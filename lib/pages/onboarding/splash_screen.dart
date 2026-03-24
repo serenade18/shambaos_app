@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'onboarding.dart';
+import 'welcome_screens.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -27,7 +27,6 @@ class _SplashScreenState extends State<SplashScreen>
       statusBarIconBrightness: Brightness.dark,
     ));
 
-    // Logo scale + fade in
     _logoController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -42,7 +41,6 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    // Whole screen fade out before navigation
     _fadeOutController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -55,21 +53,18 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startSequence() async {
-    // Small delay then animate logo in
     await Future.delayed(const Duration(milliseconds: 300));
     await _logoController.forward();
-
-    // Hold on logo
     await Future.delayed(const Duration(milliseconds: 1200));
-
-    // Fade out and navigate
     await _fadeOutController.forward();
 
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const OnboardingScreen(),
-          transitionDuration: Duration.zero,
+          pageBuilder: (_, __, ___) => const WelcomeScreens(),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 500),
         ),
       );
     }
@@ -102,38 +97,12 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Logo
                     Image.asset(
                       'images/logo.png',
                       width: 110,
                       height: 110,
                       fit: BoxFit.contain,
                     ),
-
-                    // const SizedBox(height: 20),
-
-                    // // App name below logo
-                    // const Text(
-                    //   'Shambaos',
-                    //   style: TextStyle(
-                    //     fontSize: 26,
-                    //     fontWeight: FontWeight.w800,
-                    //     color: Color(0xFF2E7D32),
-                    //     letterSpacing: 1.2,
-                    //   ),
-                    // ),
-
-                    // const SizedBox(height: 6),
-
-                    // Text(
-                    //   'Smart Farming Solutions',
-                    //   style: TextStyle(
-                    //     fontSize: 13,
-                    //     color: Colors.grey[500],
-                    //     letterSpacing: 0.5,
-                    //     fontWeight: FontWeight.w400,
-                    //   ),
-                    // ),
                   ],
                 ),
               ),
