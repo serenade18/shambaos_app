@@ -148,16 +148,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         const SizedBox(height: 12),
 
                         // Home indicator line
-                        Center(
-                          child: Container(
-                            width: 120,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
+                        // Center(
+                        //   child: Container(
+                        //     width: 120,
+                        //     height: 4,
+                        //     decoration: BoxDecoration(
+                        //       color: Colors.white.withOpacity(0.3),
+                        //       borderRadius: BorderRadius.circular(2),
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
@@ -178,18 +178,19 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       child: Container(
         height: 60,
         decoration: BoxDecoration(
-          color: const Color(0xFF5CD65C),
+          // Darker green with reduced opacity (0.85)
+          color: const Color(0x144624).withOpacity(0.24),
           borderRadius: BorderRadius.circular(50),
         ),
         child: Row(
           children: [
-            // Left arrow circle
+            // Left arrow circle - slightly darker for contrast
             Container(
               margin: const EdgeInsets.all(6),
               width: 48,
               height: 48,
               decoration: const BoxDecoration(
-                color: Color(0xFF2E7D32),
+                color: Color(0xFF1B5E20), 
                 shape: BoxShape.circle,
               ),
               child: const Icon(
