@@ -168,12 +168,25 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
 
                         // 🔢 OTP Fields
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: List.generate(
-                            6,
-                            (index) => _buildOtpBox(index),
-                          ),
-                        ),
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(6, (index) {
+                                double screenWidth = MediaQuery.of(context).size.width;
+                                double padding = 30 * 2; // your horizontal padding
+                                double gap = 10 * 5; // 5 gaps
+                                double boxWidth = (screenWidth - padding - gap) / 6;
+
+                                return Row(
+                                children: [
+                                    SizedBox(
+                                    width: boxWidth,
+                                    height: 58,
+                                    child: _buildOtpBox(index),
+                                    ),
+                                    if (index < 5) const SizedBox(width: 10),
+                                ],
+                                );
+                            }),
+                            ),
 
                         const SizedBox(height: 36),
 
