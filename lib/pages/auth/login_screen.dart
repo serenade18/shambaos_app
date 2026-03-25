@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_service.dart';
+import '../home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,6 +50,15 @@ class _LoginScreenState extends State<LoginScreen> {
         // ── Store token as needed e.g. SharedPreferences ──────
         // final token = result['data']['token'];
         _showSnack('Welcome back!');
+
+        Future.delayed(const Duration(milliseconds: 500), () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const HomeScreen(),
+            ),
+          );
+        });
 
         // TODO: Navigate to your home/dashboard screen
         // Navigator.pushReplacement(context,

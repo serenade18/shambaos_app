@@ -1,0 +1,601 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedNav = 0;
+  int _selectedCategory = 0;
+
+  final List<String> _categories = [
+    'All',
+    'Carrots',
+    'Vegetable',
+    'Fruit',
+    'Pumpkin',
+    'Grain',
+  ];
+
+  final List<Map<String, String>> _fields = [
+    {
+      'title': 'Optimize Pumpkin Harvest',
+      'desc': 'Implement efficient workflows with our automated system.',
+      'image': 'images/auth/banana.png', // replace with your field images
+    },
+    {
+      'title': 'Healthy Wheat Growth',
+      'desc': 'Real time health monitoring for the grain sector.',
+      'image': 'images/auth/farm.png',
+    },
+    {
+      'title': 'Carrot Field Analytics',
+      'desc': 'Track soil quality and yield predictions live.',
+      'image': 'images/auth/chicken.png',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7F2),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // ── Header Card ──────────────────────────────────
+              _buildHeader(),
+
+              // ── Scrollable Body ──────────────────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 100),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 28),
+                      _buildMyFieldsHeader(),
+                      const SizedBox(height: 16),
+                      _buildCategoryChips(),
+                      const SizedBox(height: 20),
+                      _buildFieldCards(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // ── Bottom Nav ───────────────────────────────────────
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildBottomNav(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  HEADER
+  // ══════════════════════════════════════════════════════════
+  Widget _buildHeader() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF2D5A27),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Top Row: Avatar + Greeting + Bell ────────────
+              Row(
+                children: [
+                  // Avatar
+                  Container(
+                    height: 46,
+                    width: 46,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.3), width: 2),
+                      image: const DecorationImage(
+                        image: AssetImage('images/logo.png'),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Greeting
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hi, Annca Namrata',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.75),
+                            fontSize: 13,
+                          ),
+                        ),
+                        const Text(
+                          'Welcome back!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Bell
+                  Container(
+                    height: 42,
+                    width: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // ── Weather Card ──────────────────────────────────
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Location + Cloud
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                            color: Colors.white70, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'New York City, USA',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.85),
+                            fontSize: 13,
+                          ),
+                        ),
+                        const Spacer(),
+                        // Cloud illustration placeholder
+                        Container(
+                          height: 44,
+                          width: 72,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.cloud,
+                              color: Colors.white70, size: 30),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // Temp + status
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          '24°C',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 48,
+                            fontWeight: FontWeight.w700,
+                            height: 1,
+                          ),
+                        ),
+                        const Spacer(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Clean/Sunny',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.75),
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              'January 28, 2026 | 13:26',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.55),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+                    Divider(color: Colors.white.withOpacity(0.12), height: 1),
+                    const SizedBox(height: 14),
+
+                    // Stats row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _weatherStat('Humidity', '85%'),
+                        _weatherStat('Precipitation', '8 mm'),
+                        _weatherStat('Wind Speed', '13 km/h'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _weatherStat(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.55),
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  MY FIELDS HEADER
+  // ══════════════════════════════════════════════════════════
+  Widget _buildMyFieldsHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'My Fields',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A1A),
+            ),
+          ),
+          Text(
+            'See All',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.black.withOpacity(0.45),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  CATEGORY CHIPS
+  // ══════════════════════════════════════════════════════════
+  Widget _buildCategoryChips() {
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          final selected = _selectedCategory == index;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected
+                    ? const Color(0xFF3D7A35)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF3D7A35).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        )
+                      ]
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+              ),
+              child: Text(
+                _categories[index],
+                style: TextStyle(
+                  color: selected ? Colors.white : Colors.black87,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  FIELD CARDS (horizontal scroll)
+  // ══════════════════════════════════════════════════════════
+  Widget _buildFieldCards() {
+    return SizedBox(
+      height: 260,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _fields.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 14),
+        itemBuilder: (context, index) {
+          final field = _fields[index];
+          return _buildFieldCard(field);
+        },
+      ),
+    );
+  }
+
+  Widget _buildFieldCard(Map<String, String> field) {
+    return Container(
+      width: 210,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                child: Image.asset(
+                  field['image']!,
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3D7A35).withOpacity(0.15),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.grass,
+                          color: Color(0xFF3D7A35), size: 40),
+                    ),
+                  ),
+                ),
+              ),
+              // Bookmark button
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  height: 32,
+                  width: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.85),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.bookmark_border_rounded,
+                    size: 16,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Text content
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  field['title']!,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  field['desc']!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.black.withOpacity(0.5),
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  BOTTOM NAV
+  // ══════════════════════════════════════════════════════════
+  Widget _buildBottomNav() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: 68,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3D1A),
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _navItem(
+                  icon: Icons.home_rounded,
+                  label: 'Home',
+                  index: 0,
+                ),
+                _navItem(
+                  icon: Icons.grass_rounded,
+                  label: 'Fields',
+                  index: 1,
+                ),
+
+                // Center FAB
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    height: 48,
+                    width: 48,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF4CAF50),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 26),
+                  ),
+                ),
+
+                _navItem(
+                  icon: Icons.document_scanner_outlined,
+                  label: 'Document',
+                  index: 3,
+                ),
+                _navItem(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Profile',
+                  index: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _navItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final selected = _selectedNav == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedNav = index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? Colors.white.withOpacity(0.08)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: selected ? const Color(0xFF4CAF50) : Colors.white54,
+              size: 22,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? const Color(0xFF4CAF50) : Colors.white54,
+                fontSize: 10,
+                fontWeight:
+                    selected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
