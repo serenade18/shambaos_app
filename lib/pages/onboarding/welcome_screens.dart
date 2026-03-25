@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'onboarding.dart';
+import '../auth/login_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data model for each welcome page
@@ -26,27 +26,27 @@ class _WelcomePage {
 const List<_WelcomePage> _pages = [
   _WelcomePage(
     image: 'images/auth/farm.png',
-    tag: 'SMART MONITORING',
-    headline: 'Know Your\nFarm in\nReal Time.',
-    subtitle: 'Get live insights on soil health, weather, and crop conditions — all from your phone.',
+    tag: 'FARM INTELLIGENCE',
+    headline: 'Modern Farming.\nTraditional\nWisdom.',
+    subtitle: 'Put the power of data in your pocket. Track your soil health and weather to ensure a bumper harvest every season.',
   ),
   _WelcomePage(
-    image: 'images/auth/milk.png',   // swap with images/welcome/screen2.jpg
-    tag: 'CROP MANAGEMENT',
-    headline: 'Plan Every\nSeason with\nConfidence.',
-    subtitle: 'Track planting schedules, growth stages, and harvest windows with precision tools.',
+    image: 'images/auth/milk.png', // Swapped as requested
+    tag: 'LIVESTOCK MANAGEMENT',
+    headline: 'Your Digital\nFarm Manager,\n24/7.',
+    subtitle: 'From poultry to dairy and fish—manage your entire inventory and production records without the paperwork.',
   ),
   _WelcomePage(
-    image: 'images/auth/banana.png',   // swap with images/welcome/screen3.jpg
-    tag: 'RESOURCE OPTIMIZER',
-    headline: 'Use Less,\nGrow More,\nWaste Nothing.',
-    subtitle: 'AI-powered recommendations help you optimize water, fertilizer, and labour usage.',
+    image: 'images/auth/banana.png', // Swapped as requested
+    tag: 'SMART INPUTS',
+    headline: 'Save on Costs.\nGrow Your\nProfits.',
+    subtitle: 'Stop wasting expensive fertilizer and water. Our AI tells you exactly what your crops need to thrive.',
   ),
   _WelcomePage(
-    image: 'images/auth/chicken.png',   // swap with images/welcome/screen4.jpg
+    image: 'images/auth/chicken.png', // Swapped as requested
     tag: 'MARKET ACCESS',
-    headline: 'Connect to\nBuyers\nDirectly.',
-    subtitle: 'List your produce, negotiate prices, and close deals without middlemen.',
+    headline: 'Direct Markets.\nBetter Prices.\nNo Brokers.',
+    subtitle: 'Connect directly to verified buyers. Take control of your sales and keep the profit you worked for.',
   ),
 ];
 
@@ -82,7 +82,7 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
   void _goToGetStarted() {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const OnboardingScreen(),
+        pageBuilder: (_, __, ___) => const LoginScreen(),
         transitionsBuilder: (_, anim, __, child) =>
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 400),
