@@ -10,19 +10,21 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // ✨ White Glossy Gradient Background
+
+          // 🌿 Background Gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFFFFFFFF), // pure white
-                  Color(0xFFF2F4F7), // soft grey-white
-                  Color(0xFFE8F0EC), // hint of green-white
+                  Color(0xFFFFFFFF),
+                  Color(0xFFF2F4F7),
+                  Color(0xFFE8F0EC),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -30,7 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
 
-          // ✨ Floating Blobs (Subtle Depth)
+          // 🌿 Blobs
           Positioned(
             top: -80,
             left: -60,
@@ -45,86 +47,68 @@ class _RegisterScreenState extends State<RegisterScreen> {
           SafeArea(
             child: Stack(
               children: [
-                // Back Button
+
+                // 🔙 Back Button
                 Positioned(
                   top: 20,
                   left: 20,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.5),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(50),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new,
-                            size: 18,
-                            color: Color(0xFF1A1A1A),
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: _glassBackButton(context),
                 ),
 
-                // Main Content
+                // 📄 Content
                 Center(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 30),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+
                         const Text(
                           "Create Account",
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A1A1A),
                           ),
                         ),
+
                         const SizedBox(height: 12),
+
                         Text(
                           "Create a new account to get started and enjoy\nseamless access to our features.",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.black.withOpacity(0.6),
-                            fontSize: 14,
-                            height: 1.5,
                           ),
                         ),
+
                         const SizedBox(height: 40),
 
-                        // Name Field
                         _buildTextField(
                           hint: "Name",
                           icon: Icons.person_outline,
                         ),
+
                         const SizedBox(height: 16),
 
-                        // Email Field
+                        // 📱 FIXED PHONE FIELD
+                        _buildPhoneField(),
+
+                        const SizedBox(height: 16),
+
                         _buildTextField(
                           hint: "Email address",
                           icon: Icons.email_outlined,
                         ),
+
                         const SizedBox(height: 16),
 
-                        // Password Field
                         _buildTextField(
                           hint: "Password",
                           icon: Icons.lock_outline,
                           isPassword: true,
                         ),
+
                         const SizedBox(height: 16),
 
-                        // Confirm Password Field
                         _buildTextField(
                           hint: "Confirm Password",
                           icon: Icons.lock_outline,
@@ -133,69 +117,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         const SizedBox(height: 30),
 
-                        // Create Account Button
+                        // 🚀 Button
                         SizedBox(
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // Logic to save user to ShambaOS DB
-                            },
+                            onPressed: () {},
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF48B67C),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
-                              elevation: 4,
-                              shadowColor:
-                                  const Color(0xFF48B67C).withOpacity(0.4),
                             ),
                             child: const Text(
                               "Create Account",
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
+                                fontSize: 16,
                               ),
                             ),
                           ),
                         ),
+
                         const SizedBox(height: 24),
 
-                        // Sign In Link
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
                           child: const Text.rich(
                             TextSpan(
                               text: "Already have an account? ",
-                              style: TextStyle(
-                                color: Colors.black54,
-                                fontSize: 13,
-                              ),
                               children: [
                                 TextSpan(
                                   text: "Sign In here",
                                   style: TextStyle(
                                     color: Color(0xFF48B67C),
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 13,
                                   ),
                                 ),
                               ],
                             ),
                           ),
                         ),
+
                         const SizedBox(height: 40),
 
                         Text(
                           "Or Continue With Account",
                           style: TextStyle(
                             color: Colors.black.withOpacity(0.5),
-                            fontSize: 12,
                           ),
                         ),
+
                         const SizedBox(height: 20),
+
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -218,7 +192,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // 🔤 Solid White TextField (Clear Input Area)
+  // ================= PHONE FIELD =================
+  Widget _buildPhoneField() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IntlPhoneField(
+        initialCountryCode: 'KE',
+        showCountryFlag: true,
+        dropdownIconPosition: IconPosition.trailing,
+        dropdownIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+        flagsButtonPadding: const EdgeInsets.only(left: 15),
+        flagsButtonMargin: EdgeInsets.zero, // 👈 Add this
+        textAlignVertical: TextAlignVertical.center,
+        style: const TextStyle(fontSize: 15, color: Colors.black87),
+        dropdownTextStyle: const TextStyle(fontSize: 15, color: Colors.black87),
+        decoration: const InputDecoration(
+          hintText: "Phone Number",
+          hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+          border: InputBorder.none,
+          counterText: "",
+          contentPadding: EdgeInsets.symmetric(vertical: 20),
+        ),
+        onChanged: (phone) {
+          print(phone.completeNumber);
+        },
+      ),
+    );
+  }
+
+  // ================= TEXT FIELD =================
   Widget _buildTextField({
     required String hint,
     required IconData icon,
@@ -232,70 +244,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
             blurRadius: 12,
-            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: TextField(
         obscureText: isPassword,
-        style: const TextStyle(
-          color: Colors.black87,
-          fontSize: 15,
-        ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-          ),
-          prefixIcon: Icon(
-            icon,
-            color: const Color(0xFF48B67C),
-            size: 22,
-          ),
-          suffixIcon: isPassword
-              ? Icon(
-                  Icons.visibility_off_outlined,
-                  color: Colors.grey,
-                  size: 20,
-                )
-              : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 18,
-            horizontal: 20,
-          ),
+          prefixIcon: Icon(icon, color: const Color(0xFF48B67C)),
+          suffixIcon: isPassword
+              ? const Icon(Icons.visibility_off_outlined)
+              : null,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         ),
       ),
     );
   }
 
-  // 🔘 Social Button (Glass Effect with Asset Icons)
+  // ================= BUTTONS =================
   Widget _socialButton(String assetPath) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(50),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          height: 50,
-          width: 50,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withOpacity(0.5),
-              width: 1.5,
-            ),
-          ),
-          child: Center(
-            child: Image.asset(assetPath, height: 22),
-          ),
-        ),
+    return Container(
+      height: 50,
+      width: 50,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+      ),
+      child: Center(
+        child: Image.asset(assetPath, height: 22),
       ),
     );
   }
 
-  // ✨ Blurred Circle (Background Glow)
+  Widget _glassBackButton(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.3),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+        onPressed: () => Navigator.pop(context),
+      ),
+    );
+  }
+
   Widget _blurCircle(double size, Color color) {
     return ImageFiltered(
       imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
