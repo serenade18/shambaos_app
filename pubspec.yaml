@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  http: ^1.2.0 
   flutter_svg: ^2.0.9
   intl_phone_field: ^3.2.0
   flutter:
@@ -37,6 +38,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flutter_intl_phone_field: ^0.0.7
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

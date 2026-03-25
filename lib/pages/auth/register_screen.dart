@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -10,6 +11,82 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  String _phoneNumber = '';
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirm = _confirmPasswordController.text;
+
+    // ── Validation ───────────────────────────────────────────
+    if (name.isEmpty || email.isEmpty || password.isEmpty || _phoneNumber.isEmpty) {
+      _showSnack('Please fill in all fields.', isError: true);
+      return;
+    }
+    if (password != confirm) {
+      _showSnack('Passwords do not match.', isError: true);
+      return;
+    }
+    if (password.length < 6) {
+      _showSnack('Password must be at least 6 characters.', isError: true);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await AuthService.register(
+        name: name,
+        phone: _phoneNumber,
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      if (response.success) {
+        _showSnack('Account created! Please sign in.');
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (mounted) Navigator.pop(context);
+      } else {
+        _showSnack(response.message ?? 'Registration failed.', isError: true);
+      }
+    } catch (e) {
+      _showSnack('Network error. Please check your connection.', isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : const Color(0xFF48B67C),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,36 +160,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 40),
 
                         _buildTextField(
+                          controller: _nameController,
                           hint: "Name",
                           icon: Icons.person_outline,
                         ),
 
                         const SizedBox(height: 16),
 
-                        // 📱 FIXED PHONE FIELD
                         _buildPhoneField(),
 
                         const SizedBox(height: 16),
 
                         _buildTextField(
+                          controller: _emailController,
                           hint: "Email address",
                           icon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
                         ),
 
                         const SizedBox(height: 16),
 
                         _buildTextField(
+                          controller: _passwordController,
                           hint: "Password",
                           icon: Icons.lock_outline,
                           isPassword: true,
+                          obscure: _obscurePassword,
+                          onToggle: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                         ),
 
                         const SizedBox(height: 16),
 
                         _buildTextField(
+                          controller: _confirmPasswordController,
                           hint: "Confirm Password",
                           icon: Icons.lock_outline,
                           isPassword: true,
+                          obscure: _obscureConfirm,
+                          onToggle: () => setState(
+                              () => _obscureConfirm = !_obscureConfirm),
                         ),
 
                         const SizedBox(height: 30),
@@ -122,20 +209,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: _isLoading ? null : _handleRegister,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF48B67C),
+                              disabledBackgroundColor:
+                                  const Color(0xFF48B67C).withOpacity(0.6),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
                             ),
-                            child: const Text(
-                              "Create Account",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Create Account",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                           ),
                         ),
 
@@ -180,6 +279,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _socialButton('images/assets/tik-tok.png'),
                           ],
                         ),
+
+                        const SizedBox(height: 30),
                       ],
                     ),
                   ),
@@ -210,12 +311,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         initialCountryCode: 'KE',
         showCountryFlag: true,
         dropdownIconPosition: IconPosition.trailing,
-        dropdownIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+        dropdownIcon: const Icon(
+            Icons.keyboard_arrow_down_rounded, color: Colors.grey),
         flagsButtonPadding: const EdgeInsets.only(left: 15),
-        flagsButtonMargin: EdgeInsets.zero, // 👈 Add this
+        flagsButtonMargin: EdgeInsets.zero,
         textAlignVertical: TextAlignVertical.center,
         style: const TextStyle(fontSize: 15, color: Colors.black87),
-        dropdownTextStyle: const TextStyle(fontSize: 15, color: Colors.black87),
+        dropdownTextStyle:
+            const TextStyle(fontSize: 15, color: Colors.black87),
         decoration: const InputDecoration(
           hintText: "Phone Number",
           hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
@@ -224,7 +327,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           contentPadding: EdgeInsets.symmetric(vertical: 20),
         ),
         onChanged: (phone) {
-          print(phone.completeNumber);
+          setState(() => _phoneNumber = phone.completeNumber);
         },
       ),
     );
@@ -232,9 +335,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // ================= TEXT FIELD =================
   Widget _buildTextField({
+    required TextEditingController controller,
     required String hint,
     required IconData icon,
     bool isPassword = false,
+    bool obscure = false,
+    VoidCallback? onToggle,
+    TextInputType? keyboardType,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -248,13 +355,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ],
       ),
       child: TextField(
-        obscureText: isPassword,
+        controller: controller,
+        obscureText: isPassword ? obscure : false,
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           hintText: hint,
           border: InputBorder.none,
           prefixIcon: Icon(icon, color: const Color(0xFF48B67C)),
           suffixIcon: isPassword
-              ? const Icon(Icons.visibility_off_outlined)
+              ? IconButton(
+                  icon: Icon(
+                    obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: Colors.grey,
+                  ),
+                  onPressed: onToggle,
+                )
               : null,
           contentPadding:
               const EdgeInsets.symmetric(vertical: 18, horizontal: 20),

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import 'auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,21 +12,85 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
   bool _rememberMe = false;
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showSnack('Please enter your email and password.', isError: true);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await AuthService.login(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      if (result.success) {
+        // ── Store token as needed e.g. SharedPreferences ──────
+        // final token = result['data']['token'];
+        _showSnack('Welcome back!');
+
+        // TODO: Navigate to your home/dashboard screen
+        // Navigator.pushReplacement(context,
+        //   MaterialPageRoute(builder: (_) => const HomeScreen()));
+      } else {
+        _showSnack(
+          result.message ?? 'Invalid credentials. Please try again.',
+          isError: true,
+        );
+      }
+    } catch (e) {
+      _showSnack('Network error. Please check your connection.', isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : const Color(0xFF48B67C),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // ✨ White Glossy Gradient Background
+          // ✨ Background Gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFFFFFFFF), // pure white
-                  Color(0xFFF2F4F7), // soft grey-white
-                  Color(0xFFE8F0EC), // hint of green-white
+                  Color(0xFFFFFFFF),
+                  Color(0xFFF2F4F7),
+                  Color(0xFFE8F0EC),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -33,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          // ✨ Floating Blobs (Subtle Depth)
+          // ✨ Floating Blobs
           Positioned(
             top: -80,
             left: -60,
@@ -72,18 +137,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // 🔤 Email Input (Solid White - Distinguishable)
+                    // 🔤 Email
                     _buildTextField(
+                      controller: _emailController,
                       hint: "Email address",
                       icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 16),
 
-                    // 🔤 Password Input (Solid White - Distinguishable)
+                    // 🔤 Password
                     _buildTextField(
+                      controller: _passwordController,
                       hint: "Password",
                       icon: Icons.lock_outline,
                       isPassword: true,
+                      obscure: _obscurePassword,
+                      onToggleObscure: () => setState(
+                          () => _obscurePassword = !_obscurePassword),
                     ),
 
                     const SizedBox(height: 10),
@@ -116,7 +187,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const ForgotPasswordScreen(),
+                                builder: (_) =>
+                                    const ForgotPasswordScreen(),
                               ),
                             );
                           },
@@ -134,29 +206,41 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    // 🔘 Solid Green Login Button (CTA - Highly Distinguishable)
+                    // 🔘 Login Button
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: _isLoading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF48B67C),
+                          disabledBackgroundColor:
+                              const Color(0xFF48B67C).withOpacity(0.6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                           elevation: 4,
-                          shadowColor: const Color(0xFF48B67C).withOpacity(0.4),
+                          shadowColor:
+                              const Color(0xFF48B67C).withOpacity(0.4),
                         ),
-                        child: const Text(
-                          "Login",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                "Login",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
                       ),
                     ),
 
@@ -168,7 +252,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(),
+                            builder: (_) => const RegisterScreen(),
                           ),
                         );
                       },
@@ -225,15 +309,18 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // 🔤 Solid White TextField (Not Glassmorphic - Clear Input Area)
   Widget _buildTextField({
+    required TextEditingController controller,
     required String hint,
     required IconData icon,
     bool isPassword = false,
+    bool obscure = false,
+    VoidCallback? onToggleObscure,
+    TextInputType? keyboardType,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // Solid white - stands out from background
+        color: Colors.white,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
@@ -244,27 +331,24 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
       child: TextField(
-        obscureText: isPassword,
-        style: const TextStyle(
-          color: Colors.black87,
-          fontSize: 15,
-        ),
+        controller: controller,
+        obscureText: isPassword ? obscure : false,
+        keyboardType: keyboardType,
+        style: const TextStyle(color: Colors.black87, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-          ),
-          prefixIcon: Icon(
-            icon,
-            color: const Color(0xFF48B67C),
-            size: 22,
-          ),
+          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFF48B67C), size: 22),
           suffixIcon: isPassword
-              ? Icon(
-                  Icons.visibility_off_outlined,
-                  color: Colors.grey,
-                  size: 20,
+              ? IconButton(
+                  icon: Icon(
+                    obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: Colors.grey,
+                    size: 20,
+                  ),
+                  onPressed: onToggleObscure,
                 )
               : null,
           border: InputBorder.none,
@@ -277,7 +361,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // 🔘 Social Button (Glass Effect - Secondary Action)
   Widget _socialButton(String assetPath) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(50),
@@ -294,25 +377,19 @@ class _LoginScreenState extends State<LoginScreen> {
               width: 1.5,
             ),
           ),
-          child: Center(
-            child: Image.asset(assetPath, height: 22),
-          ),
+          child: Center(child: Image.asset(assetPath, height: 22)),
         ),
       ),
     );
   }
 
-  // ✨ Blurred Circle (Background Glow)
   Widget _blurCircle(double size, Color color) {
     return ImageFiltered(
       imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
       child: Container(
         height: size,
         width: size,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
     );
   }
