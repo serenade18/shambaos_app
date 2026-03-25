@@ -25,34 +25,28 @@ class _WelcomePage {
 // ─────────────────────────────────────────────────────────────────────────────
 const List<_WelcomePage> _pages = [
   _WelcomePage(
-    image: 'images/auth/about-tech-farmer.jpg',
+    image: 'images/auth/farm.png',
     tag: 'SMART MONITORING',
     headline: 'Know Your\nFarm in\nReal Time.',
     subtitle: 'Get live insights on soil health, weather, and crop conditions — all from your phone.',
   ),
   _WelcomePage(
-    image: 'images/auth/about-tech-farmer.jpg',   // swap with images/welcome/screen2.jpg
+    image: 'images/auth/milk.png',   // swap with images/welcome/screen2.jpg
     tag: 'CROP MANAGEMENT',
     headline: 'Plan Every\nSeason with\nConfidence.',
     subtitle: 'Track planting schedules, growth stages, and harvest windows with precision tools.',
   ),
   _WelcomePage(
-    image: 'images/auth/about-tech-farmer.jpg',   // swap with images/welcome/screen3.jpg
+    image: 'images/auth/banana.png',   // swap with images/welcome/screen3.jpg
     tag: 'RESOURCE OPTIMIZER',
     headline: 'Use Less,\nGrow More,\nWaste Nothing.',
     subtitle: 'AI-powered recommendations help you optimize water, fertilizer, and labour usage.',
   ),
   _WelcomePage(
-    image: 'images/auth/about-tech-farmer.jpg',   // swap with images/welcome/screen4.jpg
+    image: 'images/auth/chicken.png',   // swap with images/welcome/screen4.jpg
     tag: 'MARKET ACCESS',
     headline: 'Connect to\nBuyers\nDirectly.',
     subtitle: 'List your produce, negotiate prices, and close deals without middlemen.',
-  ),
-  _WelcomePage(
-    image: 'images/auth/about-tech-farmer.jpg',   // swap with images/welcome/screen5.jpg
-    tag: 'FARM ANALYTICS',
-    headline: 'Data That\nDrives Better\nDecisions.',
-    subtitle: 'Turn your farm data into actionable reports that boost profitability every season.',
   ),
 ];
 
@@ -183,7 +177,7 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
                       }),
                     ),
 
-                    // Next / Get Started button
+                    // // Next / Get Started button
                     GestureDetector(
                       onTap: _nextPage,
                       child: AnimatedContainer(

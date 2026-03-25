@@ -62,6 +62,10 @@ flutter:
     - images/
     - images/logo.png
     - images/auth/about-tech-farmer.jpg
+    - images/auth/farm.png
+    - images/auth/banana.png
+    - images/auth/milk.png
+    - images/auth/chicken.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
