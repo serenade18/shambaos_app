@@ -151,11 +151,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _socialButton('assets/facebook.png'), // Replace with your asset paths
+                        _socialButton('images/assets/facebook.png'), // Replace with your asset paths
                         const SizedBox(width: 20),
-                        _socialButton('assets/google.png'),
+                        _socialButton('images/assets/google.png'),
                         const SizedBox(width: 20),
-                        _socialButton('assets/apple.png'),
+                        _socialButton('images/assets/tik-tok.png'),
                       ],
                     ),
                   ],
@@ -199,25 +199,26 @@ class _LoginScreenState extends State<LoginScreen> {
   // Helper for Social Buttons
   Widget _socialButton(String assetPath) {
     return Container(
-      height: 50,
-      width: 50,
-      decoration: BoxDecoration(
+        height: 50,
+        width: 50,
+        decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
         boxShadow: [
-          BoxShadow(
+            BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
-          ),
+            ),
         ],
-      ),
-      child: Center(
-        child: Image.network( // Using network for placeholder, change to Image.asset later
-          'https://cdn-icons-png.flaticon.com/512/2991/2991148.png', // Example Google Icon
-          height: 24,
         ),
-      ),
+        child: Center(
+        child: Image.asset(
+            assetPath,
+            height: 24,
+            fit: BoxFit.contain,
+        ),
+        ),
     );
-  }
+    }
 }
