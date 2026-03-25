@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,28 +15,37 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7), // The soft grey background
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // // 1. Top Back Button
-            // Positioned(
-            //   top: 20,
-            //   left: 20,
-            //   child: Container(
-            //     decoration: const BoxDecoration(
-            //       color: Colors.white,
-            //       shape: BoxShape.circle,
-            //     ),
-            //     child: IconButton(
-            //       icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black),
-            //       onPressed: () => Navigator.pop(context),
-            //     ),
-            //   ),
-            // ),
+      body: Stack(
+        children: [
+          // ✨ White Glossy Gradient Background
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFFFFFFF), // pure white
+                  Color(0xFFF2F4F7), // soft grey-white
+                  Color(0xFFE8F0EC), // hint of green-white
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
 
-            // 2. Main Content
-            Center(
+          // ✨ Floating Blobs (Subtle Depth)
+          Positioned(
+            top: -80,
+            left: -60,
+            child: _blurCircle(200, const Color(0xFF48B67C).withOpacity(0.08)),
+          ),
+          Positioned(
+            bottom: -100,
+            right: -50,
+            child: _blurCircle(250, const Color(0xFF48B67C).withOpacity(0.06)),
+          ),
+
+          SafeArea(
+            child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 30),
                 child: Column(
@@ -53,28 +64,30 @@ class _LoginScreenState extends State<LoginScreen> {
                       "Enter your email and password to securely access\nyour account and manage your services.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: Colors.black.withOpacity(0.6),
                         fontSize: 14,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 40),
 
-                    // Email Field
+                    // 🔤 Email Input (Solid White - Distinguishable)
                     _buildTextField(
                       hint: "Email address",
                       icon: Icons.email_outlined,
                     ),
                     const SizedBox(height: 16),
 
-                    // Password Field
+                    // 🔤 Password Input (Solid White - Distinguishable)
                     _buildTextField(
                       hint: "Password",
                       icon: Icons.lock_outline,
                       isPassword: true,
                     ),
 
-                    // Remember Me & Forgot Password Row
+                    const SizedBox(height: 10),
+
+                    // Remember + Forgot
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -83,26 +96,37 @@ class _LoginScreenState extends State<LoginScreen> {
                             Checkbox(
                               value: _rememberMe,
                               activeColor: const Color(0xFF48B67C),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              checkColor: Colors.white,
                               onChanged: (value) {
                                 setState(() => _rememberMe = value!);
                               },
                             ),
-                            const Text("Remember me", style: TextStyle(fontSize: 13)),
+                            const Text(
+                              "Remember me",
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 13,
+                              ),
+                            ),
                           ],
                         ),
                         TextButton(
                           onPressed: () {},
                           child: const Text(
                             "Forgot Password",
-                            style: TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              color: Color(0xFF48B67C),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 20),
 
-                    // Login Button
+                    // 🔘 Solid Green Login Button (CTA - Highly Distinguishable)
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -110,48 +134,73 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () {},
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF48B67C),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 4,
+                          shadowColor: const Color(0xFF48B67C).withOpacity(0.4),
                         ),
                         child: const Text(
                           "Login",
-                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 24),
 
                     // Sign Up Link
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
+                      },
                       child: const Text.rich(
                         TextSpan(
                           text: "Don't have an account? ",
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 13,
+                          ),
                           children: [
                             TextSpan(
                               text: "Sign Up here",
                               style: TextStyle(
                                 color: Color(0xFF48B67C),
                                 fontWeight: FontWeight.bold,
+                                fontSize: 13,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 50),
 
-                    // Social Logins
-                    const Text(
+                    Text(
                       "Or Continue With Account",
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(
+                        color: Colors.black.withOpacity(0.5),
+                        fontSize: 12,
+                      ),
                     ),
+
                     const SizedBox(height: 20),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _socialButton('images/assets/facebook.png'), // Replace with your asset paths
+                        _socialButton('images/assets/facebook.png'),
                         const SizedBox(width: 20),
                         _socialButton('images/assets/google.png'),
                         const SizedBox(width: 20),
@@ -162,63 +211,101 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  // Helper for Input Fields
-  Widget _buildTextField({required String hint, required IconData icon, bool isPassword = false}) {
+  // 🔤 Solid White TextField (Not Glassmorphic - Clear Input Area)
+  Widget _buildTextField({
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+  }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white, // Solid white - stands out from background
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: TextField(
         obscureText: isPassword,
+        style: const TextStyle(
+          color: Colors.black87,
+          fontSize: 15,
+        ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon: Icon(icon, color: Colors.grey[400], size: 22),
-          suffixIcon: isPassword ? const Icon(Icons.visibility_off_outlined, color: Colors.grey, size: 20) : null,
+          hintStyle: TextStyle(
+            color: Colors.grey,
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: const Color(0xFF48B67C),
+            size: 22,
+          ),
+          suffixIcon: isPassword
+              ? Icon(
+                  Icons.visibility_off_outlined,
+                  color: Colors.grey,
+                  size: 20,
+                )
+              : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 18,
+            horizontal: 20,
+          ),
         ),
       ),
     );
   }
 
-  // Helper for Social Buttons
+  // 🔘 Social Button (Glass Effect - Secondary Action)
   Widget _socialButton(String assetPath) {
-    return Container(
-        height: 50,
-        width: 50,
-        decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-            BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(50),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 50,
+          width: 50,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.3),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withOpacity(0.5),
+              width: 1.5,
             ),
-        ],
+          ),
+          child: Center(
+            child: Image.asset(assetPath, height: 22),
+          ),
         ),
-        child: Center(
-        child: Image.asset(
-            assetPath,
-            height: 24,
-            fit: BoxFit.contain,
-        ),
-        ),
+      ),
     );
-    }
+  }
+
+  // ✨ Blurred Circle (Background Glow)
+  Widget _blurCircle(double size, Color color) {
+    return ImageFiltered(
+      imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+      child: Container(
+        height: size,
+        width: size,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
 }
