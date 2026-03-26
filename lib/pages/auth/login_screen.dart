@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_service.dart';
+import '../../widgets/auth_dialog.dart';
 import '../home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -32,7 +33,12 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      _showSnack('Please enter your email and password.', isError: true);
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Missing Fields!',
+        message: 'Please enter your email\nand password to continue.',
+      );
       return;
     }
 
@@ -45,47 +51,41 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (!mounted) return;
+      setState(() => _isLoading = false);
 
       if (result.success) {
-        // ── Store token as needed e.g. SharedPreferences ──────
-        // final token = result['data']['token'];
-        _showSnack('Welcome back!');
-
-        Future.delayed(const Duration(milliseconds: 500), () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const HomeScreen(),
-            ),
-          );
-        });
-
-        // TODO: Navigate to your home/dashboard screen
-        // Navigator.pushReplacement(context,
-        //   MaterialPageRoute(builder: (_) => const HomeScreen()));
+        AuthDialog.show(
+          context,
+          type: AuthDialogType.success,
+          title: 'Login Successful!',
+          message: 'Please wait...\nYou will be directed to the homepage.',
+          autoDismiss: const Duration(seconds: 3),
+          onDone: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          },
+        );
       } else {
-        _showSnack(
-          result.message ?? 'Invalid credentials. Please try again.',
-          isError: true,
+        AuthDialog.show(
+          context,
+          type: AuthDialogType.error,
+          title: 'Login Failed!',
+          message: result.message ?? 'Invalid credentials.\nPlease try again.',
         );
       }
     } catch (e) {
-      _showSnack('Network error. Please check your connection.', isError: true);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        AuthDialog.show(
+          context,
+          type: AuthDialogType.error,
+          title: 'Connection Error!',
+          message: 'Network error.\nPlease check your connection.',
+        );
+      }
     }
-  }
-
-  void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.redAccent : const Color(0xFF48B67C),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
   }
 
   @override
@@ -147,7 +147,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // 🔤 Email
                     _buildTextField(
                       controller: _emailController,
                       hint: "Email address",
@@ -156,7 +155,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 🔤 Password
                     _buildTextField(
                       controller: _passwordController,
                       hint: "Password",
@@ -169,7 +167,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 10),
 
-                    // Remember + Forgot
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -179,29 +176,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               value: _rememberMe,
                               activeColor: const Color(0xFF48B67C),
                               checkColor: Colors.white,
-                              onChanged: (value) {
-                                setState(() => _rememberMe = value!);
-                              },
+                              onChanged: (value) =>
+                                  setState(() => _rememberMe = value!),
                             ),
                             const Text(
                               "Remember me",
                               style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 13,
-                              ),
+                                  color: Colors.black87, fontSize: 13),
                             ),
                           ],
                         ),
                         TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    const ForgotPasswordScreen(),
-                              ),
-                            );
-                          },
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const ForgotPasswordScreen()),
+                          ),
                           child: const Text(
                             "Forgot Password",
                             style: TextStyle(
@@ -216,7 +206,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    // 🔘 Login Button
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -256,23 +245,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Sign Up Link
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const RegisterScreen(),
-                          ),
-                        );
-                      },
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const RegisterScreen()),
+                      ),
                       child: const Text.rich(
                         TextSpan(
                           text: "Don't have an account? ",
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 13,
-                          ),
+                          style:
+                              TextStyle(color: Colors.black54, fontSize: 13),
                           children: [
                             TextSpan(
                               text: "Sign Up here",
@@ -292,9 +275,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       "Or Continue With Account",
                       style: TextStyle(
-                        color: Colors.black.withOpacity(0.5),
-                        fontSize: 12,
-                      ),
+                          color: Colors.black.withOpacity(0.5), fontSize: 12),
                     ),
 
                     const SizedBox(height: 20),
@@ -362,10 +343,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 18,
-            horizontal: 20,
-          ),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         ),
       ),
     );

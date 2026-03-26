@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../pages/profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +17,25 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedCategory = 0;
 
   String _userName = '';
+  String _userEmail = '';
+
+  String _getInitials(String name) {
+    if (name.isEmpty) return "U";
+    final parts = name.trim().split(" ");
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  Color _getAvatarColor(String name) {
+    final colors = [
+      Colors.green,
+      Colors.blue,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+    ];
+    return colors[name.hashCode % colors.length];
+  }
 
   final List<String> _categories = [
     'All',
@@ -30,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {
       'title': 'Optimize Pumpkin Harvest',
       'desc': 'Implement efficient workflows with our automated system.',
-      'image': 'images/auth/banana.png', // replace with your field images
+      'image': 'images/auth/banana.png',
     },
     {
       'title': 'Healthy Wheat Growth',
@@ -52,37 +72,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadUser() async {
     final user = await ApiService.getUser();
-
     if (user != null) {
       setState(() {
-        _userName = user['name'] ??
-            user['username'] ??
-            user['email'] ??
-            'User';
+        _userName = user['name'] ?? user['username'] ?? user['email'] ?? 'User';
+        _userEmail = user['email'] ?? '';
       });
     }
+  }
+
+  void _openProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProfileScreen(
+          userName: _userName,
+          userEmail: _userEmail,
+        ),
+      ),
+    );
   }
 
   void _handleNavigation(int index) {
     switch (index) {
       case 0:
-        // already home
         break;
-
       case 1:
         Navigator.pushNamed(context, '/fields');
         break;
-
       case 2:
         Navigator.pushNamed(context, '/create');
         break;
-
       case 3:
         Navigator.pushNamed(context, '/documents');
         break;
-
       case 4:
-        Navigator.pushNamed(context, '/profile');
+        _openProfile();
         break;
     }
   }
@@ -97,10 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Column(
             children: [
-              // ── Header Card ──────────────────────────────────
               _buildHeader(),
-
-              // ── Scrollable Body ──────────────────────────────
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(bottom: 100),
@@ -120,7 +141,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
 
-          // ── Bottom Nav ───────────────────────────────────────
           Positioned(
             bottom: 0,
             left: 0,
@@ -128,11 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: AppBottomNav(
               currentIndex: _selectedNav,
               onTap: (index) {
-                setState(() {
-                  _selectedNav = index;
-                });
-
-                // Navigation logic (IMPORTANT)
+                setState(() => _selectedNav = index);
                 _handleNavigation(index);
               },
             ),
@@ -161,26 +177,36 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Top Row: Avatar + Greeting + Bell ────────────
               Row(
                 children: [
-                  // Avatar
-                  Container(
-                    height: 46,
-                    width: 46,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: Colors.white.withOpacity(0.3), width: 2),
-                      image: const DecorationImage(
-                        image: AssetImage('images/logo.png'),
-                        fit: BoxFit.cover,
+                  // 👇 Avatar — tappable → ProfileScreen
+                  GestureDetector(
+                    onTap: _openProfile,
+                    child: Container(
+                      height: 46,
+                      width: 46,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _getAvatarColor(_userName),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          _getInitials(_userName),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
 
-                  // Greeting
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +230,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  // Bell
                   Container(
                     height: 42,
                     width: 42,
@@ -229,13 +254,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
                 child: Column(
                   children: [
-                    // Location + Cloud
                     Row(
                       children: [
                         const Icon(Icons.location_on_outlined,
@@ -249,7 +271,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const Spacer(),
-                        // Cloud illustration placeholder
                         Container(
                           height: 44,
                           width: 72,
@@ -265,7 +286,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 10),
 
-                    // Temp + status
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -305,7 +325,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     Divider(color: Colors.white.withOpacity(0.12), height: 1),
                     const SizedBox(height: 14),
 
-                    // Stats row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -330,26 +349,20 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.55),
-            fontSize: 11,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 11),
         ),
         const SizedBox(height: 2),
         Text(
           value,
           style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
+              color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ],
     );
   }
 
   // ══════════════════════════════════════════════════════════
-  //  MY FIELDS HEADER
+  //  MY FIELDS
   // ══════════════════════════════════════════════════════════
   Widget _buildMyFieldsHeader() {
     return Padding(
@@ -360,26 +373,20 @@ class _HomeScreenState extends State<HomeScreen> {
           const Text(
             'My Fields',
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A)),
           ),
           Text(
             'See All',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.black.withOpacity(0.45),
-            ),
+            style:
+                TextStyle(fontSize: 13, color: Colors.black.withOpacity(0.45)),
           ),
         ],
       ),
     );
   }
 
-  // ══════════════════════════════════════════════════════════
-  //  CATEGORY CHIPS
-  // ══════════════════════════════════════════════════════════
   Widget _buildCategoryChips() {
     return SizedBox(
       height: 38,
@@ -394,34 +401,26 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => setState(() => _selectedCategory = index),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               decoration: BoxDecoration(
-                color: selected
-                    ? const Color(0xFF3D7A35)
-                    : Colors.white,
+                color: selected ? const Color(0xFF3D7A35) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: selected
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFF3D7A35).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        )
-                      ]
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
+                boxShadow: [
+                  BoxShadow(
+                    color: selected
+                        ? const Color(0xFF3D7A35).withOpacity(0.3)
+                        : Colors.black.withOpacity(0.06),
+                    blurRadius: selected ? 8 : 6,
+                    offset: const Offset(0, 2),
+                  )
+                ],
               ),
               child: Text(
                 _categories[index],
                 style: TextStyle(
                   color: selected ? Colors.white : Colors.black87,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight:
+                      selected ? FontWeight.w600 : FontWeight.normal,
                   fontSize: 13,
                 ),
               ),
@@ -432,9 +431,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ══════════════════════════════════════════════════════════
-  //  FIELD CARDS (horizontal scroll)
-  // ══════════════════════════════════════════════════════════
   Widget _buildFieldCards() {
     return SizedBox(
       height: 260,
@@ -443,10 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: _fields.length,
         separatorBuilder: (_, __) => const SizedBox(width: 14),
-        itemBuilder: (context, index) {
-          final field = _fields[index];
-          return _buildFieldCard(field);
-        },
+        itemBuilder: (context, index) => _buildFieldCard(_fields[index]),
       ),
     );
   }
@@ -468,7 +461,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image
           Stack(
             children: [
               ClipRRect(
@@ -497,7 +489,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              // Bookmark button
               Positioned(
                 top: 10,
                 right: 10,
@@ -508,17 +499,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Colors.white.withOpacity(0.85),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.bookmark_border_rounded,
-                    size: 16,
-                    color: Colors.black54,
-                  ),
+                  child: const Icon(Icons.bookmark_border_rounded,
+                      size: 16, color: Colors.black54),
                 ),
               ),
             ],
           ),
-
-          // Text content
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
             child: Column(
@@ -527,10 +513,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   field['title']!,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                  ),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -538,10 +523,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   field['desc']!,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.black.withOpacity(0.5),
-                    height: 1.4,
-                  ),
+                      fontSize: 12,
+                      color: Colors.black.withOpacity(0.5),
+                      height: 1.4),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -552,10 +536,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  // ══════════════════════════════════════════════════════════
-  //  BOTTOM NAV
-  // ══════════════════════════════════════════════════════════
-  
-
 }
