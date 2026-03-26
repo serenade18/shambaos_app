@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../onboarding/welcome_screens.dart';
-import 'package:http/http.dart' as http;
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -34,180 +32,226 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
+  // Updated Avatar Color to match the Purple theme (e.g., Orange/Yellow)
   Color _getAvatarColor(String name) {
     final colors = [
-      Colors.green,
-      Colors.blue,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
+      const Color(0xFFF4A03A), // Match the Orange/Yellow avatar from image_5
+      const Color(0xFFE57373), // A complementary red/pink
+      const Color(0xFF4DB6AC), // A complementary teal
     ];
     return colors[name.hashCode % colors.length];
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: Column(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFFFFFFFF),
-                  Color(0xFFF2F4F7),
-                  Color(0xFFE8F0EC),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // Using a Stack to overlap the card on the header
+          Stack(
+            clipBehavior: Clip.none, 
+            alignment: Alignment.center,
+            children: [
+              _buildHeader(context),
+              Positioned(
+                bottom: -35, // This pushes half the card below the header line
+                left: 0,
+                right: 0,
+                child: _buildProfileCard(),
               ),
-            ),
+            ],
           ),
-          Positioned(
-            top: -80,
-            left: -60,
-            child: _blurCircle(200, const Color(0xFF48B67C).withOpacity(0.08)),
-          ),
-          Positioned(
-            bottom: -100,
-            right: -50,
-            child: _blurCircle(250, const Color(0xFF48B67C).withOpacity(0.06)),
-          ),
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          height: 38,
-                          width: 38,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.07),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_ios_new,
-                            size: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        'Settings',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-                    ],
+
+          // This spacer provides room for the overlapping card so 
+          // the list below doesn't start underneath it.
+          const SizedBox(height: 50),
+
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildSectionLabel(
+                    icon: Icons.person_outline_rounded,
+                    label: 'MY ACCOUNT',
+                    trailing: '0 Points  >',
                   ),
-                ),
-                const SizedBox(height: 24),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildProfileCard(),
-                        const SizedBox(height: 28),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4, bottom: 12),
-                          child: Text(
-                            'Other Settings',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
-                            ),
-                          ),
-                        ),
-                        _buildSettingsGroup([
-                          _SettingItem(
-                            icon: Icons.person_outline_rounded,
-                            label: 'Profile Details',
-                            onTap: _showProfileOptions,
-                          ),
-                          _SettingItem(
-                            icon: Icons.lock_outline_rounded,
-                            label: 'Password',
-                            onTap: () {},
-                          ),
-                          _SettingItem(
-                            icon: Icons.notifications_outlined,
-                            label: 'Notifications',
-                            onTap: () {},
-                          ),
-                          _SettingItem(
-                            icon: Icons.dark_mode_outlined,
-                            label: 'Dark Mode',
-                            isToggle: true,
-                            toggleValue: _darkMode,
-                            onToggle: (val) => setState(() => _darkMode = val),
-                          ),
-                        ]),
-                        const SizedBox(height: 16),
-                        _buildSettingsGroup([
-                          _SettingItem(
-                            icon: Icons.headset_mic_outlined,
-                            label: 'Support',
-                            onTap: () {},
-                          ),
-                          _SettingItem(
-                            icon: Icons.info_outline_rounded,
-                            label: 'Report an Issue',
-                            onTap: () {},
-                          ),
-                          _SettingItem(
-                            icon: Icons.help_outline_rounded,
-                            label: 'About ShambaOS',
-                            onTap: () {},
-                          ),
-                          _SettingItem(
-                            icon: Icons.language_outlined,
-                            label: 'Language',
-                            onTap: () {},
-                          ),
-                        ]),
-                        const SizedBox(height: 16),
-                        _buildLogoutTile(),
-                        const SizedBox(height: 32),
-                      ],
+
+                  _buildMenuGroup([
+                    _MenuItem(
+                      color: const Color(0xFFFF6B35),
+                      icon: Icons.card_membership_rounded,
+                      label: 'Rewards Member',
+                      onTap: () {},
                     ),
+                    _MenuItem(
+                      color: const Color(0xFF2196F3),
+                      icon: Icons.favorite_outline_rounded,
+                      label: 'Favourites',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      color: const Color(0xFFE91E8C),
+                      icon: Icons.credit_card_outlined,
+                      label: 'Payment Method',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      color: const Color(0xFF4CAF50),
+                      icon: Icons.calendar_today_outlined,
+                      label: 'Scheduled',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      color: const Color(0xFFFFC107),
+                      icon: Icons.business_center_outlined,
+                      label: 'Business Centre',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      color: const Color(0xFF9C27B0),
+                      icon: Icons.group_add_outlined,
+                      label: 'Invite and Earn',
+                      onTap: () {},
+                    ),
+                  ]),
+
+                  const SizedBox(height: 20),
+
+                  // ── GENERAL section ──────────────────────────
+                  _buildSectionLabel(
+                    icon: Icons.settings_outlined,
+                    label: 'GENERAL',
                   ),
-                ),
-              ],
+
+                  _buildMenuGroup([
+                    _MenuItem(
+                      color: const Color(0xFFFF6B35),
+                      icon: Icons.shield_outlined,
+                      label: 'Privacy Policy',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      color: const Color(0xFF2196F3),
+                      icon: Icons.description_outlined,
+                      label: 'Terms of Service',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      color: const Color(0xFF4CAF50),
+                      icon: Icons.notifications_outlined,
+                      label: 'Notifications',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      color: const Color(0xFF9C27B0),
+                      icon: Icons.language_outlined,
+                      label: 'Language',
+                      onTap: () {},
+                    ),
+                    _MenuItem(
+                      color: Colors.blueGrey,
+                      icon: Icons.dark_mode_outlined,
+                      label: 'Dark Mode',
+                      isToggle: true,
+                      toggleValue: _darkMode,
+                      onToggle: (val) => setState(() => _darkMode = val),
+                    ),
+                  ]),
+
+                  const SizedBox(height: 20),
+
+                  // ── Logout ───────────────────────────────────
+                  _buildLogoutTile(),
+
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
+    
+  // ══════════════════════════════════════════════════════════
+  //  HEADER (Update: Added LinearGradient to match the Purple image)
+  // ══════════════════════════════════════════════════════════
+  Widget _buildHeader(BuildContext context) {
+      return Container(
+        // Increased height to match the immersive look of the reference
+        height: 180, 
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            // Adjusted alignment to match the diagonal flow in the image
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF2D5A27), // Primary Purple
+              Color(0xFF2D5A27), // Lighter Purple/Indigo
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Optional: You can add the subtle star/shape watermark here if needed
+            SafeArea(
+              child: Padding(
+                // Increased top padding to push content down from the status bar
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        height: 40,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          // Slightly more opaque white for the button background
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back, // Standard arrow matches the reference better
+                          size: 22,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Text(
+                      'Profile',
+                      style: TextStyle(
+                        fontSize: 24, // Slightly larger font size
+                        fontWeight: FontWeight.w600, // Semi-bold for a cleaner look
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }  
 
+  // ══════════════════════════════════════════════════════════
+  //  PROFILE CARD (Update: Edit button color updated to Purple)
+  // ══════════════════════════════════════════════════════════
   Widget _buildProfileCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
@@ -220,10 +264,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _getAvatarColor(widget.userName),
-              border: Border.all(
-                color: const Color(0xFF48B67C).withOpacity(0.3),
-                width: 2,
-              ),
             ),
             child: Center(
               child: Text(
@@ -231,7 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 20,
                 ),
               ),
             ),
@@ -260,189 +300,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsGroup(List<_SettingItem> items) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: List.generate(items.length, (index) {
-          final item = items[index];
-          final isLast = index == items.length - 1;
-
-          return Column(
-            children: [
-              _buildSettingTile(item),
-              if (!isLast)
-                Divider(
-                  height: 1,
-                  indent: 52,
-                  color: Colors.black.withOpacity(0.06),
-                ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildSettingTile(_SettingItem item) {
-    return GestureDetector(
-      onTap: item.isToggle ? null : item.onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Icon(
-              item.icon,
-              size: 20,
-              color: Colors.black54,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                item.label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-            ),
-            if (item.isToggle)
-              Switch(
-                value: item.toggleValue ?? false,
-                onChanged: item.onToggle,
-                activeColor: const Color(0xFF48B67C),
-                activeTrackColor: const Color(0xFF48B67C).withOpacity(0.3),
-                inactiveThumbColor: Colors.white,
-                inactiveTrackColor: Colors.black26,
-              )
-            else
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: Colors.black38,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogoutTile() {
-    return GestureDetector(
-      onTap: () => _showLogoutConfirm(),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.logout_rounded,
-              size: 20,
-              color: Colors.red.shade400,
-            ),
-            const SizedBox(width: 14),
-            Text(
-              'Log out',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.red.shade400,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLogoutConfirm() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.black54)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              AuthService.logout();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const WelcomeScreens()),
-                (route) => false,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade400,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Log Out', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _blurCircle(double size, Color color) {
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-      child: Container(
-        height: size,
-        width: size,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      ),
-    );
-  }
-
-  // ── Profile Options Dropdown ─────────────────────────────
-  void _showProfileOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.settings_outlined),
-            title: const Text('Profile Settings'),
+          GestureDetector(
             onTap: () async {
-              Navigator.pop(context);
-
               final updated = await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -464,14 +323,240 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 });
               }
             },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 16, 150, 65), 
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.edit_outlined, color: Colors.white, size: 14),
+                  SizedBox(width: 4),
+                  Text(
+                    'Edit',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.security_outlined),
-            title: const Text('Access Permissions'),
-            onTap: () {
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  SECTION LABEL
+  // ══════════════════════════════════════════════════════════
+  Widget _buildSectionLabel({
+    required IconData icon,
+    required String label,
+    String? trailing,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: Colors.black45),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Colors.black45,
+              letterSpacing: 1.0,
+            ),
+          ),
+          const Spacer(),
+          if (trailing != null)
+            Text(
+              trailing,
+              style: const TextStyle(fontSize: 12, color: Colors.black45),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  MENU GROUP
+  // ══════════════════════════════════════════════════════════
+  Widget _buildMenuGroup(List<_MenuItem> items) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: List.generate(items.length, (index) {
+          final item = items[index];
+          final isLast = index == items.length - 1;
+          return Column(
+            children: [
+              _buildMenuTile(item),
+              if (!isLast)
+                Divider(
+                  height: 1,
+                  indent:  Indent_indent_fix,
+                  endIndent: Indent_endIndent_fix,
+                  color: Colors.black.withOpacity(0.05),
+                ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildMenuTile(_MenuItem item) {
+    return GestureDetector(
+      onTap: item.isToggle ? null : item.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              height: 38,
+              width: 38,
+              decoration: BoxDecoration(
+                color: item.color,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(item.icon, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                item.label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF1A1A1A),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            if (item.isToggle)
+              Switch(
+                value: item.toggleValue ?? false,
+                onChanged: item.onToggle,
+                // Updated: Active color for dark mode toggle changed to Purple
+                activeColor: const Color(0xFF6B4EEA), 
+                activeTrackColor: const Color(0xFF6B4EEA).withOpacity(0.3),
+                inactiveThumbColor: Colors.white,
+                inactiveTrackColor: Colors.black26,
+              )
+            else
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: Colors.black26,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Define Indent Constants (if not already defined)
+  double get Indent_indent_fix => 64;
+  double get Indent_endIndent_fix => 16;
+
+  // ══════════════════════════════════════════════════════════
+  //  LOGOUT TILE
+  // ══════════════════════════════════════════════════════════
+  Widget _buildLogoutTile() {
+    return GestureDetector(
+      onTap: _showLogoutConfirm,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              height: 38,
+              width: 38,
+              decoration: BoxDecoration(
+                color: Colors.red.shade400,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.logout_rounded,
+                  color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              'Log out',
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.red.shade400,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  LOGIC — all unchanged from original
+  // ══════════════════════════════════════════════════════════
+  void _showLogoutConfirm() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
+        title: const Text('Log Out'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel',
+                style: TextStyle(color: Colors.black54)),
+          ),
+          ElevatedButton(
+            onPressed: () {
               Navigator.pop(context);
-              // Navigate to Access Permissions screen if you implement it
+              AuthService.logout();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                    builder: (_) => const WelcomeScreens()),
+                (route) => false,
+              );
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Log Out',
+                style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -479,8 +564,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// ── Model ──────────────────────────────────────────────────────
-class _SettingItem {
+// ── Menu Item Model ────────────────────────────────────────────
+class _MenuItem {
+  final Color color;
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
@@ -488,7 +574,8 @@ class _SettingItem {
   final bool? toggleValue;
   final ValueChanged<bool>? onToggle;
 
-  const _SettingItem({
+  const _MenuItem({
+    required this.color,
     required this.icon,
     required this.label,
     this.onTap,
@@ -496,5 +583,4 @@ class _SettingItem {
     this.toggleValue,
     this.onToggle,
   });
-
 }

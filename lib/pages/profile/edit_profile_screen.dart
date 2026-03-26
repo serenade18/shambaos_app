@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profile_service.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String name;
@@ -27,6 +28,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   bool isLoading = false;
   bool isFetching = true;
+
+  String fullPhoneNumber = '';
 
   Future<void> _fetchProfile() async {
     final response = await ProfileService.getProfile();
@@ -167,7 +170,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: [
                     _input(nameController, "Full Name"),
                     _input(emailController, "Email"),
-                    _input(phoneController, "Phone"),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: IntlPhoneField(
+                        initialValue: phoneController.text,
+                        decoration: InputDecoration(
+                          hintText: "Phone",
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        initialCountryCode: 'KE', // 🔁 change to your default (e.g. US, NG, IN)
+                        onChanged: (phone) {
+                          fullPhoneNumber = phone.completeNumber; // ✅ FULL number with country code
+                        },
+                        onCountryChanged: (country) {
+                          // optional debug
+                          // print('Country changed to: ${country.name}');
+                        },
+                      ),
+                    ),
                     _input(usernameController, "Username"),
                   ],
                 ),
@@ -192,7 +218,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                          "Save",
+                          "Save Changes",
                           style: TextStyle(fontSize: 16),
                         ),
                 ),
