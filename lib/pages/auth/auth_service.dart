@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 // ════════════════════════════════════════════════════════════════
 
 class AuthService {
+  
   static Future<ApiResponse> register({
     required String name,
     required String phone,

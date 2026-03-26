@@ -1,16 +1,23 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../onboarding/welcome_screens.dart';
+import 'package:http/http.dart' as http;
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final String userName;
-  final String userEmail;
+  String userName;
+  String userEmail;
+  String userPhone;
+  String username;
 
-  const ProfileScreen({
+  ProfileScreen({
     super.key,
     this.userName = 'User',
     this.userEmail = '',
+    this.userPhone = '',
+    this.username = '',
   });
 
   @override
@@ -43,7 +50,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // ── Gradient background ──────────────────────────────
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -57,8 +63,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-
-          // ── Blobs ────────────────────────────────────────────
           Positioned(
             top: -80,
             left: -60,
@@ -69,17 +73,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             right: -50,
             child: _blurCircle(250, const Color(0xFF48B67C).withOpacity(0.06)),
           ),
-
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── App Bar ────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Row(
                     children: [
-                      // Back button
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: Container(
@@ -115,21 +116,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ── Profile Card ───────────────────────
                         _buildProfileCard(),
-
                         const SizedBox(height: 28),
-
-                        // ── Other Settings label ───────────────
                         const Padding(
                           padding: EdgeInsets.only(left: 4, bottom: 12),
                           child: Text(
@@ -141,13 +136,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-
-                        // ── Settings Group 1 ───────────────────
                         _buildSettingsGroup([
                           _SettingItem(
                             icon: Icons.person_outline_rounded,
                             label: 'Profile Details',
-                            onTap: () {},
+                            onTap: _showProfileOptions,
                           ),
                           _SettingItem(
                             icon: Icons.lock_outline_rounded,
@@ -164,14 +157,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             label: 'Dark Mode',
                             isToggle: true,
                             toggleValue: _darkMode,
-                            onToggle: (val) =>
-                                setState(() => _darkMode = val),
+                            onToggle: (val) => setState(() => _darkMode = val),
                           ),
                         ]),
-
                         const SizedBox(height: 16),
-
-                        // ── Settings Group 2 ───────────────────
                         _buildSettingsGroup([
                           _SettingItem(
                             icon: Icons.headset_mic_outlined,
@@ -194,12 +183,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onTap: () {},
                           ),
                         ]),
-
                         const SizedBox(height: 16),
-
-                        // ── Logout ─────────────────────────────
                         _buildLogoutTile(),
-
                         const SizedBox(height: 32),
                       ],
                     ),
@@ -213,7 +198,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Profile Card ─────────────────────────────────────────────
   Widget _buildProfileCard() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -230,7 +214,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Row(
         children: [
-          // Avatar
           Container(
             height: 52,
             width: 52,
@@ -253,10 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-
           const SizedBox(width: 14),
-
-          // Name + role
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,9 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  widget.userEmail.isEmpty
-                      ? 'Farm Administrator'
-                      : widget.userEmail,
+                  widget.userEmail.isEmpty ? 'Farm Administrator' : widget.userEmail,
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.black.withOpacity(0.5),
@@ -287,7 +265,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Settings Group ────────────────────────────────────────────
   Widget _buildSettingsGroup(List<_SettingItem> items) {
     return Container(
       decoration: BoxDecoration(
@@ -365,7 +342,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ── Logout Tile ───────────────────────────────────────────────
   Widget _buildLogoutTile() {
     return GestureDetector(
       onTap: () => _showLogoutConfirm(),
@@ -416,16 +392,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel',
-                style: TextStyle(color: Colors.black54)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black54)),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context); // close dialog
-              AuthService.logout();   // clear token
+              Navigator.pop(context);
+              AuthService.logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const WelcomeScreens()),
-                (route) => false,     // remove ALL routes — back to welcome
+                (route) => false,
               );
             },
             style: ElevatedButton.styleFrom(
@@ -434,8 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Log Out',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('Log Out', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -449,6 +423,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
         height: size,
         width: size,
         decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
+    );
+  }
+
+  // ── Profile Options Dropdown ─────────────────────────────
+  void _showProfileOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.settings_outlined),
+            title: const Text('Profile Settings'),
+            onTap: () async {
+              Navigator.pop(context);
+
+              final updated = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EditProfileScreen(
+                    name: widget.userName,
+                    email: widget.userEmail,
+                    phone: widget.userPhone,
+                    username: widget.username,
+                  ),
+                ),
+              );
+
+              if (updated != null) {
+                setState(() {
+                  widget.userName = updated['name'];
+                  widget.userEmail = updated['email'];
+                  widget.userPhone = updated['phone'];
+                  widget.username = updated['username'];
+                });
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.security_outlined),
+            title: const Text('Access Permissions'),
+            onTap: () {
+              Navigator.pop(context);
+              // Navigate to Access Permissions screen if you implement it
+            },
+          ),
+        ],
       ),
     );
   }
@@ -471,4 +496,5 @@ class _SettingItem {
     this.toggleValue,
     this.onToggle,
   });
+
 }
