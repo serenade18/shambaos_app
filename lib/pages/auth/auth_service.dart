@@ -28,6 +28,35 @@ class AuthService {
     );
   }
 
+  static Future<ApiResponse> refreshToken({
+    required String refresh,
+  }) async {
+    final response = await ApiService.post(
+      '/refresh_token/',
+      {'refresh': refresh,},
+      requiresAuth: false,
+    );
+
+    if (response.success && response.data != null) {
+      final token = response.data['token'] ??
+          response.data['access'] ??
+          response.data['auth_token'];
+
+      if (token != null) {
+        await ApiService.setToken(token.toString());
+
+        // ✅ Fetch user immediately after login
+        final userRes = await getUserInfo();
+        if (userRes.success && userRes.data != null) {
+          await ApiService.setUser(userRes.data);
+        }
+      }
+    }
+
+    return response;
+  }
+  
+
   static Future<ApiResponse> login({
     required String email,
     required String password,

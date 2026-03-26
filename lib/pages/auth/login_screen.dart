@@ -1,10 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_service.dart';
 import '../../widgets/auth_dialog.dart';
 import '../home_screen.dart';
+import '../../services/biometric_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,64 +30,101 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
+Future<void> _handleLogin() async {
+  final email = _emailController.text.trim();
+  final password = _passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
+  if (email.isEmpty || password.isEmpty) {
+    AuthDialog.show(
+      context,
+      type: AuthDialogType.error,
+      title: 'Missing Fields!',
+      message: 'Please enter your email\nand password to continue.',
+    );
+    return;
+  }
+
+  setState(() => _isLoading = true);
+
+  try {
+    final result = await AuthService.login(
+      email: email,
+      password: password,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (result.success && result.data != null && result.data['access'] != null) {
+  final accessToken = result.data['access'] as String;
+  final refreshToken = result.data['refresh'] as String;
+
+  // ✅ Save JWT for biometric login or future requests
+  await BiometricService.saveToken(accessToken);
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('refresh_token', refreshToken);
+
+  AuthDialog.show(
+    context,
+    type: AuthDialogType.success,
+    title: 'Login Successful!',
+    message: 'Please wait...\nYou will be directed to the homepage.',
+    autoDismiss: const Duration(seconds: 3),
+    onDone: () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    },
+  );
+} else {
+  AuthDialog.show(
+    context,
+    type: AuthDialogType.error,
+    title: 'Login Failed!',
+    message: result.message ?? 'Invalid credentials.\nPlease try again.',
+  );
+}
+  } catch (e) {
+    if (mounted) {
+      setState(() => _isLoading = false);
       AuthDialog.show(
         context,
         type: AuthDialogType.error,
-        title: 'Missing Fields!',
-        message: 'Please enter your email\nand password to continue.',
+        title: 'Connection Error!',
+        message: 'Network error.\nPlease check your connection.',
+      );
+    }
+  }
+}
+
+  // ✅ Biometric login helper
+  Future<void> _handleBiometricLogin() async {
+    final enabled = await BiometricService.isBiometricEnabled();
+    if (!enabled) return; // never logged in before
+
+    final available = await BiometricService.isAvailable();
+    if (!available) return; // device doesn't support biometrics
+
+    final success = await BiometricService.authenticate();
+    if (!success) {
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Authentication Failed!',
+        message: 'Biometric authentication failed.\nPlease try again.',
       );
       return;
     }
 
-    setState(() => _isLoading = true);
+    // ✅ Retrieve stored JWT and auto-login
+    final token = await BiometricService.getToken();
+    if (token == null) return;
 
-    try {
-      final result = await AuthService.login(
-        email: email,
-        password: password,
-      );
-
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      if (result.success) {
-        AuthDialog.show(
-          context,
-          type: AuthDialogType.success,
-          title: 'Login Successful!',
-          message: 'Please wait...\nYou will be directed to the homepage.',
-          autoDismiss: const Duration(seconds: 3),
-          onDone: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          },
-        );
-      } else {
-        AuthDialog.show(
-          context,
-          type: AuthDialogType.error,
-          title: 'Login Failed!',
-          message: result.message ?? 'Invalid credentials.\nPlease try again.',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        AuthDialog.show(
-          context,
-          type: AuthDialogType.error,
-          title: 'Connection Error!',
-          message: 'Network error.\nPlease check your connection.',
-        );
-      }
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
   }
 
   @override
@@ -246,6 +285,43 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
+                    const SizedBox(height: 16),
+
+                    FutureBuilder<bool>(
+                      future: BiometricService.isAvailable(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData || !snapshot.data!) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return Column(
+                          children: [
+                            const Text(
+                              "Or login with biometrics",
+                              style: TextStyle(color: Colors.black54, fontSize: 12),
+                            ),
+                            const SizedBox(height: 10),
+                            GestureDetector(
+                              onTap: _handleBiometricLogin,
+                              child: Container(
+                                height: 56,
+                                width: 56,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF48B67C).withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.fingerprint,
+                                  color: Color(0xFF48B67C),
+                                  size: 28,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                                        
                     const SizedBox(height: 24),
 
                     GestureDetector(
