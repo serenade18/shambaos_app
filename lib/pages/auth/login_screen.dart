@@ -160,9 +160,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       hint: "Password",
                       icon: Icons.lock_outline,
                       isPassword: true,
-                      obscure: _obscurePassword,
-                      onToggleObscure: () => setState(
-                          () => _obscurePassword = !_obscurePassword),
+                      obscure: _obscurePassword, // ✅ must be state variable
+                      onToggleObscure: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
 
                     const SizedBox(height: 10),
@@ -323,7 +326,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       child: TextField(
         controller: controller,
-        obscureText: isPassword ? obscure : false,
+        obscureText: obscure,
         keyboardType: keyboardType,
         style: const TextStyle(color: Colors.black87, fontSize: 15),
         decoration: InputDecoration(
@@ -331,17 +334,20 @@ class _LoginScreenState extends State<LoginScreen> {
           hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
           prefixIcon: Icon(icon, color: const Color(0xFF48B67C), size: 22),
           suffixIcon: isPassword
-              ? IconButton(
-                  icon: Icon(
-                    obscure
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: Colors.grey,
-                    size: 20,
-                  ),
-                  onPressed: onToggleObscure,
-                )
-              : null,
+            ? IconButton(
+                icon: Icon(
+                  obscure
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                  color: Colors.grey,
+                ),
+                onPressed: () {
+                  if (onToggleObscure != null) {
+                    onToggleObscure();
+                  }
+                },
+              )
+            : null,
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(vertical: 18, horizontal: 20),

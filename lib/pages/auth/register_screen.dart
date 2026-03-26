@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'auth_service.dart';
+import '../../widgets/auth_dialog.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -36,17 +37,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final password = _passwordController.text;
     final confirm = _confirmPasswordController.text;
 
-    // ── Validation ───────────────────────────────────────────
     if (name.isEmpty || email.isEmpty || password.isEmpty || _phoneNumber.isEmpty) {
-      _showSnack('Please fill in all fields.', isError: true);
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Missing Fields',
+        message: 'Please fill in all required fields.',
+      );
       return;
     }
+
+    if (!_phoneNumber.startsWith('+') || _phoneNumber.length < 12) {
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Invalid Phone',
+        message: 'Enter a valid phone number without leading 0.',
+      );
+      return;
+    }
+
     if (password != confirm) {
-      _showSnack('Passwords do not match.', isError: true);
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Password Error',
+        message: 'Passwords do not match.',
+      );
       return;
     }
+
     if (password.length < 6) {
-      _showSnack('Password must be at least 6 characters.', isError: true);
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Weak Password',
+        message: 'Password must be at least 6 characters.',
+      );
       return;
     }
 
@@ -63,30 +90,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (response.success) {
-        _showSnack('Account created! Please sign in.');
-        await Future.delayed(const Duration(milliseconds: 800));
-        if (mounted) Navigator.pop(context);
+        AuthDialog.show(
+          context,
+          type: AuthDialogType.success,
+          title: 'Account Created!',
+          message: 'Please wait...\nRedirecting...',
+          onDone: () => Navigator.pop(context),
+        );
       } else {
-        _showSnack(response.message ?? 'Registration failed.', isError: true);
+        AuthDialog.show(
+          context,
+          type: AuthDialogType.error,
+          title: 'Registration Failed',
+          message: response.message ?? 'Something went wrong.',
+        );
       }
-    } catch (e) {
-      _showSnack('Network error. Please check your connection.', isError: true);
+    } catch (_) {
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Network Error',
+        message: 'Please check your connection.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
-  void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.redAccent : const Color(0xFF48B67C),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
+    
+  // void _showSnack(String message, {bool isError = false}) {
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(
+  //       content: Text(message),
+  //       backgroundColor: isError ? Colors.redAccent : const Color(0xFF48B67C),
+  //       behavior: SnackBarBehavior.floating,
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  //       margin: const EdgeInsets.all(16),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -320,14 +361,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
         dropdownTextStyle:
             const TextStyle(fontSize: 15, color: Colors.black87),
         decoration: const InputDecoration(
-          hintText: "Phone Number",
+          hintText: "712345678",
           hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
           border: InputBorder.none,
           counterText: "",
           contentPadding: EdgeInsets.symmetric(vertical: 20),
         ),
         onChanged: (phone) {
-          setState(() => _phoneNumber = phone.completeNumber);
+          String number = phone.number;
+
+          // Remove leading zero if present
+          if (number.startsWith('0')) {
+            number = number.substring(1);
+          }
+
+          final formatted = '+${phone.countryCode}$number';
+
+          setState(() => _phoneNumber = formatted);
         },
       ),
     );

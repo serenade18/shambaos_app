@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'verify_otp_screen.dart';
 import 'auth_service.dart';
+import '../../widgets/auth_dialog.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -126,44 +127,57 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     final email = _emailController.text.trim();
 
                                     if (email.isEmpty) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text("Email is required")),
+                                      AuthDialog.show(
+                                        context,
+                                        type: AuthDialogType.error,
+                                        title: 'Missing Email',
+                                        message: 'Please enter your email address.',
                                       );
                                       return;
                                     }
 
                                     setState(() => _loading = true);
 
-                                    final response =
-                                        await AuthService.forgotPassword(email: email);
+                                    try {
+                                      final response =
+                                          await AuthService.forgotPassword(email: email);
 
-                                    if (!mounted) return; // ✅ prevent crash
+                                      if (!mounted) return;
 
-                                    setState(() => _loading = false);
-
-                                    if (response.success) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content:
-                                              Text(response.message ?? "Reset code sent"),
-                                        ),
-                                      );
-
-                                      Navigator.push(
+                                      if (response.success) {
+                                        AuthDialog.show(
+                                          context,
+                                          type: AuthDialogType.success,
+                                          title: 'Code Sent',
+                                          message: response.message ?? 'Reset code sent successfully.',
+                                          onDone: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => VerifyOtpScreen(email: email),
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      } else {
+                                        AuthDialog.show(
+                                          context,
+                                          type: AuthDialogType.error,
+                                          title: 'Request Failed',
+                                          message: response.message ?? 'Something went wrong. Try again.',
+                                        );
+                                      }
+                                    } catch (e) {
+                                      AuthDialog.show(
                                         context,
-                                        MaterialPageRoute(
-                                          builder: (_) => VerifyOtpScreen(email: email),
-                                        ),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            response.message ?? "Something went wrong",
-                                          ),
-                                        ),
+                                        type: AuthDialogType.error,
+                                        title: 'Network Error',
+                                        message: 'Please check your connection and try again.',
                                       );
                                     }
+                                    setState(() => _loading = false);
+
+                                                                      
                                   },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF48B67C),
@@ -191,7 +205,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   ),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
 
                         GestureDetector(

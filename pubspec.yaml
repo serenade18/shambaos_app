@@ -74,6 +74,8 @@ flutter:
     - images/assets/facebook.png
     - images/assets/google.png
     - images/assets/tik-tok.png
+    - images/assets/icons/comments.svg
+    - images/assets/icons/live-chat.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -13,29 +13,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedNav = 0;
   int _selectedCategory = 0;
 
   String _userName = '';
   String _userEmail = '';
-
-  String _getInitials(String name) {
-    if (name.isEmpty) return "U";
-    final parts = name.trim().split(" ");
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-
-  Color _getAvatarColor(String name) {
-    final colors = [
-      Colors.green,
-      Colors.blue,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-    ];
-    return colors[name.hashCode % colors.length];
-  }
 
   final List<String> _categories = [
     'All',
@@ -92,23 +73,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _handleNavigation(int index) {
-    switch (index) {
-      case 0:
-        break;
-      case 1:
-        Navigator.pushNamed(context, '/fields');
-        break;
-      case 2:
-        Navigator.pushNamed(context, '/create');
-        break;
-      case 3:
-        Navigator.pushNamed(context, '/documents');
-        break;
-      case 4:
-        _openProfile();
-        break;
-    }
+  String _getInitials(String name) {
+    if (name.isEmpty) return "U";
+    final parts = name.trim().split(" ");
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  Color _getAvatarColor(String name) {
+    final colors = [
+      Colors.green,
+      Colors.blue,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+    ];
+    return colors[name.hashCode % colors.length];
   }
 
   @override
@@ -141,17 +121,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
 
-          Positioned(
+          // ── Bottom Nav ───────────────────────────────
+          const Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: AppBottomNav(
-              currentIndex: _selectedNav,
-              onTap: (index) {
-                setState(() => _selectedNav = index);
-                _handleNavigation(index);
-              },
-            ),
+            child: AppBottomNav(),
           ),
         ],
       ),
@@ -159,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ══════════════════════════════════════════════════════════
-  //  HEADER
+  // HEADER
   // ══════════════════════════════════════════════════════════
   Widget _buildHeader() {
     return Container(
@@ -179,7 +154,6 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Row(
                 children: [
-                  // 👇 Avatar — tappable → ProfileScreen
                   GestureDetector(
                     onTap: _openProfile,
                     child: Container(
@@ -206,7 +180,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +202,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-
                   Container(
                     height: 42,
                     width: 42,
@@ -248,7 +220,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
 
-              // ── Weather Card ──────────────────────────────────
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -361,16 +332,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ══════════════════════════════════════════════════════════
-  //  MY FIELDS
-  // ══════════════════════════════════════════════════════════
   Widget _buildMyFieldsHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
+        children: const [
+          Text(
             'My Fields',
             style: TextStyle(
                 fontSize: 20,
@@ -379,8 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Text(
             'See All',
-            style:
-                TextStyle(fontSize: 13, color: Colors.black.withOpacity(0.45)),
+            style: TextStyle(fontSize: 13, color: Colors.black45),
           ),
         ],
       ),
@@ -419,8 +386,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _categories[index],
                 style: TextStyle(
                   color: selected ? Colors.white : Colors.black87,
-                  fontWeight:
-                      selected ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                   fontSize: 13,
                 ),
               ),
