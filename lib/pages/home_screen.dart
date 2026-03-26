@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/api_service.dart';
+import '../widgets/app_bottom_nav.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,6 +14,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedNav = 0;
   int _selectedCategory = 0;
+
+  String _userName = '';
 
   final List<String> _categories = [
     'All',
@@ -39,6 +43,49 @@ class _HomeScreenState extends State<HomeScreen> {
       'image': 'images/auth/chicken.png',
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = await ApiService.getUser();
+
+    if (user != null) {
+      setState(() {
+        _userName = user['name'] ??
+            user['username'] ??
+            user['email'] ??
+            'User';
+      });
+    }
+  }
+
+  void _handleNavigation(int index) {
+    switch (index) {
+      case 0:
+        // already home
+        break;
+
+      case 1:
+        Navigator.pushNamed(context, '/fields');
+        break;
+
+      case 2:
+        Navigator.pushNamed(context, '/create');
+        break;
+
+      case 3:
+        Navigator.pushNamed(context, '/documents');
+        break;
+
+      case 4:
+        Navigator.pushNamed(context, '/profile');
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +125,17 @@ class _HomeScreenState extends State<HomeScreen> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: _buildBottomNav(),
+            child: AppBottomNav(
+              currentIndex: _selectedNav,
+              onTap: (index) {
+                setState(() {
+                  _selectedNav = index;
+                });
+
+                // Navigation logic (IMPORTANT)
+                _handleNavigation(index);
+              },
+            ),
           ),
         ],
       ),
@@ -129,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Hi, Annca Namrata',
+                          'Hi, ${_userName.isEmpty ? "User" : _userName}',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.75),
                             fontSize: 13,
@@ -499,103 +556,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   //  BOTTOM NAV
   // ══════════════════════════════════════════════════════════
-  Widget _buildBottomNav() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            height: 68,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E3D1A),
-              borderRadius: BorderRadius.circular(32),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _navItem(
-                  icon: Icons.home_rounded,
-                  label: 'Home',
-                  index: 0,
-                ),
-                _navItem(
-                  icon: Icons.grass_rounded,
-                  label: 'Fields',
-                  index: 1,
-                ),
+  
 
-                // Center FAB
-                GestureDetector(
-                  onTap: () {},
-                  child: Container(
-                    height: 48,
-                    width: 48,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF4CAF50),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 26),
-                  ),
-                ),
-
-                _navItem(
-                  icon: Icons.document_scanner_outlined,
-                  label: 'Document',
-                  index: 3,
-                ),
-                _navItem(
-                  icon: Icons.person_outline_rounded,
-                  label: 'Profile',
-                  index: 4,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem({
-    required IconData icon,
-    required String label,
-    required int index,
-  }) {
-    final selected = _selectedNav == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedNav = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected
-              ? Colors.white.withOpacity(0.08)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: selected ? const Color(0xFF4CAF50) : Colors.white54,
-              size: 22,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? const Color(0xFF4CAF50) : Colors.white54,
-                fontSize: 10,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

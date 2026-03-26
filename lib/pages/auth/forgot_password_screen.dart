@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'verify_otp_screen.dart';
+import 'auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -11,6 +12,8 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _emailController = TextEditingController();
+
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -117,17 +120,51 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // Navigate to OTP screen
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => VerifyOtpScreen(
-                                    email: _emailController.text,
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: _loading
+                                ? null // 🚫 disable while loading
+                                : () async {
+                                    final email = _emailController.text.trim();
+
+                                    if (email.isEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text("Email is required")),
+                                      );
+                                      return;
+                                    }
+
+                                    setState(() => _loading = true);
+
+                                    final response =
+                                        await AuthService.forgotPassword(email: email);
+
+                                    if (!mounted) return; // ✅ prevent crash
+
+                                    setState(() => _loading = false);
+
+                                    if (response.success) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content:
+                                              Text(response.message ?? "Reset code sent"),
+                                        ),
+                                      );
+
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => VerifyOtpScreen(email: email),
+                                        ),
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            response.message ?? "Something went wrong",
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF48B67C),
                               shape: RoundedRectangleBorder(
@@ -135,17 +172,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
-                              "Send Reset Code",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Send Reset Code",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                           ),
                         ),
-
+                        
                         const SizedBox(height: 24),
 
                         GestureDetector(

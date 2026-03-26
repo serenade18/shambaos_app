@@ -1,8 +1,16 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'auth_service.dart';
 
 class SetPasswordScreen extends StatefulWidget {
-  const SetPasswordScreen({super.key});
+  final String email;
+  final String code;
+
+  const SetPasswordScreen({
+    super.key,
+    required this.email,
+    required this.code,
+  });
 
   @override
   State<SetPasswordScreen> createState() => _SetPasswordScreenState();
@@ -14,6 +22,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _loading = false;
 
   // Password strength
   double _strength = 0;
@@ -227,13 +236,35 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                           width: double.infinity,
                           height: 56,
                           child: ElevatedButton(
-                            onPressed: _passwordsMatch && _strength >= 0.5
-                                ? () {
-                                    // TODO: Call reset password API
-                                    // Then navigate to success / login
+                            onPressed: (_passwordsMatch && _strength >= 0.5 && !_loading)
+                              ? () async {
+                                  final password = _passwordController.text.trim();
+
+                                  setState(() => _loading = true);
+
+                                  final response = await AuthService.resetPassword(
+                                    email: widget.email,
+                                    code: widget.code,
+                                    newPassword: password,
+                                  );
+
+                                  if (!mounted) return;
+
+                                  setState(() => _loading = false);
+
+                                  if (response.success) {
                                     _showSuccessDialog(context);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          response.message ?? "Failed to reset password",
+                                        ),
+                                      ),
+                                    );
                                   }
-                                : null,
+                                }
+                              : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF48B67C),
                               disabledBackgroundColor:
@@ -243,14 +274,23 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
                               ),
                               elevation: 0,
                             ),
-                            child: const Text(
-                              "Save New Password",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
+                            child: _loading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  "Save New Password",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
                           ),
                         ),
                       ],

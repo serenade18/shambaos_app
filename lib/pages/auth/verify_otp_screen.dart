@@ -238,9 +238,15 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        const SetPasswordScreen(),
+                                    builder: (_) => SetPasswordScreen(
+                                      email: widget.email,
+                                      code: _otpCode,
+                                    ),
                                   ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Enter complete code")),
                                 );
                               }
                             },

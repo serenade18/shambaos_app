@@ -37,20 +37,59 @@ class AuthService {
       requiresAuth: false,
     );
 
-    // Auto-store token on successful login
     if (response.success && response.data != null) {
       final token = response.data['token'] ??
-          response.data['access'] ??      // JWT access token
-          response.data['auth_token'];    // DRF TokenAuth
+          response.data['access'] ??
+          response.data['auth_token'];
+
       if (token != null) {
-        ApiService.setToken(token.toString());
+        await ApiService.setToken(token.toString());
+
+        // ✅ Fetch user immediately after login
+        final userRes = await getUserInfo();
+        if (userRes.success && userRes.data != null) {
+          await ApiService.setUser(userRes.data);
+        }
       }
     }
 
     return response;
   }
+  
+  static Future<ApiResponse> getUserInfo() {
+    return ApiService.get('/userinfo/');
+  }
 
   static void logout() {
     ApiService.clearToken();
   }
+
+  static Future<ApiResponse> forgotPassword({
+    required String email,
+  }) {
+    return ApiService.post(
+      '/forgot-password/',
+      {
+        'email': email,
+      },
+      requiresAuth: false,
+    );
+  }
+
+  static Future<ApiResponse> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) {
+    return ApiService.post(
+      '/reset-password/',
+      {
+        'email': email,
+        'code': code,
+        'new_password': newPassword,
+      },
+      requiresAuth: false,
+    );
+  }
+
 }
