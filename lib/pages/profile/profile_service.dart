@@ -30,4 +30,9 @@ class ProfileService {
       'new_password': newPassword,
     });
   }
+
+  // Get Notifications
+  static Future<ApiResponse> setNotification() async {
+    return ApiService.get('/notification-prefs/', requiresAuth: true,);
+  }
 }

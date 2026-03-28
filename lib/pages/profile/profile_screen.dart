@@ -1,16 +1,16 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../onboarding/welcome_screens.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  String userName;
-  String userEmail;
-  String userPhone;
-  String username;
+  // FIX 1: All widget properties must be `final` — mutable state belongs in State, not Widget.
+  final String userName;
+  final String userEmail;
+  final String userPhone;
+  final String username;
 
-  ProfileScreen({
+  const ProfileScreen({
     super.key,
     this.userName = 'User',
     this.userEmail = '',
@@ -25,6 +25,21 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _darkMode = false;
 
+  // FIX 2: Moved mutable user data into State, initialized from widget in initState.
+  late String _userName;
+  late String _userEmail;
+  late String _userPhone;
+  late String _username;
+
+  @override
+  void initState() {
+    super.initState();
+    _userName = widget.userName;
+    _userEmail = widget.userEmail;
+    _userPhone = widget.userPhone;
+    _username = widget.username;
+  }
+
   String _getInitials(String name) {
     if (name.isEmpty) return "U";
     final parts = name.trim().split(" ");
@@ -32,41 +47,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
-  // Updated Avatar Color to match the Purple theme (e.g., Orange/Yellow)
   Color _getAvatarColor(String name) {
     final colors = [
-      const Color(0xFFF4A03A), // Match the Orange/Yellow avatar from image_5
-      const Color(0xFFE57373), // A complementary red/pink
-      const Color(0xFF4DB6AC), // A complementary teal
+      const Color(0xFFF4A03A),
+      const Color(0xFFE57373),
+      const Color(0xFF4DB6AC),
     ];
     return colors[name.hashCode % colors.length];
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Column(
         children: [
-          // Using a Stack to overlap the card on the header
           Stack(
-            clipBehavior: Clip.none, 
+            clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
               _buildHeader(context),
               Positioned(
-                bottom: -35, // This pushes half the card below the header line
+                bottom: -35,
                 left: 0,
                 right: 0,
                 child: _buildProfileCard(),
               ),
             ],
           ),
-
-          // This spacer provides room for the overlapping card so 
-          // the list below doesn't start underneath it.
           const SizedBox(height: 50),
-
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -77,7 +86,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: 'MY ACCOUNT',
                     trailing: '0 Points  >',
                   ),
-
                   _buildMenuGroup([
                     _MenuItem(
                       color: const Color(0xFFFF6B35),
@@ -116,15 +124,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () {},
                     ),
                   ]),
-
                   const SizedBox(height: 20),
-
-                  // ── GENERAL section ──────────────────────────
                   _buildSectionLabel(
                     icon: Icons.settings_outlined,
                     label: 'GENERAL',
                   ),
-
                   _buildMenuGroup([
                     _MenuItem(
                       color: const Color(0xFFFF6B35),
@@ -159,12 +163,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onToggle: (val) => setState(() => _darkMode = val),
                     ),
                   ]),
-
                   const SizedBox(height: 20),
-
-                  // ── Logout ───────────────────────────────────
                   _buildLogoutTile(),
-
                   const SizedBox(height: 40),
                 ],
               ),
@@ -174,73 +174,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-    
-  // ══════════════════════════════════════════════════════════
-  //  HEADER (Update: Added LinearGradient to match the Purple image)
-  // ══════════════════════════════════════════════════════════
+
   Widget _buildHeader(BuildContext context) {
-      return Container(
-        // Increased height to match the immersive look of the reference
-        height: 180, 
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            // Adjusted alignment to match the diagonal flow in the image
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF2D5A27), // Primary Purple
-              Color(0xFF2D5A27), // Lighter Purple/Indigo
+    return Container(
+      height: 180,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        // FIX 3: Gradient now uses two distinct colors so it actually renders as a gradient.
+        // Previously both stops were identical (0xFF2D5A27), making it a flat color.
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1B4332), // Deep forest green
+            Color(0xFF2D5A27), // Mid green
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  height: 40,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    size: 22,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Text(
+                'Profile',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
             ],
           ),
         ),
-        child: Stack(
-          children: [
-            // Optional: You can add the subtle star/shape watermark here if needed
-            SafeArea(
-              child: Padding(
-                // Increased top padding to push content down from the status bar
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        height: 40,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          // Slightly more opaque white for the button background
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back, // Standard arrow matches the reference better
-                          size: 22,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 24, // Slightly larger font size
-                        fontWeight: FontWeight.w600, // Semi-bold for a cleaner look
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }  
+      ),
+    );
+  }
 
-  // ══════════════════════════════════════════════════════════
-  //  PROFILE CARD (Update: Edit button color updated to Purple)
-  // ══════════════════════════════════════════════════════════
   Widget _buildProfileCard() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -263,11 +250,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: 52,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _getAvatarColor(widget.userName),
+              // FIX 4: Now reads from State fields (_userName) instead of widget fields.
+              color: _getAvatarColor(_userName),
             ),
             child: Center(
               child: Text(
-                _getInitials(widget.userName),
+                _getInitials(_userName),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -282,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.userName.isEmpty ? 'User' : widget.userName,
+                  _userName.isEmpty ? 'User' : _userName,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -291,7 +279,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  widget.userEmail.isEmpty ? 'Farm Administrator' : widget.userEmail,
+                  _userEmail.isEmpty ? 'Farm Administrator' : _userEmail,
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.black.withOpacity(0.5),
@@ -306,27 +294,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (_) => EditProfileScreen(
-                    name: widget.userName,
-                    email: widget.userEmail,
-                    phone: widget.userPhone,
-                    username: widget.username,
+                    name: _userName,
+                    email: _userEmail,
+                    phone: _userPhone,
+                    username: _username,
                   ),
                 ),
               );
 
               if (updated != null) {
                 setState(() {
-                  widget.userName = updated['name'];
-                  widget.userEmail = updated['email'];
-                  widget.userPhone = updated['phone'];
-                  widget.username = updated['username'];
+                  // FIX 5: Updating State fields instead of widget fields (widget is immutable).
+                  _userName = updated['name'];
+                  _userEmail = updated['email'];
+                  _userPhone = updated['phone'];
+                  _username = updated['username'];
                 });
               }
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 16, 150, 65), 
+                color: const Color.fromARGB(255, 16, 150, 65),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
@@ -351,9 +340,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ══════════════════════════════════════════════════════════
-  //  SECTION LABEL
-  // ══════════════════════════════════════════════════════════
   Widget _buildSectionLabel({
     required IconData icon,
     required String label,
@@ -385,9 +371,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ══════════════════════════════════════════════════════════
-  //  MENU GROUP
-  // ══════════════════════════════════════════════════════════
   Widget _buildMenuGroup(List<_MenuItem> items) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -412,8 +395,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (!isLast)
                 Divider(
                   height: 1,
-                  indent:  Indent_indent_fix,
-                  endIndent: Indent_endIndent_fix,
+                  // FIX 6: Replaced broken getter references with direct constants.
+                  // `Indent_indent_fix` and `Indent_endIndent_fix` used an unconventional
+                  // naming style; inline constants are cleaner and less error-prone.
+                  indent: 64,
+                  endIndent: 16,
                   color: Colors.black.withOpacity(0.05),
                 ),
             ],
@@ -454,8 +440,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Switch(
                 value: item.toggleValue ?? false,
                 onChanged: item.onToggle,
-                // Updated: Active color for dark mode toggle changed to Purple
-                activeColor: const Color(0xFF6B4EEA), 
+                activeColor: const Color(0xFF6B4EEA),
                 activeTrackColor: const Color(0xFF6B4EEA).withOpacity(0.3),
                 inactiveThumbColor: Colors.white,
                 inactiveTrackColor: Colors.black26,
@@ -472,13 +457,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Define Indent Constants (if not already defined)
-  double get Indent_indent_fix => 64;
-  double get Indent_endIndent_fix => 16;
-
-  // ══════════════════════════════════════════════════════════
-  //  LOGOUT TILE
-  // ══════════════════════════════════════════════════════════
   Widget _buildLogoutTile() {
     return GestureDetector(
       onTap: _showLogoutConfirm,
@@ -505,8 +483,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: Colors.red.shade400,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.logout_rounded,
-                  color: Colors.white, size: 18),
+              child: const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 14),
             Text(
@@ -523,30 +500,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ══════════════════════════════════════════════════════════
-  //  LOGIC — all unchanged from original
-  // ══════════════════════════════════════════════════════════
   void _showLogoutConfirm() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Log Out'),
         content: const Text('Are you sure you want to log out?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel',
-                style: TextStyle(color: Colors.black54)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black54)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               AuthService.logout();
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                    builder: (_) => const WelcomeScreens()),
+                MaterialPageRoute(builder: (_) => const WelcomeScreens()),
                 (route) => false,
               );
             },
@@ -555,8 +526,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Log Out',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('Log Out', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
