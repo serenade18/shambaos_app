@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../onboarding/welcome_screens.dart';
 import 'edit_profile_screen.dart';
+import 'notification_screen.dart'; // ← connect NotificationScreen
 
 class ProfileScreen extends StatefulWidget {
-  // FIX 1: All widget properties must be `final` — mutable state belongs in State, not Widget.
   final String userName;
   final String userEmail;
   final String userPhone;
@@ -25,7 +25,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _darkMode = false;
 
-  // FIX 2: Moved mutable user data into State, initialized from widget in initState.
   late String _userName;
   late String _userEmail;
   late String _userPhone;
@@ -146,7 +145,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: const Color(0xFF4CAF50),
                       icon: Icons.notifications_outlined,
                       label: 'Notifications',
-                      onTap: () {},
+                      // ── CONNECTED ──────────────────────────────────
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const NotificationScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _MenuItem(
                       color: const Color(0xFF9C27B0),
@@ -180,14 +187,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       height: 180,
       width: double.infinity,
       decoration: const BoxDecoration(
-        // FIX 3: Gradient now uses two distinct colors so it actually renders as a gradient.
-        // Previously both stops were identical (0xFF2D5A27), making it a flat color.
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1B4332), // Deep forest green
-            Color(0xFF2D5A27), // Mid green
+            Color(0xFF1B4332),
+            Color(0xFF2D5A27),
           ],
         ),
       ),
@@ -205,11 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.arrow_back,
-                    size: 22,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.arrow_back, size: 22, color: Colors.white),
                 ),
               ),
               const SizedBox(width: 16),
@@ -250,7 +251,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: 52,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              // FIX 4: Now reads from State fields (_userName) instead of widget fields.
               color: _getAvatarColor(_userName),
             ),
             child: Center(
@@ -280,10 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 3),
                 Text(
                   _userEmail.isEmpty ? 'Farm Administrator' : _userEmail,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black.withOpacity(0.5),
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.black.withOpacity(0.5)),
                 ),
               ],
             ),
@@ -301,10 +298,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               );
-
               if (updated != null) {
                 setState(() {
-                  // FIX 5: Updating State fields instead of widget fields (widget is immutable).
                   _userName = updated['name'];
                   _userEmail = updated['email'];
                   _userPhone = updated['phone'];
@@ -362,10 +357,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Spacer(),
           if (trailing != null)
-            Text(
-              trailing,
-              style: const TextStyle(fontSize: 12, color: Colors.black45),
-            ),
+            Text(trailing, style: const TextStyle(fontSize: 12, color: Colors.black45)),
         ],
       ),
     );
@@ -395,9 +387,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (!isLast)
                 Divider(
                   height: 1,
-                  // FIX 6: Replaced broken getter references with direct constants.
-                  // `Indent_indent_fix` and `Indent_endIndent_fix` used an unconventional
-                  // naming style; inline constants are cleaner and less error-prone.
                   indent: 64,
                   endIndent: 16,
                   color: Colors.black.withOpacity(0.05),
@@ -419,10 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               height: 38,
               width: 38,
-              decoration: BoxDecoration(
-                color: item.color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: item.color, shape: BoxShape.circle),
               child: Icon(item.icon, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 14),
@@ -446,11 +432,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 inactiveTrackColor: Colors.black26,
               )
             else
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 14,
-                color: Colors.black26,
-              ),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.black26),
           ],
         ),
       ),
@@ -479,10 +461,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               height: 38,
               width: 38,
-              decoration: BoxDecoration(
-                color: Colors.red.shade400,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: Colors.red.shade400, shape: BoxShape.circle),
               child: const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 14),
@@ -523,8 +502,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade400,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Log Out', style: TextStyle(color: Colors.white)),
           ),

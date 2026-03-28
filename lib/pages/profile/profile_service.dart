@@ -35,4 +35,21 @@ class ProfileService {
   static Future<ApiResponse> setNotification() async {
     return ApiService.get('/notification-prefs/', requiresAuth: true,);
   }
+
+  // Update notification preferences
+  static Future<ApiResponse> updateNotification({
+    required bool lowStockAlerts,
+    required bool leaveRequests,
+    required bool paymentReminders,
+    required bool healthReminders,
+    required bool systemUpdates,
+  }) async {
+    return ApiService.put('/notification-prefs/', {
+      'low_stock_alerts': lowStockAlerts,
+      'leave_requests': leaveRequests,
+      'payment_reminders': paymentReminders,
+      'health_reminders': healthReminders,
+      'system_updates': systemUpdates,
+    }, requiresAuth: true);
+  }
 }
