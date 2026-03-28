@@ -30,73 +30,73 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-Future<void> _handleLogin() async {
-  final email = _emailController.text.trim();
-  final password = _passwordController.text;
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
 
-  if (email.isEmpty || password.isEmpty) {
-    AuthDialog.show(
-      context,
-      type: AuthDialogType.error,
-      title: 'Missing Fields!',
-      message: 'Please enter your email\nand password to continue.',
-    );
-    return;
-  }
-
-  setState(() => _isLoading = true);
-
-  try {
-    final result = await AuthService.login(
-      email: email,
-      password: password,
-    );
-
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-
-    if (result.success && result.data != null && result.data['access'] != null) {
-  final accessToken = result.data['access'] as String;
-  final refreshToken = result.data['refresh'] as String;
-
-  // ✅ Save JWT for biometric login or future requests
-  await BiometricService.saveToken(accessToken);
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setString('refresh_token', refreshToken);
-
-  AuthDialog.show(
-    context,
-    type: AuthDialogType.success,
-    title: 'Login Successful!',
-    message: 'Please wait...\nYou will be directed to the homepage.',
-    autoDismiss: const Duration(seconds: 3),
-    onDone: () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    },
-  );
-} else {
-  AuthDialog.show(
-    context,
-    type: AuthDialogType.error,
-    title: 'Login Failed!',
-    message: result.message ?? 'Invalid credentials.\nPlease try again.',
-  );
-}
-  } catch (e) {
-    if (mounted) {
-      setState(() => _isLoading = false);
+    if (email.isEmpty || password.isEmpty) {
       AuthDialog.show(
         context,
         type: AuthDialogType.error,
-        title: 'Connection Error!',
-        message: 'Network error.\nPlease check your connection.',
+        title: 'Missing Fields!',
+        message: 'Please enter your email\nand password to continue.',
       );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await AuthService.login(
+        email: email,
+        password: password,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (result.success && result.data != null && result.data['access'] != null) {
+    final accessToken = result.data['access'] as String;
+    final refreshToken = result.data['refresh'] as String;
+
+    // ✅ Save JWT for biometric login or future requests
+    await BiometricService.saveToken(accessToken);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('refresh_token', refreshToken);
+
+    AuthDialog.show(
+      context,
+      type: AuthDialogType.success,
+      title: 'Login Successful!',
+      message: 'Please wait...\nYou will be directed to the homepage.',
+      autoDismiss: const Duration(seconds: 3),
+      onDone: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      },
+    );
+  } else {
+    AuthDialog.show(
+      context,
+      type: AuthDialogType.error,
+      title: 'Login Failed!',
+      message: result.message ?? 'Invalid credentials.\nPlease try again.',
+    );
+  }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        AuthDialog.show(
+          context,
+          type: AuthDialogType.error,
+          title: 'Connection Error!',
+          message: 'Network error.\nPlease check your connection.',
+        );
+      }
     }
   }
-}
 
   // ✅ Biometric login helper
   Future<void> _handleBiometricLogin() async {

@@ -32,13 +32,13 @@ class _AppBottomNavState extends State<AppBottomNav> {
         Navigator.pushReplacementNamed(context, '/home');
         break;
       case 1:
-        Navigator.pushReplacementNamed(context, '/fields');
+        Navigator.pushReplacementNamed(context, '/sales');
         break;
       case 2:
         Navigator.pushReplacementNamed(context, '/chat');
         break;
       case 3:
-        Navigator.pushReplacementNamed(context, '/documents');
+        Navigator.pushReplacementNamed(context, '/payments');
         break;
       case 4:
         Navigator.pushReplacementNamed(context, '/more');
@@ -64,7 +64,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _navItem(Icons.home_rounded, 'Home', 0, context),
-                _navItem(Icons.grass_rounded, 'Fields', 1, context),
+                _navItem(Icons.grass_rounded, 'sales', 1, context),
 
                 // Center → Chat (SVG or fallback PNG)
                 GestureDetector(
@@ -98,7 +98,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
                   ),
                 ),
 
-                _navItem(Icons.document_scanner_outlined, 'Document', 3, context),
+                _navItem(Icons.document_scanner_outlined, 'Payment', 3, context),
                 _navItem(Icons.more_horiz, 'More', 4, context),
               ],
             ),
