@@ -76,6 +76,7 @@ flutter:
     - images/auth/mountains.jpg
     - images/auth/farming.jpg
     - images/auth/beans.jpg
+    - images/auth/plain.jpg
     - images/assets/facebook.png
     - images/assets/google.png
     - images/assets/tik-tok.png

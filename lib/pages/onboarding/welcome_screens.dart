@@ -1,3 +1,4 @@
+import 'dart:async'; // Required for the automatic timer
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../auth/login_screen.dart';
@@ -6,8 +7,8 @@ import '../auth/login_screen.dart';
 // Data model for each welcome page
 // ─────────────────────────────────────────────────────────────────────────────
 class _WelcomePage {
-  final String image;       // asset path
-  final String tag;         // small label above headline
+  final String image;
+  final String tag;
   final String headline;
   final String subtitle;
 
@@ -19,10 +20,6 @@ class _WelcomePage {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Replace the image paths with your actual local assets.
-// All images should live under  images/  in your project root.
-// ─────────────────────────────────────────────────────────────────────────────
 const List<_WelcomePage> _pages = [
   _WelcomePage(
     image: 'images/auth/farming.jpg',
@@ -31,28 +28,25 @@ const List<_WelcomePage> _pages = [
     subtitle: 'Put the power of data in your pocket. Track your soil health and weather to ensure a bumper harvest every season.',
   ),
   _WelcomePage(
-    image: 'images/auth/beans.jpg', // Swapped as requested
+    image: 'images/auth/beans.jpg',
     tag: 'LIVESTOCK MANAGEMENT',
     headline: 'Your Digital\nFarm Manager,\n24/7.',
     subtitle: 'From poultry to dairy and fish—manage your entire inventory and production records without the paperwork.',
   ),
   _WelcomePage(
-    image: 'images/auth/cow.jpg', // Swapped as requested
+    image: 'images/auth/cow.jpg',
     tag: 'SMART INPUTS',
     headline: 'Save on Costs.\nGrow Your\nProfits.',
     subtitle: 'Stop wasting expensive fertilizer and water. Our AI tells you exactly what your crops need to thrive.',
   ),
   _WelcomePage(
-    image: 'images/auth/chicken.png', // Swapped as requested
+    image: 'images/auth/chicken.png',
     tag: 'MARKET ACCESS',
     headline: 'Direct Markets.\nBetter Prices.\nNo Brokers.',
     subtitle: 'Connect directly to verified buyers. Take control of your sales and keep the profit you worked for.',
   ),
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// WelcomeScreens  –  the PageView host
-// ─────────────────────────────────────────────────────────────────────────────
 class WelcomeScreens extends StatefulWidget {
   const WelcomeScreens({super.key});
 
@@ -63,6 +57,7 @@ class WelcomeScreens extends StatefulWidget {
 class _WelcomeScreensState extends State<WelcomeScreens> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  Timer? _autoScrollTimer;
 
   @override
   void initState() {
@@ -71,15 +66,32 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ));
+    _startAutoScroll();
+  }
+
+  // ── Auto Scroll Logic ──────────────────────────────────────
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_currentPage < _pages.length - 1) {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _autoScrollTimer?.cancel();
+        _goToLogin();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _autoScrollTimer?.cancel(); // Critical to stop timer when widget is destroyed
     _pageController.dispose();
     super.dispose();
   }
 
-  void _goToGetStarted() {
+  void _goToLogin() {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => const LoginScreen(),
@@ -88,17 +100,6 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
         transitionDuration: const Duration(milliseconds: 400),
       ),
     );
-  }
-
-  void _nextPage() {
-    if (_currentPage < _pages.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 450),
-        curve: Curves.easeInOut,
-      );
-    } else {
-      _goToGetStarted();
-    }
   }
 
   @override
@@ -115,22 +116,19 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
             itemBuilder: (_, i) => _WelcomePageView(page: _pages[i]),
           ),
 
-          // ── Skip button — top right ────────────────────────
+          // ── Skip button (Top Right) ────────────────────────
           SafeArea(
             child: Align(
               alignment: Alignment.topRight,
               child: GestureDetector(
-                onTap: _goToGetStarted,
+                onTap: _goToLogin,
                 child: Container(
                   margin: const EdgeInsets.only(top: 16, right: 20),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.18),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 1,
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                   ),
                   child: const Text(
                     'Skip',
@@ -138,7 +136,6 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
                       color: Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
                     ),
                   ),
                 ),
@@ -146,68 +143,30 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
             ),
           ),
 
-          // ── Bottom controls ────────────────────────────────
+          // ── Dot Indicators (Centered Bottom) ───────────────
           Positioned(
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: 40,
             child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
+              child: Center(
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Dot indicators
-                    Row(
-                      children: List.generate(_pages.length, (i) {
-                        final bool active = i == _currentPage;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.only(right: 6),
-                          width: active ? 24 : 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: active
-                                ? const Color(0xFF5CD65C)
-                                : Colors.white.withOpacity(0.35),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        );
-                      }),
-                    ),
-
-                    // // Next / Get Started button
-                    GestureDetector(
-                      onTap: _nextPage,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        width: _currentPage == _pages.length - 1 ? 160 : 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF5CD65C),
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                        child: _currentPage == _pages.length - 1
-                            ? const Center(
-                                child: Text(
-                                  'Get Started',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              )
-                            : const Icon(
-                                Icons.arrow_forward,
-                                color: Colors.white,
-                                size: 22,
-                              ),
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(_pages.length, (i) {
+                    final bool active = i == _currentPage;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: active ? 24 : 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: active
+                            ? const Color(0xFF5CD65C)
+                            : Colors.white.withOpacity(0.35),
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                    ),
-                  ],
+                    );
+                  }),
                 ),
               ),
             ),
@@ -218,9 +177,6 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Single welcome page widget
-// ─────────────────────────────────────────────────────────────────────────────
 class _WelcomePageView extends StatefulWidget {
   final _WelcomePage page;
   const _WelcomePageView({required this.page});
@@ -244,7 +200,7 @@ class _WelcomePageViewState extends State<_WelcomePageView>
     );
     _fadeAnim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.15),
+      begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
 
@@ -261,38 +217,30 @@ class _WelcomePageViewState extends State<_WelcomePageView>
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Background image
         Positioned.fill(
-          child: Image.asset(
-            widget.page.image,
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset(widget.page.image, fit: BoxFit.cover),
         ),
-
-        // Gradient overlay
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                stops: const [0.0, 0.4, 0.65, 1.0],
+                stops: const [0.0, 0.4, 0.6, 1.0],
                 colors: [
-                  Colors.black.withOpacity(0.15),
+                  Colors.black.withOpacity(0.1),
                   Colors.transparent,
-                  Colors.black.withOpacity(0.6),
-                  Colors.black.withOpacity(0.95),
+                  Colors.black.withOpacity(0.5),
+                  Colors.black.withOpacity(0.9),
                 ],
               ),
             ),
           ),
         ),
-
-        // Text content
         Positioned(
           left: 28,
           right: 28,
-          bottom: 110,
+          bottom: 100,
           child: SlideTransition(
             position: _slideAnim,
             child: FadeTransition(
@@ -300,53 +248,40 @@ class _WelcomePageViewState extends State<_WelcomePageView>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Tag chip
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF5CD65C).withOpacity(0.25),
+                      color: const Color(0xFF5CD65C).withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(0xFF5CD65C).withOpacity(0.5),
-                        width: 1,
-                      ),
+                      border: Border.all(color: const Color(0xFF5CD65C).withOpacity(0.4)),
                     ),
                     child: Text(
                       widget.page.tag,
                       style: const TextStyle(
                         color: Color(0xFF5CD65C),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.1,
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 14),
-
-                  // Headline
                   Text(
                     widget.page.headline,
                     style: const TextStyle(
-                      fontSize: 36,
+                      fontSize: 34,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
-                      height: 1.08,
-                      letterSpacing: 0.2,
+                      height: 1.1,
                     ),
                   ),
-
                   const SizedBox(height: 14),
-
-                  // Subtitle
                   Text(
                     widget.page.subtitle,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white.withOpacity(0.7),
-                      height: 1.6,
-                      fontWeight: FontWeight.w400,
+                      height: 1.5,
                     ),
                   ),
                 ],

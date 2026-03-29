@@ -319,7 +319,7 @@ class _LoginScreenState extends State<LoginScreen>
           // ── Full-screen nature background ──────────────────────────────
           SizedBox.expand(
             child: Image.asset(
-              'images/auth/mountains.jpg',
+              'images/auth/plain.jpg',
               fit: BoxFit.cover,
             ),
           ),

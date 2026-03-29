@@ -46,7 +46,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Single
           // ── Background (Consistent with Auth Flow) ──
           SizedBox.expand(
             child: Image.asset(
-              'images/auth/mountains.jpg',
+              'images/auth/plain.jpg',
               fit: BoxFit.cover,
             ),
           ),

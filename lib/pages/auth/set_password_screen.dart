@@ -80,7 +80,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> with SingleTicker
       body: Stack(
         children: [
           // ── Background ──
-          SizedBox.expand(child: Image.asset('images/auth/mountains.jpg', fit: BoxFit.cover)),
+          SizedBox.expand(child: Image.asset('images/auth/plain.jpg', fit: BoxFit.cover)),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(

@@ -93,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
       body: Stack(
         children: [
           // ── Background (Matching Login) ──
-          SizedBox.expand(child: Image.asset('images/auth/mountains.jpg', fit: BoxFit.cover)),
+          SizedBox.expand(child: Image.asset('images/auth/plain.jpg', fit: BoxFit.cover)),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(

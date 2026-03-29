@@ -87,7 +87,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProv
       body: Stack(
         children: [
           // ── Background & Gradient ──
-          SizedBox.expand(child: Image.asset('images/auth/mountans.jpg', fit: BoxFit.cover)),
+          SizedBox.expand(child: Image.asset('images/auth/plain.jpg', fit: BoxFit.cover)),
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
