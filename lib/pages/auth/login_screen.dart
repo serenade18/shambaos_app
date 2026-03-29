@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'auth_service.dart';
@@ -15,23 +14,50 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
+  final _emailController    = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _rememberMe = false;
+  bool _rememberMe      = false;
   bool _obscurePassword = true;
-  bool _isLoading = false;
+  bool _isLoading       = false;
+
+  // Biometric button visibility — refreshed on resume too
+  bool _biometricReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refreshBiometricState();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-check when user comes back from Settings after enrolling biometrics
+    if (state == AppLifecycleState.resumed) {
+      _refreshBiometricState();
+    }
+  }
+
+  Future<void> _refreshBiometricState() async {
+    final ready = await BiometricService.isReadyToUse();
+    if (mounted) setState(() => _biometricReady = ready);
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  // ─────────────────────────────────────────────
+  // STANDARD LOGIN
+  // ─────────────────────────────────────────────
   Future<void> _handleLogin() async {
-    final email = _emailController.text.trim();
+    final email    = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
@@ -47,44 +73,47 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await AuthService.login(
-        email: email,
-        password: password,
-      );
+      final result = await AuthService.login(email: email, password: password);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      if (result.success && result.data != null && result.data['access'] != null) {
-    final accessToken = result.data['access'] as String;
-    final refreshToken = result.data['refresh'] as String;
+      if (result.success && result.data != null) {
+        final accessToken  = result.data['access']?.toString();
+        final refreshToken = result.data['refresh']?.toString();
 
-    // ✅ Save JWT for biometric login or future requests
-    await BiometricService.saveToken(accessToken);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('refresh_token', refreshToken);
+        if (accessToken == null || refreshToken == null) {
+          throw Exception("Invalid token response");
+        }
 
-    AuthDialog.show(
-      context,
-      type: AuthDialogType.success,
-      title: 'Login Successful!',
-      message: 'Please wait...\nYou will be directed to the homepage.',
-      autoDismiss: const Duration(seconds: 3),
-      onDone: () {
-        Navigator.pushReplacement(
+        // ── Ask user if they want biometric login ──────────────────────────
+        final biometricAvailable = await BiometricService.isAvailable();
+        final alreadyEnabled     = await BiometricService.isEnabled();
+
+        if (biometricAvailable && !alreadyEnabled && mounted) {
+          _showEnableBiometricDialog(
+            accessToken:  accessToken,
+            refreshToken: refreshToken,
+            onComplete:   () => _navigateHome(),
+          );
+        } else {
+          // Refresh tokens in secure storage if already enabled
+          if (alreadyEnabled) {
+            await BiometricService.enableAndSaveTokens(
+              access:  accessToken,
+              refresh: refreshToken,
+            );
+          }
+          _showSuccessAndNavigate();
+        }
+      } else {
+        AuthDialog.show(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          type: AuthDialogType.error,
+          title: 'Login Failed!',
+          message: result.message ?? 'Invalid credentials.\nPlease try again.',
         );
-      },
-    );
-  } else {
-    AuthDialog.show(
-      context,
-      type: AuthDialogType.error,
-      title: 'Login Failed!',
-      message: result.message ?? 'Invalid credentials.\nPlease try again.',
-    );
-  }
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -98,41 +127,151 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // ✅ Biometric login helper
-  Future<void> _handleBiometricLogin() async {
-    final enabled = await BiometricService.isBiometricEnabled();
-    if (!enabled) return; // never logged in before
+  // ─────────────────────────────────────────────
+  // BIOMETRIC OPT-IN DIALOG
+  // ─────────────────────────────────────────────
+  void _showEnableBiometricDialog({
+    required String accessToken,
+    required String refreshToken,
+    required VoidCallback onComplete,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.fingerprint, color: Color(0xFF48B67C), size: 28),
+            SizedBox(width: 10),
+            Text(
+              'Enable Biometric Login?',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Skip the password next time.\nUse your fingerprint or face ID to log in instantly.',
+          style: TextStyle(color: Colors.black54, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              onComplete();
+            },
+            child: const Text(
+              'Not now',
+              style: TextStyle(color: Colors.black45),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await BiometricService.enableAndSaveTokens(
+                access:  accessToken,
+                refresh: refreshToken,
+              );
+              onComplete();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF48B67C),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            child: const Text(
+              'Enable',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    final available = await BiometricService.isAvailable();
-    if (!available) return; // device doesn't support biometrics
+  void _showSuccessAndNavigate() {
+    AuthDialog.show(
+      context,
+      type: AuthDialogType.success,
+      title: 'Login Successful!',
+      message: 'Redirecting...',
+      autoDismiss: const Duration(seconds: 2),
+      onDone: _navigateHome,
+    );
+  }
 
-    final success = await BiometricService.authenticate();
-    if (!success) {
-      AuthDialog.show(
-        context,
-        type: AuthDialogType.error,
-        title: 'Authentication Failed!',
-        message: 'Biometric authentication failed.\nPlease try again.',
-      );
-      return;
-    }
-
-    // ✅ Retrieve stored JWT and auto-login
-    final token = await BiometricService.getToken();
-    if (token == null) return;
-
+  void _navigateHome() {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const HomeScreen()),
     );
   }
 
+  // ─────────────────────────────────────────────
+  // BIOMETRIC LOGIN
+  // ─────────────────────────────────────────────
+  Future<void> _handleBiometricLogin() async {
+    if (_isLoading) return;
+
+    final success = await BiometricService.authenticate();
+
+    if (!success) {
+      if (!mounted) return;
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Authentication Failed',
+        message: 'Biometric check failed.\nPlease try again.',
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final accessToken  = await BiometricService.getAccessToken();
+      final refreshToken = await BiometricService.getRefreshToken();
+
+      if (accessToken == null || refreshToken == null) {
+        throw Exception("Missing tokens — please login with password first.");
+      }
+
+      // Validate / silently refresh the session server-side
+      final isValid = await AuthService.validateToken(
+        accessToken:  accessToken,
+        refreshToken: refreshToken,
+      );
+
+      if (!isValid) throw Exception("Session expired");
+
+      if (!mounted) return;
+      _navigateHome();
+    } catch (e) {
+      await BiometricService.clear();
+      await _refreshBiometricState(); // hide the button
+
+      if (!mounted) return;
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Session Expired',
+        message: 'Please login with your\npassword again.',
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // BUILD
+  // ─────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // ✨ Background Gradient
+          // Background gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -147,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          // ✨ Floating Blobs
+          // Floating blobs
           Positioned(
             top: -80,
             left: -60,
@@ -199,12 +338,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       hint: "Password",
                       icon: Icons.lock_outline,
                       isPassword: true,
-                      obscure: _obscurePassword, // ✅ must be state variable
-                      onToggleObscure: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
+                      obscure: _obscurePassword,
+                      onToggleObscure: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
 
                     const SizedBox(height: 10),
@@ -218,8 +354,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               value: _rememberMe,
                               activeColor: const Color(0xFF48B67C),
                               checkColor: Colors.white,
-                              onChanged: (value) =>
-                                  setState(() => _rememberMe = value!),
+                              onChanged: (v) =>
+                                  setState(() => _rememberMe = v!),
                             ),
                             const Text(
                               "Remember me",
@@ -248,6 +384,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
+                    // ── Login button ──────────────────────────────────────
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -285,45 +422,40 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
 
-                    FutureBuilder<bool>(
-                      future: BiometricService.isAvailable(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData || !snapshot.data!) {
-                          return const SizedBox.shrink();
-                        }
-
-                        return Column(
-                          children: [
-                            const Text(
-                              "Or login with biometrics",
-                              style: TextStyle(color: Colors.black54, fontSize: 12),
+                    // ── Biometric button — only shown when ready ──────────
+                    if (_biometricReady) ...[
+                      const Text(
+                        "Or login with biometrics",
+                        style:
+                            TextStyle(color: Colors.black54, fontSize: 12),
+                      ),
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: _handleBiometricLogin,
+                        child: Container(
+                          height: 60,
+                          width: 60,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF48B67C).withOpacity(0.1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF48B67C).withOpacity(0.3),
+                              width: 1.5,
                             ),
-                            const SizedBox(height: 10),
-                            GestureDetector(
-                              onTap: _handleBiometricLogin,
-                              child: Container(
-                                height: 56,
-                                width: 56,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF48B67C).withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.fingerprint,
-                                  color: Color(0xFF48B67C),
-                                  size: 28,
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                                        
-                    const SizedBox(height: 24),
+                          ),
+                          child: const Icon(
+                            Icons.fingerprint,
+                            color: Color(0xFF48B67C),
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
+                    // ── Sign up link ──────────────────────────────────────
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
@@ -356,7 +488,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                           color: Colors.black.withOpacity(0.5), fontSize: 12),
                     ),
-
                     const SizedBox(height: 20),
 
                     Row(
@@ -369,6 +500,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         _socialButton('images/assets/tik-tok.png'),
                       ],
                     ),
+
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
@@ -379,6 +512,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // ─────────────────────────────────────────────
+  // HELPER WIDGETS
+  // ─────────────────────────────────────────────
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -408,22 +544,17 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon: Icon(icon, color: const Color(0xFF48B67C), size: 22),
+          prefixIcon:
+              Icon(icon, color: const Color(0xFF48B67C), size: 22),
           suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  obscure
-                      ? Icons.visibility_off
-                      : Icons.visibility,
-                  color: Colors.grey,
-                ),
-                onPressed: () {
-                  if (onToggleObscure != null) {
-                    onToggleObscure();
-                  }
-                },
-              )
-            : null,
+              ? IconButton(
+                  icon: Icon(
+                    obscure ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: onToggleObscure,
+                )
+              : null,
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(vertical: 18, horizontal: 20),

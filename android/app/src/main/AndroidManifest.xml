@@ -3,6 +3,7 @@
     <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
 
     <application
+        android:enableOnBackInvokedCallback="true"
         android:label="shambaos_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

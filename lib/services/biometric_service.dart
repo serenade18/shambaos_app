@@ -3,48 +3,98 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class BiometricService {
   static final LocalAuthentication _auth = LocalAuthentication();
-  static final FlutterSecureStorage _storage = FlutterSecureStorage();
 
-  /// Check if biometrics are supported and enrolled
+  // Android: encryptedSharedPreferences adds hardware-backed encryption
+  static const FlutterSecureStorage _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
+  static const _accessKey  = 'bio_access_token';
+  static const _refreshKey = 'bio_refresh_token';
+  static const _enabledKey = 'bio_enabled';
+
+  // ─────────────────────────────────────────────
+  // AVAILABILITY CHECKS
+  // ─────────────────────────────────────────────
+
+  /// True if the device hardware supports biometrics AND has enrolled biometrics.
   static Future<bool> isAvailable() async {
-    final canCheck = await _auth.canCheckBiometrics;
-    final isSupported = await _auth.isDeviceSupported();
-    return canCheck && isSupported;
-  }
-
-  /// Perform biometric authentication
-  /// Returns true if auth succeeds
-  static Future<bool> authenticate() async {
     try {
-      return await _auth.authenticate(
-        localizedReason: 'Authenticate to login',
-        biometricOnly: true,
-      );
-    } catch (e) {
+      final isSupported = await _auth.isDeviceSupported();
+      if (!isSupported) return false;
+
+      final canCheck = await _auth.canCheckBiometrics;
+      if (!canCheck) return false;
+
+      final enrolled = await _auth.getAvailableBiometrics();
+      return enrolled.isNotEmpty;
+    } catch (_) {
       return false;
     }
   }
 
-  /// Save JWT securely after first login
-  static Future<void> saveToken(String token) async {
-    await _storage.write(key: 'jwt_token', value: token);
-    await _storage.write(key: 'biometric_enabled', value: 'true');
+  /// True if the user has previously opted in to biometric login.
+  static Future<bool> isEnabled() async {
+    try {
+      return (await _storage.read(key: _enabledKey)) == 'true';
+    } catch (_) {
+      return false;
+    }
   }
 
-  /// Retrieve JWT token
-  static Future<String?> getToken() async {
-    return await _storage.read(key: 'jwt_token');
+  /// True if biometrics is available AND the user has enabled it.
+  static Future<bool> isReadyToUse() async {
+    return await isAvailable() && await isEnabled();
   }
 
-  /// Check if biometric login is enabled
-  static Future<bool> isBiometricEnabled() async {
-    final enabled = await _storage.read(key: 'biometric_enabled');
-    return enabled == 'true';
+  // ─────────────────────────────────────────────
+  // AUTHENTICATE
+  // ─────────────────────────────────────────────
+
+  /// Triggers the system biometric prompt.
+  /// Returns true only on successful biometric match.
+  static Future<bool> authenticate() async {
+    try {
+      return await _auth.authenticate(
+        localizedReason: 'Use your fingerprint or face to login',
+        options: const AuthenticationOptions(
+          biometricOnly: true,    // no PIN/pattern fallback
+          stickyAuth: true,       // survive app backgrounding
+          useErrorDialogs: true,  // show system error dialogs
+        ),
+      );
+    } catch (_) {
+      return false;
+    }
   }
 
-  /// Clear saved JWT (optional, e.g., on logout)
+  // ─────────────────────────────────────────────
+  // TOKEN STORAGE — called only after user opts in
+  // ─────────────────────────────────────────────
+
+  /// Saves tokens and marks biometric login as enabled.
+  static Future<void> enableAndSaveTokens({
+    required String access,
+    required String refresh,
+  }) async {
+    await _storage.write(key: _accessKey,  value: access);
+    await _storage.write(key: _refreshKey, value: refresh);
+    await _storage.write(key: _enabledKey, value: 'true');
+  }
+
+  static Future<String?> getAccessToken() async {
+    try { return await _storage.read(key: _accessKey);  } catch (_) { return null; }
+  }
+
+  static Future<String?> getRefreshToken() async {
+    try { return await _storage.read(key: _refreshKey); } catch (_) { return null; }
+  }
+
+  // ─────────────────────────────────────────────
+  // CLEAR — call on logout or session expiry
+  // ─────────────────────────────────────────────
+
   static Future<void> clear() async {
-    await _storage.delete(key: 'jwt_token');
-    await _storage.delete(key: 'biometric_enabled');
+    try { await _storage.deleteAll(); } catch (_) {}
   }
 }

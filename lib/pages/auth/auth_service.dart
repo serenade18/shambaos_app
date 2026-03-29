@@ -1,13 +1,10 @@
 import '../../services/api_service.dart';
 
-// ════════════════════════════════════════════════════════════════
-//  auth_service.dart  —  Auth endpoints only
-//  Uses ApiService base client. All other feature services
-//  follow this exact same pattern.
-// ════════════════════════════════════════════════════════════════
-
 class AuthService {
-  
+
+  // ─────────────────────────────────────────────
+  // REGISTER
+  // ─────────────────────────────────────────────
   static Future<ApiResponse> register({
     required String name,
     required String phone,
@@ -28,12 +25,15 @@ class AuthService {
     );
   }
 
-  static Future<ApiResponse> refreshToken({
+  // ─────────────────────────────────────────────
+  // REFRESH TOKEN (RENAMED)
+  // ─────────────────────────────────────────────
+  static Future<ApiResponse> refreshAuthToken({
     required String refresh,
   }) async {
     final response = await ApiService.post(
       '/refresh_token/',
-      {'refresh': refresh,},
+      {'refresh': refresh},
       requiresAuth: false,
     );
 
@@ -45,7 +45,7 @@ class AuthService {
       if (token != null) {
         await ApiService.setToken(token.toString());
 
-        // ✅ Fetch user immediately after login
+        // ✅ Reload user after refresh
         final userRes = await getUserInfo();
         if (userRes.success && userRes.data != null) {
           await ApiService.setUser(userRes.data);
@@ -55,8 +55,47 @@ class AuthService {
 
     return response;
   }
-  
 
+  // ─────────────────────────────────────────────
+  // VALIDATE TOKEN (FIXED)
+  // ─────────────────────────────────────────────
+  static Future<bool> validateToken({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    try {
+      // 1️⃣ Try access token
+      await ApiService.setToken(accessToken);
+
+      final response = await ApiService.get(
+        '/validate-token/',
+        requiresAuth: true,
+      );
+
+      if (response.success) return true;
+    } catch (e) {
+      // Optional: log error
+      // print('Access token failed: $e');
+    }
+
+    // 2️⃣ Try refresh token
+    try {
+      final refreshRes = await refreshAuthToken(
+        refresh: refreshToken, // ✅ FIXED
+      );
+
+      if (refreshRes.success) return true;
+    } catch (e) {
+      // print('Refresh token failed: $e');
+    }
+
+    // 3️⃣ Fully invalid session
+    return false;
+  }
+
+  // ─────────────────────────────────────────────
+  // LOGIN
+  // ─────────────────────────────────────────────
   static Future<ApiResponse> login({
     required String email,
     required String password,
@@ -68,40 +107,53 @@ class AuthService {
     );
 
     if (response.success && response.data != null) {
-      final token = response.data['token'] ??
-          response.data['access'] ??
+      final access = response.data['access'] ??
+          response.data['token'] ??
           response.data['auth_token'];
 
-      if (token != null) {
-        await ApiService.setToken(token.toString());
+      final refresh = response.data['refresh'];
 
-        // ✅ Fetch user immediately after login
-        final userRes = await getUserInfo();
-        if (userRes.success && userRes.data != null) {
-          await ApiService.setUser(userRes.data);
-        }
+      if (access != null) {
+        await ApiService.setToken(access.toString());
+      }
+
+      if (access != null && refresh != null) {
+        response.data['access'] = access;
+        response.data['refresh'] = refresh;
+      }
+
+      final userRes = await getUserInfo();
+      if (userRes.success && userRes.data != null) {
+        await ApiService.setUser(userRes.data);
       }
     }
 
     return response;
   }
-  
+
+  // ─────────────────────────────────────────────
+  // USER INFO
+  // ─────────────────────────────────────────────
   static Future<ApiResponse> getUserInfo() {
     return ApiService.get('/userinfo/');
   }
 
+  // ─────────────────────────────────────────────
+  // LOGOUT
+  // ─────────────────────────────────────────────
   static void logout() {
     ApiService.clearToken();
   }
 
+  // ─────────────────────────────────────────────
+  // PASSWORD RESET
+  // ─────────────────────────────────────────────
   static Future<ApiResponse> forgotPassword({
     required String email,
   }) {
     return ApiService.post(
       '/forgot-password/',
-      {
-        'email': email,
-      },
+      {'email': email},
       requiresAuth: false,
     );
   }
@@ -121,5 +173,4 @@ class AuthService {
       requiresAuth: false,
     );
   }
-
 }
