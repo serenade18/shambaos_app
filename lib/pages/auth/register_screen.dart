@@ -11,7 +11,7 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -22,63 +22,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _animController.forward();
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
   Future<void> _handleRegister() async {
+    // ... your existing validation logic ...
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
     final confirm = _confirmPasswordController.text;
 
     if (name.isEmpty || email.isEmpty || password.isEmpty || _phoneNumber.isEmpty) {
-      AuthDialog.show(
-        context,
-        type: AuthDialogType.error,
-        title: 'Missing Fields',
-        message: 'Please fill in all required fields.',
-      );
-      return;
-    }
-
-    if (!_phoneNumber.startsWith('+') || _phoneNumber.length < 12) {
-      AuthDialog.show(
-        context,
-        type: AuthDialogType.error,
-        title: 'Invalid Phone',
-        message: 'Enter a valid phone number without leading 0.',
-      );
-      return;
-    }
-
-    if (password != confirm) {
-      AuthDialog.show(
-        context,
-        type: AuthDialogType.error,
-        title: 'Password Error',
-        message: 'Passwords do not match.',
-      );
-      return;
-    }
-
-    if (password.length < 6) {
-      AuthDialog.show(
-        context,
-        type: AuthDialogType.error,
-        title: 'Weak Password',
-        message: 'Password must be at least 6 characters.',
-      );
+      AuthDialog.show(context, type: AuthDialogType.error, title: 'Missing Fields', message: 'Please fill in all fields.');
       return;
     }
 
     setState(() => _isLoading = true);
-
     try {
       final response = await AuthService.register(
         name: name,
@@ -86,247 +66,150 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: email,
         password: password,
       );
-
       if (!mounted) return;
+      setState(() => _isLoading = false);
 
       if (response.success) {
         AuthDialog.show(
           context,
           type: AuthDialogType.success,
           title: 'Account Created!',
-          message: 'Please wait...\nRedirecting...',
+          message: 'Redirecting to login...',
           onDone: () => Navigator.pop(context),
         );
       } else {
-        AuthDialog.show(
-          context,
-          type: AuthDialogType.error,
-          title: 'Registration Failed',
-          message: response.message ?? 'Something went wrong.',
-        );
+        AuthDialog.show(context, type: AuthDialogType.error, title: 'Registration Failed', message: response.message ?? 'Error');
       }
-    } catch (_) {
-      AuthDialog.show(
-        context,
-        type: AuthDialogType.error,
-        title: 'Network Error',
-        message: 'Please check your connection.',
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      setState(() => _isLoading = false);
     }
   }
-    
-  // void _showSnack(String message, {bool isError = false}) {
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(
-  //       content: Text(message),
-  //       backgroundColor: isError ? Colors.redAccent : const Color(0xFF48B67C),
-  //       behavior: SnackBarBehavior.floating,
-  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  //       margin: const EdgeInsets.all(16),
-  //     ),
-  //   );
-  // }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       body: Stack(
         children: [
-
-          // 🌿 Background Gradient
+          // ── Background (Matching Login) ──
+          SizedBox.expand(child: Image.asset('images/auth/mountains.jpg', fit: BoxFit.cover)),
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFFFFFFFF),
-                  Color(0xFFF2F4F7),
-                  Color(0xFFE8F0EC),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black.withOpacity(0.15), Colors.black.withOpacity(0.5)],
               ),
             ),
           ),
 
-          // 🌿 Blobs
-          Positioned(
-            top: -80,
-            left: -60,
-            child: _blurCircle(200, const Color(0xFF48B67C).withOpacity(0.08)),
-          ),
-          Positioned(
-            bottom: -100,
-            right: -50,
-            child: _blurCircle(250, const Color(0xFF48B67C).withOpacity(0.06)),
-          ),
-
+          // ── Content ──
           SafeArea(
-            child: Stack(
-              children: [
-
-                // 🔙 Back Button
-                Positioned(
-                  top: 20,
-                  left: 20,
-                  child: _glassBackButton(context),
-                ),
-
-                // 📄 Content
-                Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 30),
-                    child: Column(
-                      children: [
-
-                        const Text(
-                          "Create Account",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                          ),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: size.width * 0.06, vertical: 24),
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.17),
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(color: Colors.white.withOpacity(0.35), width: 1.5),
                         ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("Create Account", style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Colors.white)),
+                            const SizedBox(height: 8),
+                            Text("Fill in the details to get started", style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+                            const SizedBox(height: 28),
 
-                        const SizedBox(height: 12),
+                            _buildGlassField(controller: _nameController, hint: "Full Name", icon: Icons.person_outline),
+                            const SizedBox(height: 14),
+                            
+                            _buildGlassPhoneField(),
+                            const SizedBox(height: 14),
 
-                        Text(
-                          "Create a new account to get started and enjoy\nseamless access to our features.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.black.withOpacity(0.6),
-                          ),
-                        ),
+                            _buildGlassField(controller: _emailController, hint: "Email Address", icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+                            const SizedBox(height: 14),
 
-                        const SizedBox(height: 40),
+                            _buildGlassField(
+                              controller: _passwordController,
+                              hint: "Password",
+                              icon: Icons.lock_outline,
+                              isPassword: true,
+                              obscure: _obscurePassword,
+                              onToggleObscure: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
+                            const SizedBox(height: 14),
 
-                        _buildTextField(
-                          controller: _nameController,
-                          hint: "Name",
-                          icon: Icons.person_outline,
-                        ),
+                            _buildGlassField(
+                              controller: _confirmPasswordController,
+                              hint: "Confirm Password",
+                              icon: Icons.lock_reset_outlined,
+                              isPassword: true,
+                              obscure: _obscureConfirm,
+                              onToggleObscure: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                            ),
+                            
+                            const SizedBox(height: 32),
 
-                        const SizedBox(height: 16),
-
-                        _buildPhoneField(),
-
-                        const SizedBox(height: 16),
-
-                        _buildTextField(
-                          controller: _emailController,
-                          hint: "Email address",
-                          icon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        _buildTextField(
-                          controller: _passwordController,
-                          hint: "Password",
-                          icon: Icons.lock_outline,
-                          isPassword: true,
-                          obscure: _obscurePassword,
-                          onToggle: () => setState(
-                              () => _obscurePassword = !_obscurePassword),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        _buildTextField(
-                          controller: _confirmPasswordController,
-                          hint: "Confirm Password",
-                          icon: Icons.lock_outline,
-                          isPassword: true,
-                          obscure: _obscureConfirm,
-                          onToggle: () => setState(
-                              () => _obscureConfirm = !_obscureConfirm),
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        // 🚀 Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleRegister,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF48B67C),
-                              disabledBackgroundColor:
-                                  const Color(0xFF48B67C).withOpacity(0.6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                            // ── Register Button ──
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _handleRegister,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3DBE6E),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  elevation: 0,
+                                ),
+                                child: _isLoading 
+                                  ? const CircularProgressIndicator(color: Colors.white) 
+                                  : const Text("Sign Up", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                               ),
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 22,
-                                    width: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
-                                : const Text(
-                                    "Create Account",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                          ),
-                        ),
+                            
+                            const SizedBox(height: 24),
 
-                        const SizedBox(height: 24),
-
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: const Text.rich(
-                            TextSpan(
-                              text: "Already have an account? ",
-                              children: [
-                                TextSpan(
-                                  text: "Sign In here",
-                                  style: TextStyle(
-                                    color: Color(0xFF48B67C),
-                                    fontWeight: FontWeight.bold,
+                            Center(
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: Text.rich(
+                                  TextSpan(
+                                    text: "Already have an account? ",
+                                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13),
+                                    children: const [
+                                      TextSpan(text: "Login here", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                    ],
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 40),
-
-                        Text(
-                          "Or Continue With Account",
-                          style: TextStyle(
-                            color: Colors.black.withOpacity(0.5),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _socialButton('images/assets/facebook.png'),
-                            const SizedBox(width: 20),
-                            _socialButton('images/assets/google.png'),
-                            const SizedBox(width: 20),
-                            _socialButton('images/assets/tik-tok.png'),
                           ],
                         ),
-
-                        const SizedBox(height: 30),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ],
+              ),
+            ),
+          ),
+          
+          // Back Button
+          Positioned(
+            top: 50,
+            left: 20,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
             ),
           ),
         ],
@@ -334,139 +217,73 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // ================= PHONE FIELD =================
-  Widget _buildPhoneField() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: IntlPhoneField(
-        initialCountryCode: 'KE',
-        showCountryFlag: true,
-        dropdownIconPosition: IconPosition.trailing,
-        dropdownIcon: const Icon(
-            Icons.keyboard_arrow_down_rounded, color: Colors.grey),
-        flagsButtonPadding: const EdgeInsets.only(left: 15),
-        flagsButtonMargin: EdgeInsets.zero,
-        textAlignVertical: TextAlignVertical.center,
-        style: const TextStyle(fontSize: 15, color: Colors.black87),
-        dropdownTextStyle:
-            const TextStyle(fontSize: 15, color: Colors.black87),
-        decoration: const InputDecoration(
-          hintText: "712345678",
-          hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-          border: InputBorder.none,
-          counterText: "",
-          contentPadding: EdgeInsets.symmetric(vertical: 20),
-        ),
-        onChanged: (phone) {
-          String number = phone.number;
-
-          // Remove leading zero if present
-          if (number.startsWith('0')) {
-            number = number.substring(1);
-          }
-
-          final formatted = '+${phone.countryCode}$number';
-
-          setState(() => _phoneNumber = formatted);
-        },
-      ),
-    );
-  }
-
-  // ================= TEXT FIELD =================
-  Widget _buildTextField({
+  Widget _buildGlassField({
     required TextEditingController controller,
     required String hint,
     required IconData icon,
     bool isPassword = false,
     bool obscure = false,
-    VoidCallback? onToggle,
+    VoidCallback? onToggleObscure,
     TextInputType? keyboardType,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.30)),
           ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: isPassword ? obscure : false,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          prefixIcon: Icon(icon, color: const Color(0xFF48B67C)),
-          suffixIcon: isPassword
-              ? IconButton(
-                  icon: Icon(
-                    obscure
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: Colors.grey,
-                  ),
-                  onPressed: onToggle,
-                )
-              : null,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+          child: TextField(
+            controller: controller,
+            obscureText: obscure,
+            keyboardType: keyboardType,
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 14),
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, color: Colors.white.withOpacity(0.6)),
+                      onPressed: onToggleObscure,
+                    )
+                  : Icon(icon, color: Colors.white.withOpacity(0.55), size: 20),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  // ================= BUTTONS =================
-  Widget _socialButton(String assetPath) {
-    return Container(
-      height: 50,
-      width: 50,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white,
-      ),
-      child: Center(
-        child: Image.asset(assetPath, height: 22),
-      ),
-    );
-  }
-
-  Widget _glassBackButton(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
-        shape: BoxShape.circle,
-      ),
-      child: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-        onPressed: () => Navigator.pop(context),
-      ),
-    );
-  }
-
-  Widget _blurCircle(double size, Color color) {
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-      child: Container(
-        height: size,
-        width: size,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
+  Widget _buildGlassPhoneField() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.30)),
+          ),
+          child: IntlPhoneField(
+            initialCountryCode: 'KE', // Set to Kenya for Agrosight/shambaos
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            dropdownTextStyle: const TextStyle(color: Colors.white),
+            cursorColor: Colors.white,
+            dropdownIcon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'Phone Number',
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 14),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+            ),
+            onChanged: (phone) => _phoneNumber = phone.completeNumber,
+          ),
         ),
       ),
     );

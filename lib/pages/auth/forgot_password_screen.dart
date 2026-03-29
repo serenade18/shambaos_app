@@ -11,225 +11,213 @@ class ForgotPasswordScreen extends StatefulWidget {
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
+  bool _isLoading = false;
 
-  bool _loading = false;
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _animController.forward();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       body: Stack(
         children: [
-          // 🌿 Background Gradient
+          // ── Background (Consistent with Auth Flow) ──
+          SizedBox.expand(
+            child: Image.asset(
+              'images/auth/mountains.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // ── Darker Gradient for Readability ──
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFFFFFFFF),
-                  Color(0xFFF2F4F7),
-                  Color(0xFFE8F0EC),
+                  Colors.black.withOpacity(0.2),
+                  Colors.black.withOpacity(0.5),
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
               ),
             ),
           ),
 
-          // 🌿 Blobs
-          Positioned(
-            top: -80,
-            left: -60,
-            child: _blurCircle(200, const Color(0xFF48B67C).withOpacity(0.08)),
-          ),
-          Positioned(
-            bottom: -100,
-            right: -50,
-            child: _blurCircle(250, const Color(0xFF48B67C).withOpacity(0.06)),
-          ),
-
+          // ── Main Content ──
           SafeArea(
-            child: Stack(
-              children: [
-                // 🔙 Back Button
-                Positioned(
-                  top: 20,
-                  left: 20,
-                  child: _glassBackButton(context),
-                ),
-
-                // 📄 Content
-                Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 30),
-                    child: Column(
-                      children: [
-                        // 🔑 Icon
-                        Container(
-                          height: 90,
-                          width: 90,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF48B67C).withOpacity(0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.lock_reset_rounded,
-                            size: 44,
-                            color: Color(0xFF48B67C),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: size.width * 0.07),
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.17),
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.35),
+                            width: 1.5,
                           ),
                         ),
-
-                        const SizedBox(height: 28),
-
-                        const Text(
-                          "Forgot Password?",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        Text(
-                          "No worries! Enter your email address and\nwe'll send you a reset code.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.black.withOpacity(0.6),
-                            height: 1.5,
-                          ),
-                        ),
-
-                        const SizedBox(height: 40),
-
-                        _buildTextField(
-                          controller: _emailController,
-                          hint: "Email address",
-                          icon: Icons.email_outlined,
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        // 🚀 Send Code Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: _loading
-                                ? null // 🚫 disable while loading
-                                : () async {
-                                    final email = _emailController.text.trim();
-
-                                    if (email.isEmpty) {
-                                      AuthDialog.show(
-                                        context,
-                                        type: AuthDialogType.error,
-                                        title: 'Missing Email',
-                                        message: 'Please enter your email address.',
-                                      );
-                                      return;
-                                    }
-
-                                    setState(() => _loading = true);
-
-                                    try {
-                                      final response =
-                                          await AuthService.forgotPassword(email: email);
-
-                                      if (!mounted) return;
-
-                                      if (response.success) {
-                                        AuthDialog.show(
-                                          context,
-                                          type: AuthDialogType.success,
-                                          title: 'Code Sent',
-                                          message: response.message ?? 'Reset code sent successfully.',
-                                          onDone: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => VerifyOtpScreen(email: email),
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      } else {
-                                        AuthDialog.show(
-                                          context,
-                                          type: AuthDialogType.error,
-                                          title: 'Request Failed',
-                                          message: response.message ?? 'Something went wrong. Try again.',
-                                        );
-                                      }
-                                    } catch (e) {
-                                      AuthDialog.show(
-                                        context,
-                                        type: AuthDialogType.error,
-                                        title: 'Network Error',
-                                        message: 'Please check your connection and try again.',
-                                      );
-                                    }
-                                    setState(() => _loading = false);
-
-                                                                      
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF48B67C),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: _loading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    "Send Reset Code",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: const Text.rich(
-                            TextSpan(
-                              text: "Remember your password? ",
-                              children: [
-                                TextSpan(
-                                  text: "Sign In",
-                                  style: TextStyle(
-                                    color: Color(0xFF48B67C),
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 🔑 Icon Header
+                            Container(
+                              height: 80,
+                              width: 80,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3DBE6E).withOpacity(0.2),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF3DBE6E).withOpacity(0.5),
+                                  width: 2,
                                 ),
-                              ],
+                              ),
+                              child: const Icon(
+                                Icons.lock_reset_rounded,
+                                size: 40,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
+
+                            const SizedBox(height: 24),
+
+                            const Text(
+                              "Forgot Password?",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            Text(
+                              "Enter your email address and we'll send\nyou a reset code to get back in.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.75),
+                                fontSize: 13,
+                                height: 1.5,
+                              ),
+                            ),
+
+                            const SizedBox(height: 32),
+
+                            // ── Glass Email Field ──
+                            _buildGlassField(
+                              controller: _emailController,
+                              hint: "Email address",
+                              icon: Icons.email_outlined,
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // ── Send Button ──
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _handleSendCode,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3DBE6E),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text(
+                                        "Send Reset Code",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // ── Back to Login Link ──
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Text.rich(
+                                TextSpan(
+                                  text: "Remembered? ",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.75),
+                                    fontSize: 13,
+                                  ),
+                                  children: const [
+                                    TextSpan(
+                                      text: "Back to Sign In",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ],
+              ),
+            ),
+          ),
+
+          // ── Back Button (Positioned at top) ──
+          Positioned(
+            top: 50,
+            left: 20,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+              onPressed: () => Navigator.pop(context),
             ),
           ),
         ],
@@ -237,61 +225,97 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildTextField({
+  // ─────────────────────────────────────────────
+  // REUSABLE GLASS FIELD (Matches Login/Register)
+  // ─────────────────────────────────────────────
+  Widget _buildGlassField({
     required TextEditingController controller,
     required String hint,
     required IconData icon,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.30),
+              width: 1,
+            ),
           ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: TextInputType.emailAddress,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          prefixIcon: Icon(icon, color: const Color(0xFF48B67C)),
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+          child: TextField(
+            controller: controller,
+            keyboardType: TextInputType.emailAddress,
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: Colors.white.withOpacity(0.55),
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.6), size: 20),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _glassBackButton(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
-        shape: BoxShape.circle,
-      ),
-      child: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-        onPressed: () => Navigator.pop(context),
-      ),
-    );
-  }
+  // ── Logic ──
+  Future<void> _handleSendCode() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: 'Missing Email',
+        message: 'Please enter your email address to continue.',
+      );
+      return;
+    }
 
-  Widget _blurCircle(double size, Color color) {
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-      child: Container(
-        height: size,
-        width: size,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
+    setState(() => _isLoading = true);
+    try {
+      final response = await AuthService.forgotPassword(email: email);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response.success) {
+        AuthDialog.show(
+          context,
+          type: AuthDialogType.success,
+          title: 'Code Sent',
+          message: response.message ?? 'Check your inbox for the reset code.',
+          onDone: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => VerifyOtpScreen(email: email)),
+            );
+          },
+        );
+      } else {
+        AuthDialog.show(
+          context,
+          type: AuthDialogType.error,
+          title: 'Request Failed',
+          message: response.message ?? 'We couldn\'t find an account with that email.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        AuthDialog.show(
+          context,
+          type: AuthDialogType.error,
+          title: 'Network Error',
+          message: 'Please check your connection and try again.',
+        );
+      }
+    }
   }
 }

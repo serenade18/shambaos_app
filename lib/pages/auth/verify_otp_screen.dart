@@ -13,19 +13,27 @@ class VerifyOtpScreen extends StatefulWidget {
   State<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
 }
 
-class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
-  final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
+class _VerifyOtpScreenState extends State<VerifyOtpScreen> with SingleTickerProviderStateMixin {
+  final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   int _secondsRemaining = 60;
   bool _canResend = false;
   Timer? _timer;
 
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
   @override
   void initState() {
     super.initState();
     _startTimer();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _animController.forward();
   }
 
   void _startTimer() {
@@ -46,301 +54,241 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
 
   @override
   void dispose() {
-    for (var c in _controllers) {
-      c.dispose();
-    }
-    for (var f in _focusNodes) {
-      f.dispose();
-    }
+    for (var c in _controllers) c.dispose();
+    for (var f in _focusNodes) f.dispose();
     _timer?.cancel();
+    _animController.dispose();
     super.dispose();
   }
 
   void _onOtpChanged(String value, int index) {
-    if (value.length == 1 && index < 5) {
+    // If a value is typed, move to next
+    if (value.isNotEmpty && index < 5) {
       _focusNodes[index + 1].requestFocus();
-    } else if (value.isEmpty && index > 0) {
+    } 
+    // If value is deleted, move to previous
+    if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
+    }
+    
+    // Auto-verify if 6th digit is reached
+    if (_otpCode.length == 6) {
+      _handleVerify();
     }
   }
 
-  String get _otpCode =>
-      _controllers.map((c) => c.text).join();
+  String get _otpCode => _controllers.map((c) => c.text).join();
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       body: Stack(
         children: [
-          // 🌿 Background Gradient
+          // ── Background & Gradient ──
+          SizedBox.expand(child: Image.asset('images/auth/mountans.jpg', fit: BoxFit.cover)),
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFFFFFFFF),
-                  Color(0xFFF2F4F7),
-                  Color(0xFFE8F0EC),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.5)],
               ),
             ),
           ),
 
-          // 🌿 Blobs
-          Positioned(
-            top: -80,
-            left: -60,
-            child: _blurCircle(200, const Color(0xFF48B67C).withOpacity(0.08)),
-          ),
-          Positioned(
-            bottom: -100,
-            right: -50,
-            child: _blurCircle(250, const Color(0xFF48B67C).withOpacity(0.06)),
-          ),
-
           SafeArea(
-            child: Stack(
-              children: [
-                // 🔙 Back Button
-                Positioned(
-                  top: 20,
-                  left: 20,
-                  child: _glassBackButton(context),
-                ),
-
-                // 📄 Content
-                Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 30),
-                    child: Column(
-                      children: [
-                        // ✉️ Icon
-                        Container(
-                          height: 90,
-                          width: 90,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF48B67C).withOpacity(0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.mark_email_read_outlined,
-                            size: 44,
-                            color: Color(0xFF48B67C),
-                          ),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: size.width * 0.07),
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(28),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 36),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.17),
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(color: Colors.white.withOpacity(0.35), width: 1.5),
                         ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildHeaderIcon(),
+                            const SizedBox(height: 24),
+                            const Text("Verify Email", style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Colors.white)),
+                            const SizedBox(height: 10),
+                            Text("We sent a 6-digit code to", style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+                            Text(widget.email, style: const TextStyle(color: Color(0xFF3DBE6E), fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 32),
 
-                        const SizedBox(height: 28),
-
-                        const Text(
-                          "Verify Your Email",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        Text(
-                          "We sent a 6-digit code to",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.black.withOpacity(0.6),
-                          ),
-                        ),
-
-                        const SizedBox(height: 4),
-
-                        Text(
-                          widget.email.isNotEmpty
-                              ? widget.email
-                              : "your email address",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFF48B67C),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-
-                        const SizedBox(height: 40),
-
-                        // 🔢 OTP Fields
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(6, (index) {
-                                double screenWidth = MediaQuery.of(context).size.width;
-                                double padding = 30 * 2; // your horizontal padding
-                                double gap = 10 * 5; // 5 gaps
-                                double boxWidth = (screenWidth - padding - gap) / 6;
-
-                                return Row(
-                                children: [
-                                    SizedBox(
-                                    width: boxWidth,
-                                    height: 58,
+                            // 🔢 SCALABLE OTP Grid
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: List.generate(6, (index) {
+                                return Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4),
                                     child: _buildOtpBox(index),
-                                    ),
-                                    if (index < 5) const SizedBox(width: 10),
-                                ],
-                                );
-                            }),
-                            ),
-
-                        const SizedBox(height: 36),
-
-                        // ⏱ Resend timer
-                        _canResend
-                            ? GestureDetector(
-                                onTap: _startTimer,
-                                child: const Text.rich(
-                                  TextSpan(
-                                    text: "Didn't receive code? ",
-                                    children: [
-                                      TextSpan(
-                                        text: "Resend",
-                                        style: TextStyle(
-                                          color: Color(0xFF48B67C),
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : Text.rich(
-                                TextSpan(
-                                  text: "Resend code in ",
-                                  style: TextStyle(
-                                      color: Colors.black.withOpacity(0.5)),
-                                  children: [
-                                    TextSpan(
-                                      text: "0:${_secondsRemaining.toString().padLeft(2, '0')}",
-                                      style: const TextStyle(
-                                        color: Color(0xFF48B67C),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                        const SizedBox(height: 30),
-
-                        // ✅ Verify Button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (_otpCode.length == 6) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => SetPasswordScreen(
-                                      email: widget.email,
-                                      code: _otpCode,
-                                    ),
                                   ),
                                 );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text("Enter complete code")),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF48B67C),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              elevation: 0,
+                              }),
                             ),
-                            child: const Text(
-                              "Verify Code",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+
+                            const SizedBox(height: 32),
+                            _buildTimerSection(),
+                            const SizedBox(height: 32),
+                            _buildVerifyButton(),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
+          
+          _buildBackButton(),
         ],
       ),
     );
   }
 
-  Widget _buildOtpBox(int index) {
+  // ── Helper Widgets ──
+
+  Widget _buildHeaderIcon() {
+    return Container(
+      height: 80,
+      width: 80,
+      decoration: BoxDecoration(
+        color: const Color(0xFF3DBE6E).withOpacity(0.2),
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFF3DBE6E).withOpacity(0.5), width: 2),
+      ),
+      child: const Icon(Icons.mark_email_read_outlined, size: 40, color: Colors.white),
+    );
+  }
+
+  Widget _buildTimerSection() {
+    return _canResend
+        ? GestureDetector(
+            onTap: _startTimer,
+            child: const Text("Didn't receive code? Resend",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+          )
+        : Text(
+            "Resend code in 0:${_secondsRemaining.toString().padLeft(2, '0')}",
+            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+          );
+  }
+
+  Widget _buildVerifyButton() {
     return SizedBox(
-      width: 48,
-      height: 58,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: _handleVerify,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF3DBE6E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 0,
         ),
-        child: TextField(
-          controller: _controllers[index],
-          focusNode: _focusNodes[index],
-          textAlign: TextAlign.center,
-          keyboardType: TextInputType.number,
-          maxLength: 1,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF48B67C),
-          ),
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            counterText: "",
-          ),
-          onChanged: (val) => _onOtpChanged(val, index),
-        ),
+        child: const Text("Verify Code",
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     );
   }
 
-  Widget _glassBackButton(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
-        shape: BoxShape.circle,
-      ),
+  Widget _buildBackButton() {
+    return Positioned(
+      top: 50,
+      left: 20,
       child: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
         onPressed: () => Navigator.pop(context),
       ),
     );
   }
 
-  Widget _blurCircle(double size, Color color) {
-    return ImageFiltered(
-      imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-      child: Container(
-        height: size,
-        width: size,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
+  Widget _buildOtpBox(int index) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: AspectRatio(
+          aspectRatio: 0.85,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                ),
+                // We use alignment center here to help the TextField's position
+                alignment: Alignment.center,
+                child: RawKeyboardListener(
+                  focusNode: FocusNode(),
+                  onKey: (event) {
+                    if (event.runtimeType == RawKeyDownEvent &&
+                        event.logicalKey == LogicalKeyboardKey.backspace &&
+                        _controllers[index].text.isEmpty &&
+                        index > 0) {
+                      _focusNodes[index - 1].requestFocus();
+                    }
+                  },
+                  child: TextField(
+                    controller: _controllers[index],
+                    focusNode: _focusNodes[index],
+                    textAlign: TextAlign.center,
+                    // 🎯 FIX 1: Explicitly center the text vertically
+                    textAlignVertical: TextAlignVertical.center,
+                    keyboardType: TextInputType.number,
+                    maxLength: 1,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: TextStyle(
+                      fontSize: MediaQuery.of(context).size.width * 0.055,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      // 🎯 FIX 2: Ensure the height of the text doesn't add extra leading/padding
+                      height: 1, 
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      counterText: "",
+                      // 🎯 FIX 3: Remove all default padding that pushes text down
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: (val) => _onOtpChanged(val, index),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  void _handleVerify() {
+    if (_otpCode.length == 6) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SetPasswordScreen(email: widget.email, code: _otpCode),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter the complete 6-digit code")),
+      );
+    }
   }
 }

@@ -72,6 +72,7 @@ flutter:
     - images/auth/banana.png
     - images/auth/milk.png
     - images/auth/chicken.png
+    - images/auth/mountains.jpg
     - images/assets/facebook.png
     - images/assets/google.png
     - images/assets/tik-tok.png
