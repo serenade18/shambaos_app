@@ -71,8 +71,11 @@ flutter:
     - images/auth/farm.png
     - images/auth/banana.png
     - images/auth/milk.png
+    - images/auth/cow.jpg
     - images/auth/chicken.png
     - images/auth/mountains.jpg
+    - images/auth/farming.jpg
+    - images/auth/beans.jpg
     - images/assets/facebook.png
     - images/assets/google.png
     - images/assets/tik-tok.png

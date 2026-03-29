@@ -25,19 +25,19 @@ class _WelcomePage {
 // ─────────────────────────────────────────────────────────────────────────────
 const List<_WelcomePage> _pages = [
   _WelcomePage(
-    image: 'images/auth/farm.png',
+    image: 'images/auth/farming.jpg',
     tag: 'FARM INTELLIGENCE',
     headline: 'Modern Farming.\nTraditional\nWisdom.',
     subtitle: 'Put the power of data in your pocket. Track your soil health and weather to ensure a bumper harvest every season.',
   ),
   _WelcomePage(
-    image: 'images/auth/milk.png', // Swapped as requested
+    image: 'images/auth/beans.jpg', // Swapped as requested
     tag: 'LIVESTOCK MANAGEMENT',
     headline: 'Your Digital\nFarm Manager,\n24/7.',
     subtitle: 'From poultry to dairy and fish—manage your entire inventory and production records without the paperwork.',
   ),
   _WelcomePage(
-    image: 'images/auth/banana.png', // Swapped as requested
+    image: 'images/auth/cow.jpg', // Swapped as requested
     tag: 'SMART INPUTS',
     headline: 'Save on Costs.\nGrow Your\nProfits.',
     subtitle: 'Stop wasting expensive fertilizer and water. Our AI tells you exactly what your crops need to thrive.',

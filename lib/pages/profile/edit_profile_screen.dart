@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'profile_service.dart';
+import '../../widgets/auth_dialog.dart'; // Using the AuthDialog we created earlier
 import 'package:intl_phone_field/intl_phone_field.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -29,8 +30,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   bool isLoading = false;
   bool isFetching = true;
-
   String fullPhoneNumber = '';
+
+  final Color themeGreen = const Color(0xFF3DBE6E);
+  final Color inputBg = const Color(0xFFE9E9E9);
 
   @override
   void initState() {
@@ -39,22 +42,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     emailController = TextEditingController(text: widget.email);
     phoneController = TextEditingController(text: widget.phone);
     usernameController = TextEditingController(text: widget.username);
-
     _fetchProfile();
   }
 
   Future<void> _fetchProfile() async {
     final response = await ProfileService.getProfile();
-
     if (response.success && response.data != null) {
       final data = response.data;
-
-      nameController.text = data['name'] ?? widget.name;
-      emailController.text = data['email'] ?? widget.email;
-      phoneController.text = data['phone'] ?? widget.phone;
-      usernameController.text = data['username'] ?? widget.username;
+      setState(() {
+        nameController.text = data['name'] ?? widget.name;
+        emailController.text = data['email'] ?? widget.email;
+        phoneController.text = data['phone'] ?? widget.phone;
+        usernameController.text = data['username'] ?? widget.username;
+      });
     }
-
     setState(() => isFetching = false);
   }
 
@@ -62,198 +63,172 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => isLoading = true);
 
     final response = await ProfileService.updateProfile(
-      name: nameController.text,
-      email: emailController.text,
-      phone: fullPhoneNumber.isEmpty
-          ? phoneController.text
-          : fullPhoneNumber,
-      username: usernameController.text,
+      name: nameController.text.trim(),
+      email: emailController.text.trim(),
+      phone: fullPhoneNumber.isEmpty ? phoneController.text : fullPhoneNumber,
+      username: usernameController.text.trim(),
     );
 
     setState(() => isLoading = false);
 
     if (response.success) {
-      Navigator.pop(context, {
-        "name": nameController.text,
-        "email": emailController.text,
-        "phone": fullPhoneNumber.isEmpty
-            ? phoneController.text
-            : fullPhoneNumber,
-        "username": usernameController.text,
-      });
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.success,
+        title: "Profile Updated",
+        message: "Your changes have been saved successfully.",
+        onDone: () => Navigator.pop(context, true),
+      );
+    } else {
+      AuthDialog.show(
+        context,
+        type: AuthDialogType.error,
+        title: "Update Failed",
+        message: response.message ?? "Could not update profile.",
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-      body: SafeArea(
-        child: isFetching
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Personal info",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 22),
+        ),
+      ),
+      body: isFetching
+          ? Center(child: CircularProgressIndicator(color: themeGreen))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // BACK
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: _softContainer(
-                            child: const Icon(Icons.arrow_back),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // HEADER
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
+                  const SizedBox(height: 20),
+                  
+                  // 🤳 Selfie Section
+                  Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Edit Profile",
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: inputBg,
+                          child: Icon(Icons.person_outline, size: 50, color: Colors.black.withOpacity(0.3)),
                         ),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 16),
+                        const Text("Take a Selfie", 
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
                         Text(
-                          "Update your details",
-                          style: TextStyle(color: Colors.black54),
+                          "Add your photo so drivers can recognise you\nwhen picking or delivering your package.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.black.withOpacity(0.5), fontSize: 13, height: 1.4),
                         ),
+                        const SizedBox(height: 16),
+                        _buildPhotoButton(),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 40),
 
-                  // AVATAR
-                  _softContainer(
-                    padding: const EdgeInsets.all(20),
-                    shape: BoxShape.circle,
-                    child: const Icon(Icons.person, size: 50),
-                  ),
+                  // 📝 Form Fields
+                  _fieldLabel("Name"),
+                  _buildInput(nameController),
 
-                  const SizedBox(height: 20),
+                  _fieldLabel("Email"),
+                  _buildInput(emailController),
 
-                  // FORM
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: _softContainer(
-                        padding: const EdgeInsets.all(20),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              _input(nameController, "Full Name"),
-                              _input(emailController, "Email"),
+                  _fieldLabel("Phone Number"),
+                  _buildPhoneInput(),
 
-                              IntlPhoneField(
-                                initialValue: phoneController.text,
-                                decoration: _inputDecoration("Phone"),
-                                initialCountryCode: 'KE',
-                                onChanged: (phone) {
-                                  fullPhoneNumber =
-                                      phone.completeNumber;
-                                },
-                              ),
+                  _fieldLabel("Username"),
+                  _buildInput(usernameController),
 
-                              _input(usernameController, "Username"),
-                            ],
-                          ),
-                        ),
+                  const SizedBox(height: 40),
+
+                  // 💾 Save Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: isLoading ? null : _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeGreen,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
                       ),
+                      child: isLoading
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text("Save Changes", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                     ),
                   ),
-
-                  // BUTTON
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        onPressed: isLoading ? null : _saveProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00C853),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          elevation: 5,
-                        ),
-                        child: isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white)
-                            : const Text(
-                                "Save Changes",
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.white),
-                              ),
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 30),
                 ],
               ),
-      ),
+            ),
     );
   }
 
-  // ✨ SOFT WHITE CONTAINER (Neumorphism)
-  Widget _softContainer({
-    required Widget child,
-    EdgeInsets padding = const EdgeInsets.all(12),
-    BoxShape shape = BoxShape.rectangle,
-  }) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F9FC),
-        shape: shape,
-        borderRadius:
-            shape == BoxShape.rectangle ? BorderRadius.circular(20) : null,
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.white,
-            offset: Offset(-4, -4),
-            blurRadius: 10,
-          ),
-          BoxShadow(
-            color: Colors.black12,
-            offset: Offset(4, 4),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-
-  Widget _input(TextEditingController controller, String hint) {
+  Widget _fieldLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 8, top: 16),
+      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+    );
+  }
+
+  Widget _buildInput(TextEditingController controller) {
+    return Container(
+      decoration: BoxDecoration(
+        color: inputBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: TextField(
         controller: controller,
-        decoration: _inputDecoration(hint),
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      filled: true,
-      fillColor: const Color(0xFFF7F9FC),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide.none,
+  Widget _buildPhoneInput() {
+    return Container(
+      decoration: BoxDecoration(
+        color: inputBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: IntlPhoneField(
+        initialValue: phoneController.text,
+        disableLengthCheck: true,
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+        initialCountryCode: 'KE',
+        onChanged: (phone) => fullPhoneNumber = phone.completeNumber,
+      ),
+    );
+  }
+
+  Widget _buildPhotoButton() {
+    return TextButton.icon(
+      onPressed: () {}, // Add Image Picker Logic here
+      icon: Icon(Icons.camera_alt_outlined, color: themeGreen, size: 20),
+      label: Text("Take Photo", style: TextStyle(color: themeGreen, fontWeight: FontWeight.bold)),
+      style: TextButton.styleFrom(
+        backgroundColor: themeGreen.withOpacity(0.1),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
