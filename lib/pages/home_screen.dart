@@ -16,9 +16,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedCategory = 0;
 
+  // add this with your other state variables at the top
+  final GlobalKey<WeatherWidgetState> _weatherKey = GlobalKey<WeatherWidgetState>();
+
   String _userName = '';
   String _userEmail = '';
-
+  
   final List<String> _categories = [
     'All',
     'Carrots',
@@ -62,6 +65,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _onRefresh() async {
+  await Future.wait([
+    _loadUser(),
+    _weatherKey.currentState?.refresh() ?? Future.value(),
+  ]);
+}
+
   void _openProfile() {
     Navigator.push(
       context,
@@ -104,7 +114,12 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               _buildHeader(),
               Expanded(
-                child: SingleChildScrollView(
+                child: RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  color: const Color(0xFF3D7A35),        // spinner colour
+                  backgroundColor: Colors.white,
+                  displacement: 20,
+                  child: SingleChildScrollView(
                   padding: const EdgeInsets.only(bottom: 100),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+                )
               ),
             ],
           ),
@@ -221,11 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
 
-              const WeatherWidget(
-                lat: 36.72187322222223,
-                lon: -1.3657504444444444,
-                location: 'Nairobi, Kenya',
-              ),
+              WeatherWidget(key: _weatherKey),
             ],
           ),
         ),

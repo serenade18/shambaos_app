@@ -3,23 +3,15 @@ import '../models/weather_model.dart';
 import '../pages/home_service.dart';
 
 class WeatherWidget extends StatefulWidget {
-  final double lat;
-  final double lon;
-  final String location;
-
-  const WeatherWidget({
-    super.key,
-    required this.lat,
-    required this.lon,
-    required this.location,
-  });
+  const WeatherWidget({super.key});
 
   @override
-  State<WeatherWidget> createState() => _WeatherWidgetState();
+  State<WeatherWidget> createState() => WeatherWidgetState();
 }
 
-class _WeatherWidgetState extends State<WeatherWidget> {
+class WeatherWidgetState extends State<WeatherWidget> {
   WeatherModel? weather;
+  String fieldName = '';
   bool isLoading = true;
 
   @override
@@ -29,25 +21,50 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   }
 
   Future<void> _loadWeather() async {
+    setState(() => isLoading = true);
+
+    final polygons = await HomeService.listPolygons();
+
+    if (polygons.isEmpty) {
+      setState(() {
+        weather = null;
+        isLoading = false;
+      });
+      return;
+    }
+
+    final first = polygons.first;
+    final lat = first.center[1];
+    final lon = first.center[0];
+
     final result = await HomeService.getCurrentWeather(
-      lat: widget.lat,
-      lon: widget.lon,
+      lat: lat,
+      lon: lon,
     );
 
     setState(() {
       weather = result;
+      fieldName = first.name;
       isLoading = false;
     });
   }
 
+  /// Called externally via GlobalKey to refresh weather data
+  Future<void> refresh() => _loadWeather();
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     }
 
     if (weather == null) {
-      return const Text("Failed to load weather");
+      return const Text(
+        'Failed to load weather',
+        style: TextStyle(color: Colors.white70),
+      );
     }
 
     return _buildUI();
@@ -71,7 +88,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
                   color: Colors.white70, size: 16),
               const SizedBox(width: 6),
               Text(
-                widget.location,
+                fieldName.isEmpty ? 'Your Field' : fieldName,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.85),
                   fontSize: 13,
@@ -145,8 +162,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
         const SizedBox(height: 2),
         Text(value,
             style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600)),
+                color: Colors.white, fontWeight: FontWeight.w600)),
       ],
     );
   }
