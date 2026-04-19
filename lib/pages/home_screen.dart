@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/weather_widget.dart';
 import '../pages/profile/profile_screen.dart';
+import '../services/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,12 +17,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedCategory = 0;
 
-  // add this with your other state variables at the top
-  final GlobalKey<WeatherWidgetState> _weatherKey = GlobalKey<WeatherWidgetState>();
+  final GlobalKey<WeatherWidgetState> _weatherKey =
+      GlobalKey<WeatherWidgetState>();
 
   String _userName = '';
   String _userEmail = '';
-  
+
   final List<String> _categories = [
     'All',
     'Carrots',
@@ -59,18 +60,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = await ApiService.getUser();
     if (user != null) {
       setState(() {
-        _userName = user['name'] ?? user['username'] ?? user['email'] ?? 'User';
+        _userName =
+            user['name'] ?? user['username'] ?? user['email'] ?? 'User';
         _userEmail = user['email'] ?? '';
       });
     }
   }
 
   Future<void> _onRefresh() async {
-  await Future.wait([
-    _loadUser(),
-    _weatherKey.currentState?.refresh() ?? Future.value(),
-  ]);
-}
+    await Future.wait([
+      _loadUser(),
+      _weatherKey.currentState?.refresh() ?? Future.value(),
+    ]);
+  }
 
   void _openProfile() {
     Navigator.push(
@@ -85,8 +87,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getInitials(String name) {
-    if (name.isEmpty) return "U";
-    final parts = name.trim().split(" ");
+    if (name.isEmpty) return 'U';
+    final parts = name.trim().split(' ');
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
@@ -104,41 +106,40 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F2),
+      backgroundColor: colors.scaffoldBackground,
       body: Stack(
         children: [
           Column(
             children: [
-              _buildHeader(),
+              _buildHeader(colors),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: _onRefresh,
-                  color: const Color(0xFF3D7A35),        // spinner colour
-                  backgroundColor: Colors.white,
+                  color: AppColors.brand,
+                  backgroundColor: colors.cardBackground,
                   displacement: 20,
                   child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 100),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 28),
-                      _buildMyFieldsHeader(),
-                      const SizedBox(height: 16),
-                      _buildCategoryChips(),
-                      const SizedBox(height: 20),
-                      _buildFieldCards(),
-                    ],
+                    padding: const EdgeInsets.only(bottom: 100),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 28),
+                        _buildMyFieldsHeader(colors),
+                        const SizedBox(height: 16),
+                        _buildCategoryChips(colors),
+                        const SizedBox(height: 20),
+                        _buildFieldCards(colors),
+                      ],
+                    ),
                   ),
                 ),
-                )
               ),
             ],
           ),
-
-          // ── Bottom Nav ───────────────────────────────
           const Positioned(
             bottom: 0,
             left: 0,
@@ -153,11 +154,11 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   // HEADER
   // ══════════════════════════════════════════════════════════
-  Widget _buildHeader() {
+  Widget _buildHeader(AppColors colors) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFF2D5A27),
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: colors.headerBackground,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(32),
           bottomRight: Radius.circular(32),
         ),
@@ -180,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         shape: BoxShape.circle,
                         color: _getAvatarColor(_userName),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: colors.avatarBorder,
                           width: 2,
                         ),
                       ),
@@ -223,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 42,
                     width: 42,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
+                      color: colors.iconOverlay,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -234,9 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 20),
-
               WeatherWidget(key: _weatherKey),
             ],
           ),
@@ -245,47 +244,36 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _weatherStat(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 11),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: const TextStyle(
-              color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
- 
-  Widget _buildMyFieldsHeader() {
+  // ══════════════════════════════════════════════════════════
+  // MY FIELDS HEADER
+  // ══════════════════════════════════════════════════════════
+  Widget _buildMyFieldsHeader(AppColors colors) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
+        children: [
           Text(
             'My Fields',
             style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1A1A)),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: colors.textPrimary,
+            ),
           ),
           Text(
             'See All',
-            style: TextStyle(fontSize: 13, color: Colors.black45),
+            style: TextStyle(fontSize: 13, color: colors.textHint),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCategoryChips() {
+  // ══════════════════════════════════════════════════════════
+  // CATEGORY CHIPS
+  // ══════════════════════════════════════════════════════════
+  Widget _buildCategoryChips(AppColors colors) {
     return SizedBox(
       height: 38,
       child: ListView.separated(
@@ -299,25 +287,27 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () => setState(() => _selectedCategory = index),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFF3D7A35) : Colors.white,
+                color: selected ? colors.chipSelected : colors.chipBackground,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: selected
-                        ? const Color(0xFF3D7A35).withOpacity(0.3)
+                        ? colors.chipSelected.withOpacity(0.3)
                         : Colors.black.withOpacity(0.06),
                     blurRadius: selected ? 8 : 6,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ],
               ),
               child: Text(
                 _categories[index],
                 style: TextStyle(
-                  color: selected ? Colors.white : Colors.black87,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  color: selected ? Colors.white : colors.textPrimary,
+                  fontWeight:
+                      selected ? FontWeight.w600 : FontWeight.normal,
                   fontSize: 13,
                 ),
               ),
@@ -328,7 +318,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFieldCards() {
+  // ══════════════════════════════════════════════════════════
+  // FIELD CARDS
+  // ══════════════════════════════════════════════════════════
+  Widget _buildFieldCards(AppColors colors) {
     return SizedBox(
       height: 260,
       child: ListView.separated(
@@ -336,16 +329,17 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         itemCount: _fields.length,
         separatorBuilder: (_, __) => const SizedBox(width: 14),
-        itemBuilder: (context, index) => _buildFieldCard(_fields[index]),
+        itemBuilder: (context, index) =>
+            _buildFieldCard(_fields[index], colors),
       ),
     );
   }
 
-  Widget _buildFieldCard(Map<String, String> field) {
+  Widget _buildFieldCard(Map<String, String> field, AppColors colors) {
     return Container(
       width: 210,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -373,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   errorBuilder: (_, __, ___) => Container(
                     height: 150,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3D7A35).withOpacity(0.15),
+                      color: AppColors.brand.withOpacity(0.15),
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
@@ -381,7 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     child: const Center(
                       child: Icon(Icons.grass,
-                          color: Color(0xFF3D7A35), size: 40),
+                          color: AppColors.brand, size: 40),
                     ),
                   ),
                 ),
@@ -393,11 +387,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 32,
                   width: 32,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.85),
+                    color: colors.cardBackground.withOpacity(0.85),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.bookmark_border_rounded,
-                      size: 16, color: Colors.black54),
+                  child: Icon(
+                    Icons.bookmark_border_rounded,
+                    size: 16,
+                    color: colors.textSecondary,
+                  ),
                 ),
               ),
             ],
@@ -409,10 +406,11 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   field['title']!,
-                  style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -420,9 +418,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   field['desc']!,
                   style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.black.withOpacity(0.5),
-                      height: 1.4),
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    height: 1.4,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

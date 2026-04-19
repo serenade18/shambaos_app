@@ -1,7 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'profile_service.dart';
-import '../../widgets/auth_dialog.dart'; // Using the AuthDialog we created earlier
+import '../../services/app_colors.dart';
+import '../../widgets/auth_dialog.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -32,9 +33,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool isFetching = true;
   String fullPhoneNumber = '';
 
-  final Color themeGreen = const Color(0xFF3DBE6E);
-  final Color inputBg = const Color(0xFFE9E9E9);
-
   @override
   void initState() {
     super.initState();
@@ -43,6 +41,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     phoneController = TextEditingController(text: widget.phone);
     usernameController = TextEditingController(text: widget.username);
     _fetchProfile();
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    usernameController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchProfile() async {
@@ -75,102 +82,144 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       AuthDialog.show(
         context,
         type: AuthDialogType.success,
-        title: "Profile Updated",
-        message: "Your changes have been saved successfully.",
+        title: 'Profile Updated',
+        message: 'Your changes have been saved successfully.',
         onDone: () => Navigator.pop(context, true),
       );
     } else {
       AuthDialog.show(
         context,
         type: AuthDialogType.error,
-        title: "Update Failed",
-        message: response.message ?? "Could not update profile.",
+        title: 'Update Failed',
+        message: response.message ?? 'Could not update profile.',
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colors.cardBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: colors.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Personal info",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 22),
+        title: Text(
+          'Personal info',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+          ),
         ),
       ),
       body: isFetching
-          ? Center(child: CircularProgressIndicator(color: themeGreen))
+          ? Center(
+              child: CircularProgressIndicator(color: AppColors.brand),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  
-                  // 🤳 Selfie Section
+
+                  // ── Avatar / selfie section ─────────────────────
                   Center(
                     child: Column(
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundColor: inputBg,
-                          child: Icon(Icons.person_outline, size: 50, color: Colors.black.withOpacity(0.3)),
+                          backgroundColor: colors.scaffoldBackground,
+                          child: Icon(
+                            Icons.person_outline,
+                            size: 50,
+                            color: colors.textHint,
+                          ),
                         ),
                         const SizedBox(height: 16),
-                        const Text("Take a Selfie", 
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text(
+                          'Take a Selfie',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: colors.textPrimary,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Text(
-                          "Add your photo so drivers can recognise you\nwhen picking or delivering your package.",
+                          'Add a profile photo to identify yourself in our community',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.black.withOpacity(0.5), fontSize: 13, height: 1.4),
+                          style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
                         ),
                         const SizedBox(height: 16),
-                        _buildPhotoButton(),
+                        _buildPhotoButton(colors),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 40),
 
-                  // 📝 Form Fields
-                  _fieldLabel("Name"),
-                  _buildInput(nameController),
+                  // ── Form fields ─────────────────────────────────
+                  _fieldLabel('Name', colors),
+                  _buildInput(nameController, colors),
 
-                  _fieldLabel("Email"),
-                  _buildInput(emailController),
+                  _fieldLabel('Email', colors),
+                  _buildInput(emailController, colors),
 
-                  _fieldLabel("Phone Number"),
-                  _buildPhoneInput(),
+                  _fieldLabel('Phone Number', colors),
+                  _buildPhoneInput(colors),
 
-                  _fieldLabel("Username"),
-                  _buildInput(usernameController),
+                  _fieldLabel('Username', colors),
+                  _buildInput(usernameController, colors),
 
                   const SizedBox(height: 40),
 
-                  // 💾 Save Button
+                  // ── Save button ─────────────────────────────────
                   SizedBox(
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
                       onPressed: isLoading ? null : _saveProfile,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: themeGreen,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: AppColors.brand,
+                        disabledBackgroundColor:
+                            AppColors.brand.withOpacity(0.6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 0,
                       ),
                       child: isLoading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text("Save Changes", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Save Changes',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
+
                   const SizedBox(height: 30),
                 ],
               ),
@@ -178,41 +227,58 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _fieldLabel(String label) {
+  // ── Field label ──────────────────────────────────────────────
+  Widget _fieldLabel(String label, AppColors colors) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, top: 16),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-    );
-  }
-
-  Widget _buildInput(TextEditingController controller) {
-    return Container(
-      decoration: BoxDecoration(
-        color: inputBg,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        controller: controller,
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          color: colors.textPrimary,
         ),
       ),
     );
   }
 
-  Widget _buildPhoneInput() {
+  // ── Text input ───────────────────────────────────────────────
+  Widget _buildInput(TextEditingController controller, AppColors colors) {
     return Container(
       decoration: BoxDecoration(
-        color: inputBg,
+        color: colors.scaffoldBackground,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextField(
+        controller: controller,
+        style: TextStyle(color: colors.textPrimary),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          hintStyle: TextStyle(color: colors.textHint),
+        ),
+      ),
+    );
+  }
+
+  // ── Phone input ──────────────────────────────────────────────
+  Widget _buildPhoneInput(AppColors colors) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.scaffoldBackground,
         borderRadius: BorderRadius.circular(12),
       ),
       child: IntlPhoneField(
         initialValue: phoneController.text,
         disableLengthCheck: true,
-        decoration: const InputDecoration(
+        style: TextStyle(color: colors.textPrimary),
+        dropdownTextStyle: TextStyle(color: colors.textPrimary),
+        decoration: InputDecoration(
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          hintStyle: TextStyle(color: colors.textHint),
         ),
         initialCountryCode: 'KE',
         onChanged: (phone) => fullPhoneNumber = phone.completeNumber,
@@ -220,15 +286,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildPhotoButton() {
+  // ── Photo button ─────────────────────────────────────────────
+  Widget _buildPhotoButton(AppColors colors) {
     return TextButton.icon(
-      onPressed: () {}, // Add Image Picker Logic here
-      icon: Icon(Icons.camera_alt_outlined, color: themeGreen, size: 20),
-      label: Text("Take Photo", style: TextStyle(color: themeGreen, fontWeight: FontWeight.bold)),
+      onPressed: () {},
+      icon: const Icon(Icons.camera_alt_outlined,
+          color: AppColors.brand, size: 20),
+      label: const Text(
+        'Take Photo',
+        style: TextStyle(
+          color: AppColors.brand,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
       style: TextButton.styleFrom(
-        backgroundColor: themeGreen.withOpacity(0.1),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        backgroundColor: AppColors.brand.withOpacity(0.1),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }

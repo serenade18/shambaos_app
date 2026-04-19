@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../auth/auth_service.dart';
 import '../onboarding/welcome_screens.dart';
+import '../../main.dart';
+import '../../services/app_colors.dart';
 import 'edit_profile_screen.dart';
-import 'notification_screen.dart'; // ← connect NotificationScreen
+import 'notification_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userName;
@@ -23,8 +25,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _darkMode = false;
-
   late String _userName;
   late String _userEmail;
   late String _userPhone;
@@ -37,11 +37,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _userEmail = widget.userEmail;
     _userPhone = widget.userPhone;
     _username = widget.username;
+    themeNotifier.addListener(_onThemeChange);
   }
 
+  @override
+  void dispose() {
+    themeNotifier.removeListener(_onThemeChange);
+    super.dispose();
+  }
+
+  void _onThemeChange() => setState(() {});
+
   String _getInitials(String name) {
-    if (name.isEmpty) return "U";
-    final parts = name.trim().split(" ");
+    if (name.isEmpty) return 'U';
+    final parts = name.trim().split(' ');
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
@@ -57,20 +66,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: colors.scaffoldBackground,
       body: Column(
         children: [
           Stack(
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
-              _buildHeader(context),
+              _buildHeader(context, colors),
               Positioned(
                 bottom: -35,
                 left: 0,
                 right: 0,
-                child: _buildProfileCard(),
+                child: _buildProfileCard(colors),
               ),
             ],
           ),
@@ -84,8 +95,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.person_outline_rounded,
                     label: 'MY ACCOUNT',
                     trailing: '0 Points  >',
+                    colors: colors,
                   ),
-                  _buildMenuGroup([
+                  _buildMenuGroup(colors, [
                     _MenuItem(
                       color: const Color(0xFFFF6B35),
                       icon: Icons.card_membership_rounded,
@@ -127,8 +139,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildSectionLabel(
                     icon: Icons.settings_outlined,
                     label: 'GENERAL',
+                    colors: colors,
                   ),
-                  _buildMenuGroup([
+                  _buildMenuGroup(colors, [
                     _MenuItem(
                       color: const Color(0xFFFF6B35),
                       icon: Icons.shield_outlined,
@@ -145,7 +158,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: const Color(0xFF4CAF50),
                       icon: Icons.notifications_outlined,
                       label: 'Notifications',
-                      // ── CONNECTED ──────────────────────────────────
                       onTap: () {
                         Navigator.push(
                           context,
@@ -166,12 +178,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.dark_mode_outlined,
                       label: 'Dark Mode',
                       isToggle: true,
-                      toggleValue: _darkMode,
-                      onToggle: (val) => setState(() => _darkMode = val),
+                      toggleValue: themeNotifier.isDark,
+                      onToggle: (val) => themeNotifier.toggle(val),
                     ),
                   ]),
                   const SizedBox(height: 20),
-                  _buildLogoutTile(),
+                  _buildLogoutTile(colors),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -182,7 +194,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  // ══════════════════════════════════════════════════════════
+  // HEADER — gradient stays, it's on-brand either mode
+  // ══════════════════════════════════════════════════════════
+  Widget _buildHeader(BuildContext context, AppColors colors) {
     return Container(
       height: 180,
       width: double.infinity,
@@ -190,10 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1B4332),
-            Color(0xFF2D5A27),
-          ],
+          colors: [Color(0xFF1B4332), Color(0xFF2D5A27)],
         ),
       ),
       child: SafeArea(
@@ -207,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   height: 40,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: colors.iconOverlay,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(Icons.arrow_back, size: 22, color: Colors.white),
@@ -229,12 +241,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileCard() {
+  // ══════════════════════════════════════════════════════════
+  // PROFILE CARD
+  // ══════════════════════════════════════════════════════════
+  Widget _buildProfileCard(AppColors colors) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -271,16 +286,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   _userName.isEmpty ? 'User' : _userName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
+                    color: colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   _userEmail.isEmpty ? 'Farm Administrator' : _userEmail,
-                  style: TextStyle(fontSize: 13, color: Colors.black.withOpacity(0.5)),
+                  style: TextStyle(fontSize: 13, color: colors.textSecondary),
                 ),
               ],
             ),
@@ -310,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 16, 150, 65),
+                color: AppColors.brand,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
@@ -335,39 +350,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ══════════════════════════════════════════════════════════
+  // SECTION LABEL
+  // ══════════════════════════════════════════════════════════
   Widget _buildSectionLabel({
     required IconData icon,
     required String label,
+    required AppColors colors,
     String? trailing,
   }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: Colors.black45),
+          Icon(icon, size: 14, color: colors.textHint),
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Colors.black45,
+              color: colors.textHint,
               letterSpacing: 1.0,
             ),
           ),
           const Spacer(),
           if (trailing != null)
-            Text(trailing, style: const TextStyle(fontSize: 12, color: Colors.black45)),
+            Text(
+              trailing,
+              style: TextStyle(fontSize: 12, color: colors.textHint),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildMenuGroup(List<_MenuItem> items) {
+  // ══════════════════════════════════════════════════════════
+  // MENU GROUP
+  // ══════════════════════════════════════════════════════════
+  Widget _buildMenuGroup(AppColors colors, List<_MenuItem> items) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -383,14 +408,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final isLast = index == items.length - 1;
           return Column(
             children: [
-              _buildMenuTile(item),
+              _buildMenuTile(item, colors),
               if (!isLast)
-                Divider(
-                  height: 1,
-                  indent: 64,
-                  endIndent: 16,
-                  color: Colors.black.withOpacity(0.05),
-                ),
+                Divider(height: 1, indent: 64, endIndent: 16, color: colors.divider),
             ],
           );
         }),
@@ -398,7 +418,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMenuTile(_MenuItem item) {
+  // ══════════════════════════════════════════════════════════
+  // MENU TILE
+  // ══════════════════════════════════════════════════════════
+  Widget _buildMenuTile(_MenuItem item, AppColors colors) {
     return GestureDetector(
       onTap: item.isToggle ? null : item.onTap,
       child: Padding(
@@ -408,16 +431,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               height: 38,
               width: 38,
-              decoration: BoxDecoration(color: item.color, shape: BoxShape.circle),
+              decoration:
+                  BoxDecoration(color: item.color, shape: BoxShape.circle),
               child: Icon(item.icon, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 item.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF1A1A1A),
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -426,27 +450,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Switch(
                 value: item.toggleValue ?? false,
                 onChanged: item.onToggle,
-                activeColor: const Color(0xFF6B4EEA),
-                activeTrackColor: const Color(0xFF6B4EEA).withOpacity(0.3),
+                activeColor: Colors.white,
+                activeTrackColor: AppColors.brand,
                 inactiveThumbColor: Colors.white,
-                inactiveTrackColor: Colors.black26,
+                inactiveTrackColor: colors.border,
               )
             else
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.black26),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  size: 14, color: colors.textHint),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLogoutTile() {
+  // ══════════════════════════════════════════════════════════
+  // LOGOUT TILE
+  // ══════════════════════════════════════════════════════════
+  Widget _buildLogoutTile(AppColors colors) {
     return GestureDetector(
       onTap: _showLogoutConfirm,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -461,8 +489,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               height: 38,
               width: 38,
-              decoration: BoxDecoration(color: Colors.red.shade400, shape: BoxShape.circle),
-              child: const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+              decoration: BoxDecoration(
+                  color: Colors.red.shade400, shape: BoxShape.circle),
+              child:
+                  const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 14),
             Text(
@@ -489,7 +519,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.black54)),
+            child: Text('Cancel',
+                style: TextStyle(color: context.appColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -502,7 +533,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade400,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Log Out', style: TextStyle(color: Colors.white)),
           ),
@@ -512,7 +544,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// ── Menu Item Model ────────────────────────────────────────────
+// ── Menu Item Model ─────────────────────────────────────────────
 class _MenuItem {
   final Color color;
   final IconData icon;

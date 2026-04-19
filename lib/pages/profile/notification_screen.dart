@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profile_service.dart';
+import '../../services/app_colors.dart';
 
 // ===============================
 // MODEL
@@ -35,6 +36,8 @@ class NotificationPrefs {
 
 // ===============================
 // CONFIG (UI mapping layer)
+// Note: icon colors & backgrounds are vibrant brand colors —
+// they stay fixed across themes intentionally.
 // ===============================
 class NotificationItem {
   final String key;
@@ -60,8 +63,7 @@ final List<NotificationItem> notificationItems = [
   NotificationItem(
     key: 'low_stock_alerts',
     title: 'Low Stock Alerts',
-    subtitle:
-        'Get notified when inventory drops below the configured threshold.',
+    subtitle: 'Get notified when inventory drops below the configured threshold.',
     icon: Icons.inventory_2_rounded,
     iconColor: Color(0xFFB45309),
     iconBackground: Color(0xFFFFF4E0),
@@ -78,8 +80,7 @@ final List<NotificationItem> notificationItems = [
   NotificationItem(
     key: 'health_reminders',
     title: 'Health & Vaccination',
-    subtitle:
-        'Scheduled health checks, vaccinations, and compliance reminders.',
+    subtitle: 'Scheduled health checks, vaccinations, and compliance reminders.',
     icon: Icons.favorite_rounded,
     iconColor: Color(0xFFDC2626),
     iconBackground: Color(0xFFFDEAEA),
@@ -97,16 +98,10 @@ final List<NotificationItem> notificationItems = [
     title: 'Payment Reminders',
     subtitle: 'Pending payments, due invoices, and financial actions.',
     icon: Icons.credit_card_rounded,
-    iconColor: Color(0xFF109641),
+    iconColor: AppColors.brand,
     iconBackground: Color(0xFFE8F7EE),
   ),
 ];
-
-// ===============================
-// THEME CONSTANTS
-// ===============================
-const _kGreen = Color(0xFF109641);
-const _kGreenLight = Color(0xFFE8F7EE);
 
 // ===============================
 // SCREEN
@@ -121,9 +116,6 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   NotificationPrefs? _prefs;
   bool _isLoading = true;
-
-  /// Tracks which key is currently being saved.
-  /// The toggle for that row is disabled until the request completes.
   String? _savingKey;
 
   @override
@@ -137,10 +129,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
   // ===============================
   Future<void> _loadPreferences() async {
     setState(() => _isLoading = true);
-
     try {
       final response = await ProfileService.setNotification();
-
       if (response.success && response.data != null) {
         setState(() {
           _prefs = NotificationPrefs.fromJson(response.data['data']);
@@ -156,30 +146,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   // ===============================
   // PATCH — sends only the changed key
-  // Payload example: { "leave_requests": true }
   // ===============================
   Future<void> _updatePref(String key, bool value) async {
     if (_prefs == null || _savingKey != null) return;
 
-    // 1. Optimistic local update so the toggle feels instant
     _applyLocal(key, value);
     setState(() => _savingKey = key);
 
     try {
       final response = await ProfileService.patchNotification(key, value);
-
       if (response.success && response.data != null) {
-        // 2. Sync all fields from server response to stay consistent
         setState(() {
           _prefs = NotificationPrefs.fromJson(response.data['data']);
         });
       } else {
-        // 3. Revert on API error
         _applyLocal(key, !value);
         _handleError('Failed to save. Please try again.');
       }
     } catch (_) {
-      // 4. Revert on network error
       _applyLocal(key, !value);
       _handleError('Connection error');
     } finally {
@@ -187,8 +171,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
-  /// Applies a single boolean field change to local [_prefs].
-  /// Used for both optimistic updates and reverts.
   void _applyLocal(String key, bool value) {
     if (_prefs == null) return;
     setState(() {
@@ -214,27 +196,27 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   void _handleError(String message) {
     setState(() => _isLoading = false);
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
   // ===============================
-  // UI
+  // BUILD
   // ===============================
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.cardBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colors.cardBackground,
         elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.all(10),
@@ -242,12 +224,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
             onTap: () => Navigator.pop(context),
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFF4F4F4),
+                color: colors.scaffoldBackground,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.black,
+                color: colors.textPrimary,
                 size: 18,
               ),
             ),
@@ -255,14 +237,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: _kGreen))
+          ? Center(child: CircularProgressIndicator(color: AppColors.brand))
           : Column(
               children: [
-                // Thin progress bar shown while any key is saving
                 if (_savingKey != null)
                   LinearProgressIndicator(
-                    color: _kGreen,
-                    backgroundColor: _kGreenLight,
+                    color: AppColors.brand,
+                    backgroundColor: colors.divider,
                     minHeight: 3,
                   ),
 
@@ -272,20 +253,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     children: [
                       const SizedBox(height: 4),
 
+                      // Title
                       RichText(
-                        text: const TextSpan(
+                        text: TextSpan(
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF0D0D0D),
+                            color: colors.textPrimary,
                             letterSpacing: -0.5,
                             height: 1.1,
                           ),
                           children: [
-                            TextSpan(text: 'Notifications'),
+                            const TextSpan(text: 'Notifi'),
                             TextSpan(
-                              text: '',
-                              style: TextStyle(color: _kGreen),
+                              text: 'cations',
+                              style: const TextStyle(color: AppColors.brand),
                             ),
                           ],
                         ),
@@ -293,11 +275,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                       const SizedBox(height: 10),
 
-                      const Text(
+                      Text(
                         'Control the types of alerts you receive across your workspace.',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF888888),
+                          color: colors.textSecondary,
                           height: 1.5,
                         ),
                       ),
@@ -309,6 +291,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           item: item,
                           value: _getValue(item.key),
                           isSaving: _savingKey == item.key,
+                          colors: colors,
                         );
                       }),
 
@@ -316,10 +299,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                       // Master mute
                       Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           border: Border(
-                            top: BorderSide(
-                                color: Color(0xFFF0F0F0), width: 8),
+                            top: BorderSide(color: colors.divider, width: 8),
                           ),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 18),
@@ -329,7 +311,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               width: 46,
                               height: 46,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF111111),
+                                color: colors.textPrimary,
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: const Icon(
@@ -339,7 +321,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ),
                             ),
                             const SizedBox(width: 14),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -348,15 +330,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF111111),
+                                      color: colors.textPrimary,
                                     ),
                                   ),
-                                  SizedBox(height: 2),
+                                  const SizedBox(height: 2),
                                   Text(
                                     'Silence everything at once',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Color(0xFFAAAAAA),
+                                      color: colors.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -366,9 +348,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               value: false,
                               onChanged: (val) {},
                               activeColor: Colors.white,
-                              activeTrackColor: _kGreen,
+                              activeTrackColor: AppColors.brand,
                               inactiveThumbColor: Colors.white,
-                              inactiveTrackColor: const Color(0xFFE0E0E0),
+                              inactiveTrackColor: colors.border,
                             ),
                           ],
                         ),
@@ -411,6 +393,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     required NotificationItem item,
     required bool value,
     required bool isSaving,
+    required AppColors colors,
   }) {
     return Column(
       children: [
@@ -419,6 +402,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Icon pill — colors are intentionally vibrant/fixed
               Container(
                 width: 46,
                 height: 46,
@@ -439,10 +423,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       children: [
                         Text(
                           item.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF111111),
+                            color: colors.textPrimary,
                           ),
                         ),
                         if (item.badge != null) ...[
@@ -451,15 +435,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: _kGreenLight,
+                              color: const Color(0xFFE8F7EE),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Text(
-                              item.badge!,
-                              style: const TextStyle(
+                            child: const Text(
+                              'STOCK',
+                              style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: _kGreen,
+                                color: AppColors.brand,
                                 letterSpacing: 0.4,
                               ),
                             ),
@@ -470,9 +454,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     const SizedBox(height: 3),
                     Text(
                       item.subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFFAAAAAA),
+                        color: colors.textSecondary,
                         height: 1.45,
                       ),
                     ),
@@ -480,20 +464,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
               ),
 
-              // Toggle is disabled while its request is in-flight
               Switch(
                 value: value,
-                onChanged:
-                    isSaving ? null : (val) => _updatePref(item.key, val),
+                onChanged: isSaving ? null : (val) => _updatePref(item.key, val),
                 activeColor: Colors.white,
-                activeTrackColor: _kGreen,
+                activeTrackColor: AppColors.brand,
                 inactiveThumbColor: Colors.white,
-                inactiveTrackColor: const Color(0xFFE0E0E0),
+                inactiveTrackColor: colors.border,
               ),
             ],
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: Color(0xFFF2F2F2)),
+        Divider(height: 1, thickness: 1, color: colors.divider),
       ],
     );
   }
