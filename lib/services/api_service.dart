@@ -213,6 +213,21 @@ class ApiService {
     );
   }
 
+  static Future<ApiResponse> patch(
+    String endpoint,
+    Map<String, dynamic> body, {
+    bool requiresAuth = true,
+  }) {
+    return _request(
+      () => http.patch(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: _headers(requiresAuth: requiresAuth),
+        body: jsonEncode(body),
+      ),
+      requiresAuth: requiresAuth,
+    );
+  }
+
   static Future<ApiResponse> delete(
     String endpoint, {
     bool requiresAuth = true,

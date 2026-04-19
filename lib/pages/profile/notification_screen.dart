@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'profile_service.dart';
 
-// --- Notification Model (Matches your API JSON) ---
+// ===============================
+// MODEL
+// ===============================
 class NotificationPrefs {
   final int id;
   bool lowStockAlerts;
@@ -31,6 +33,84 @@ class NotificationPrefs {
   }
 }
 
+// ===============================
+// CONFIG (UI mapping layer)
+// ===============================
+class NotificationItem {
+  final String key;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBackground;
+  final String? badge;
+
+  NotificationItem({
+    required this.key,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBackground,
+    this.badge,
+  });
+}
+
+final List<NotificationItem> notificationItems = [
+  NotificationItem(
+    key: 'low_stock_alerts',
+    title: 'Low Stock Alerts',
+    subtitle:
+        'Get notified when inventory drops below the configured threshold.',
+    icon: Icons.inventory_2_rounded,
+    iconColor: Color(0xFFB45309),
+    iconBackground: Color(0xFFFFF4E0),
+    badge: 'STOCK',
+  ),
+  NotificationItem(
+    key: 'leave_requests',
+    title: 'Leave Requests',
+    subtitle: 'Alerts when staff submit leave requests requiring approval.',
+    icon: Icons.badge_rounded,
+    iconColor: Color(0xFF1A56DB),
+    iconBackground: Color(0xFFE8F0FE),
+  ),
+  NotificationItem(
+    key: 'health_reminders',
+    title: 'Health & Vaccination',
+    subtitle:
+        'Scheduled health checks, vaccinations, and compliance reminders.',
+    icon: Icons.favorite_rounded,
+    iconColor: Color(0xFFDC2626),
+    iconBackground: Color(0xFFFDEAEA),
+  ),
+  NotificationItem(
+    key: 'system_updates',
+    title: 'System Updates',
+    subtitle: 'Platform updates, new features, and maintenance announcements.',
+    icon: Icons.notifications_rounded,
+    iconColor: Color(0xFF7C3AED),
+    iconBackground: Color(0xFFF0EEFF),
+  ),
+  NotificationItem(
+    key: 'payment_reminders',
+    title: 'Payment Reminders',
+    subtitle: 'Pending payments, due invoices, and financial actions.',
+    icon: Icons.credit_card_rounded,
+    iconColor: Color(0xFF109641),
+    iconBackground: Color(0xFFE8F7EE),
+  ),
+];
+
+// ===============================
+// THEME CONSTANTS
+// ===============================
+const _kGreen = Color(0xFF109641);
+const _kGreenLight = Color(0xFFE8F7EE);
+
+// ===============================
+// SCREEN
+// ===============================
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
@@ -41,7 +121,10 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   NotificationPrefs? _prefs;
   bool _isLoading = true;
-  bool _isSaving = false;
+
+  /// Tracks which key is currently being saved.
+  /// The toggle for that row is disabled until the request completes.
+  String? _savingKey;
 
   @override
   void initState() {
@@ -49,60 +132,103 @@ class _NotificationScreenState extends State<NotificationScreen> {
     _loadPreferences();
   }
 
-  // --- Logic: Fetching from API ---
+  // ===============================
+  // LOAD
+  // ===============================
   Future<void> _loadPreferences() async {
     setState(() => _isLoading = true);
+
     try {
       final response = await ProfileService.setNotification();
-      
+
       if (response.success && response.data != null) {
-        // Correctly accessing the nested 'data' object from your API response
-        final rawData = response.data['data'];
         setState(() {
-          _prefs = NotificationPrefs.fromJson(rawData);
+          _prefs = NotificationPrefs.fromJson(response.data['data']);
           _isLoading = false;
         });
+      } else {
+        _handleError('Failed to load notifications');
       }
-    } catch (e) {
-      _handleError("Connection error");
+    } catch (_) {
+      _handleError('Connection error');
     }
   }
 
-  // --- Logic: Updating API ---
-  Future<void> _updatePref(String type, bool value) async {
-    if (_prefs == null) return;
+  // ===============================
+  // PATCH — sends only the changed key
+  // Payload example: { "leave_requests": true }
+  // ===============================
+  Future<void> _updatePref(String key, bool value) async {
+    if (_prefs == null || _savingKey != null) return;
 
-    setState(() {
-      if (type == 'low') _prefs!.lowStockAlerts = value;
-      if (type == 'leave') _prefs!.leaveRequests = value;
-      if (type == 'payment') _prefs!.paymentReminders = value;
-      if (type == 'health') _prefs!.healthReminders = value;
-      if (type == 'system') _prefs!.systemUpdates = value;
-      _isSaving = true;
-    });
+    // 1. Optimistic local update so the toggle feels instant
+    _applyLocal(key, value);
+    setState(() => _savingKey = key);
 
     try {
-      await ProfileService.updateNotification(
-        lowStockAlerts: _prefs!.lowStockAlerts,
-        leaveRequests: _prefs!.leaveRequests,
-        paymentReminders: _prefs!.paymentReminders,
-        healthReminders: _prefs!.healthReminders,
-        systemUpdates: _prefs!.systemUpdates,
-      );
-    } catch (e) {
-      _handleError("Save error");
+      final response = await ProfileService.patchNotification(key, value);
+
+      if (response.success && response.data != null) {
+        // 2. Sync all fields from server response to stay consistent
+        setState(() {
+          _prefs = NotificationPrefs.fromJson(response.data['data']);
+        });
+      } else {
+        // 3. Revert on API error
+        _applyLocal(key, !value);
+        _handleError('Failed to save. Please try again.');
+      }
+    } catch (_) {
+      // 4. Revert on network error
+      _applyLocal(key, !value);
+      _handleError('Connection error');
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) setState(() => _savingKey = null);
     }
+  }
+
+  /// Applies a single boolean field change to local [_prefs].
+  /// Used for both optimistic updates and reverts.
+  void _applyLocal(String key, bool value) {
+    if (_prefs == null) return;
+    setState(() {
+      switch (key) {
+        case 'low_stock_alerts':
+          _prefs!.lowStockAlerts = value;
+          break;
+        case 'leave_requests':
+          _prefs!.leaveRequests = value;
+          break;
+        case 'payment_reminders':
+          _prefs!.paymentReminders = value;
+          break;
+        case 'health_reminders':
+          _prefs!.healthReminders = value;
+          break;
+        case 'system_updates':
+          _prefs!.systemUpdates = value;
+          break;
+      }
+    });
   }
 
   void _handleError(String message) {
     setState(() => _isLoading = false);
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
   }
 
+  // ===============================
+  // UI
+  // ===============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -110,157 +236,264 @@ class _NotificationScreenState extends State<NotificationScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 22),
-          onPressed: () => Navigator.pop(context),
+        leading: Padding(
+          padding: const EdgeInsets.all(10),
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4F4F4),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.black,
+                size: 18,
+              ),
+            ),
+          ),
         ),
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Colors.black))
-        : Column(
-            children: [
-              if (_isSaving) const LinearProgressIndicator(color: Colors.black, backgroundColor: Colors.white, minHeight: 2),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: [
-                    const Text(
-                      'Notifications',
-                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Tell us the types of push notifications you would like to get on this device. You can change this at any time.',
-                      style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.4),
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    _buildToggleRow(
-                      title: 'Add a Contribution',
-                      subtitle: "As a valued member of our travel community, we'll occasionally invite you to contribute your experiences.",
-                      value: _prefs!.lowStockAlerts,
-                      onChanged: (val) => _updatePref('low', val),
-                    ),
-                    _buildToggleRow(
-                      title: 'Question Updates',
-                      subtitle: 'Get notified when a traveller answers your question.',
-                      value: _prefs!.leaveRequests,
-                      onChanged: (val) => _updatePref('leave', val),
-                    ),
-                    _buildToggleRow(
-                      title: 'Location-based Notifcations',
-                      subtitle: 'Get tips and helpful information on places you visit.',
-                      value: _prefs!.healthReminders,
-                      onChanged: (val) => _updatePref('health', val),
-                    ),
-                    _buildToggleRow(
-                      title: 'Price Drops & Booking Reminders',
-                      subtitle: "Don't miss a price reduction or forget about booking your perfect trip.",
-                      value: _prefs!.systemUpdates,
-                      onChanged: (val) => _updatePref('system', val),
-                    ),
-                    _buildToggleRow(
-                      title: 'Message and Booking Updates',
-                      subtitle: 'Receive notifications when an owner sends you a message or there are requests.',
-                      value: _prefs!.paymentReminders,
-                      onChanged: (val) => _updatePref('payment', val),
-                    ),
-                    
-                    // --- Master Mute Switch ---
-                    Container(
-                      margin: const EdgeInsets.only(top: 10),
-                      padding: const EdgeInsets.symmetric(vertical: 25),
-                      decoration: const BoxDecoration(
-                        border: Border(top: BorderSide(color: Color(0xFFF2F2F2), width: 10))
-                      ),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Do not receive any notifications',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: _kGreen))
+          : Column(
+              children: [
+                // Thin progress bar shown while any key is saving
+                if (_savingKey != null)
+                  LinearProgressIndicator(
+                    color: _kGreen,
+                    backgroundColor: _kGreenLight,
+                    minHeight: 3,
+                  ),
+
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    children: [
+                      const SizedBox(height: 4),
+
+                      RichText(
+                        text: const TextSpan(
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0D0D0D),
+                            letterSpacing: -0.5,
+                            height: 1.1,
+                          ),
+                          children: [
+                            TextSpan(text: 'Notifications'),
+                            TextSpan(
+                              text: '',
+                              style: TextStyle(color: _kGreen),
                             ),
-                          ),
-                          Switch(
-                            value: false, // You can add logic here to turn everything off
-                            onChanged: (val) {},
-                            activeColor: Colors.black,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 10),
+
+                      const Text(
+                        'Control the types of alerts you receive across your workspace.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF888888),
+                          height: 1.5,
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      ...notificationItems.map((item) {
+                        return _buildToggleRow(
+                          item: item,
+                          value: _getValue(item.key),
+                          isSaving: _savingKey == item.key,
+                        );
+                      }),
+
+                      const SizedBox(height: 12),
+
+                      // Master mute
+                      Container(
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                                color: Color(0xFFF0F0F0), width: 8),
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF111111),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(
+                                Icons.notifications_off_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Mute all notifications',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF111111),
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Silence everything at once',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFFAAAAAA),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: false,
+                              onChanged: (val) {},
+                              activeColor: Colors.white,
+                              activeTrackColor: _kGreen,
+                              inactiveThumbColor: Colors.white,
+                              inactiveTrackColor: const Color(0xFFE0E0E0),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
-              ),
-              _buildBottomNav(),
-            ],
-          ),
+              ],
+            ),
     );
   }
 
+  // ===============================
+  // GET VALUE MAPPER
+  // ===============================
+  bool _getValue(String key) {
+    if (_prefs == null) return false;
+    switch (key) {
+      case 'low_stock_alerts':
+        return _prefs!.lowStockAlerts;
+      case 'leave_requests':
+        return _prefs!.leaveRequests;
+      case 'payment_reminders':
+        return _prefs!.paymentReminders;
+      case 'health_reminders':
+        return _prefs!.healthReminders;
+      case 'system_updates':
+        return _prefs!.systemUpdates;
+      default:
+        return false;
+    }
+  }
+
+  // ===============================
+  // ROW WIDGET
+  // ===============================
   Widget _buildToggleRow({
-    required String title,
-    required String subtitle,
+    required NotificationItem item,
     required bool value,
-    required ValueChanged<bool> onChanged,
+    required bool isSaving,
   }) {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: item.iconBackground,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(item.icon, color: item.iconColor, size: 22),
+              ),
+
+              const SizedBox(width: 14),
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: const TextStyle(fontSize: 14, color: Colors.black54, height: 1.3)),
+                    Row(
+                      children: [
+                        Text(
+                          item.title,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF111111),
+                          ),
+                        ),
+                        if (item.badge != null) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _kGreenLight,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              item.badge!,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: _kGreen,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      item.subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFAAAAAA),
+                        height: 1.45,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+
+              // Toggle is disabled while its request is in-flight
               Switch(
                 value: value,
-                onChanged: onChanged,
-                activeColor: Colors.black,
-                activeTrackColor: Colors.black,
+                onChanged:
+                    isSaving ? null : (val) => _updatePref(item.key, val),
+                activeColor: Colors.white,
+                activeTrackColor: _kGreen,
+                inactiveThumbColor: Colors.white,
+                inactiveTrackColor: const Color(0xFFE0E0E0),
               ),
             ],
           ),
         ),
-        const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-      ],
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFEEEEEE)))),
-      padding: const EdgeInsets.only(bottom: 30, top: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _navItem(Icons.home_outlined, "Explore", true),
-          _navItem(Icons.search, "Search", false),
-          _navItem(Icons.favorite_border, "Plan", false),
-          _navItem(Icons.edit_outlined, "Review", false),
-        ],
-      ),
-    );
-  }
-
-  Widget _navItem(IconData icon, String label, bool active) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (active) Container(height: 3, width: 35, color: const Color(0xFF34E0A1)),
-        const SizedBox(height: 6),
-        Icon(icon, color: active ? Colors.black : Colors.grey, size: 28),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: active ? FontWeight.bold : FontWeight.normal, color: active ? Colors.black : Colors.grey)),
+        const Divider(height: 1, thickness: 1, color: Color(0xFFF2F2F2)),
       ],
     );
   }
