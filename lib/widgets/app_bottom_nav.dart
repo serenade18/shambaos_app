@@ -22,9 +22,17 @@ class _AppBottomNavState extends State<AppBottomNav> {
   }
 
   void _handleTap(BuildContext context, int index) {
-    if (_currentIndex == index) return; // prevent reloading same screen
-    setState(() => _currentIndex = index);
+    // If clicking "More", we don't necessarily want to highlight it as the 
+    // active tab in the background screen, we just want to open the menu.
+    if (index == 4) {
+      widget.onTap?.call(index);
+      Navigator.pushNamed(context, '/more');
+      return; 
+    }
 
+    if (_currentIndex == index) return; 
+    
+    setState(() => _currentIndex = index);
     widget.onTap?.call(index);
 
     switch (index) {
@@ -40,12 +48,9 @@ class _AppBottomNavState extends State<AppBottomNav> {
       case 3:
         Navigator.pushReplacementNamed(context, '/payments');
         break;
-      case 4:
-        Navigator.pushReplacementNamed(context, '/more');
-        break;
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Padding(

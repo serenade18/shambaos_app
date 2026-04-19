@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'pages/onboarding/splash_screen.dart';
+import 'pages/home_screen.dart'; // Import your home screen
+import 'pages/menu_screen.dart'; // Import the new menu screen
 import 'theme_notifier.dart';
 import './services/app_colors.dart';
 
@@ -49,7 +51,16 @@ class MyApp extends StatelessWidget {
             extensions: const [AppColors.dark],
           ),
 
-          home: const SplashScreen(),
+          // Define named routes here
+          initialRoute: '/',
+          routes: {
+            '/': (context) => const SplashScreen(),
+            '/home': (context) => const HomeScreen(),
+            '/more': (context) => const MenuScreen(),
+            // Add other routes as needed:
+            // '/sales': (context) => const SalesScreen(),
+            // '/chat': (context) => const ChatScreen(),
+          },
         );
       },
     );
