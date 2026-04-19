@@ -47,7 +47,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
   }
 
   Future<void> _handleRegister() async {
-    // ... your existing validation logic ...
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;

@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'profile_service.dart';
 
-// --- Notification Model ---
+// --- Notification Model (Matches your API JSON) ---
 class NotificationPrefs {
   final int id;
-  bool lowStockAlerts; // Mapped to lowStockAlerts
-  bool leaveRequests; // Mapped to leaveRequests
-  bool healthReminders; // Mapped to healthReminders
-  bool systemUpdates; // Mapped to systemUpdates
+  bool lowStockAlerts;
+  bool leaveRequests;
+  bool paymentReminders;
+  bool healthReminders;
+  bool systemUpdates;
 
   NotificationPrefs({
     required this.id,
     required this.lowStockAlerts,
     required this.leaveRequests,
+    required this.paymentReminders,
     required this.healthReminders,
     required this.systemUpdates,
   });
@@ -22,6 +24,7 @@ class NotificationPrefs {
       id: json['id'] ?? 0,
       lowStockAlerts: json['low_stock_alerts'] ?? false,
       leaveRequests: json['leave_requests'] ?? false,
+      paymentReminders: json['payment_reminders'] ?? false,
       healthReminders: json['health_reminders'] ?? false,
       systemUpdates: json['system_updates'] ?? false,
     );
@@ -53,17 +56,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
       final response = await ProfileService.setNotification();
       
       if (response.success && response.data != null) {
-        // Handling nested data structure commonly found in ApiResponses
-        final Map<String, dynamic> rawData = response.data is Map && response.data.containsKey('data') 
-            ? response.data['data'] 
-            : response.data;
-
+        // Correctly accessing the nested 'data' object from your API response
+        final rawData = response.data['data'];
         setState(() {
           _prefs = NotificationPrefs.fromJson(rawData);
           _isLoading = false;
         });
-      } else {
-        _handleError("Failed to load settings");
       }
     } catch (e) {
       _handleError("Connection error");
@@ -71,22 +69,26 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   // --- Logic: Updating API ---
-  Future<void> _savePreferences() async {
+  Future<void> _updatePref(String type, bool value) async {
     if (_prefs == null) return;
-    setState(() => _isSaving = true);
+
+    setState(() {
+      if (type == 'low') _prefs!.lowStockAlerts = value;
+      if (type == 'leave') _prefs!.leaveRequests = value;
+      if (type == 'payment') _prefs!.paymentReminders = value;
+      if (type == 'health') _prefs!.healthReminders = value;
+      if (type == 'system') _prefs!.systemUpdates = value;
+      _isSaving = true;
+    });
 
     try {
-      final response = await ProfileService.updateNotification(
+      await ProfileService.updateNotification(
         lowStockAlerts: _prefs!.lowStockAlerts,
         leaveRequests: _prefs!.leaveRequests,
-        paymentReminders: false, // Defaulting if not in current UI
+        paymentReminders: _prefs!.paymentReminders,
         healthReminders: _prefs!.healthReminders,
         systemUpdates: _prefs!.systemUpdates,
       );
-
-      if (!response.success) {
-        _handleError("Update failed");
-      }
     } catch (e) {
       _handleError("Save error");
     } finally {
@@ -104,114 +106,95 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF4A90E2), Color(0xFF9BCAFF)], // Screenshot Blue Gradient
-          ),
-        ),
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: _isLoading 
-                ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                : _buildWhiteCard(),
-            ),
-          ],
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 22),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 20, 16, 10),
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-              onPressed: () => Navigator.pop(context),
-            ),
-            const Text(
-              'Notification Settings',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWhiteCard() {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(20, 10, 20, 40),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: ClipRRect( // Ensures progress indicator respects corners
-        borderRadius: BorderRadius.circular(30),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator(color: Colors.black))
+        : Column(
             children: [
-              if (_isSaving) const LinearProgressIndicator(minHeight: 2),
-              const Text(
-                'Choose what brightens your day',
-                style: TextStyle(fontSize: 16, color: Color(0xFF666666)),
+              if (_isSaving) const LinearProgressIndicator(color: Colors.black, backgroundColor: Colors.white, minHeight: 2),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  children: [
+                    const Text(
+                      'Notifications',
+                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.black),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Tell us the types of push notifications you would like to get on this device. You can change this at any time.',
+                      style: TextStyle(fontSize: 16, color: Colors.black87, height: 1.4),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    _buildToggleRow(
+                      title: 'Add a Contribution',
+                      subtitle: "As a valued member of our travel community, we'll occasionally invite you to contribute your experiences.",
+                      value: _prefs!.lowStockAlerts,
+                      onChanged: (val) => _updatePref('low', val),
+                    ),
+                    _buildToggleRow(
+                      title: 'Question Updates',
+                      subtitle: 'Get notified when a traveller answers your question.',
+                      value: _prefs!.leaveRequests,
+                      onChanged: (val) => _updatePref('leave', val),
+                    ),
+                    _buildToggleRow(
+                      title: 'Location-based Notifcations',
+                      subtitle: 'Get tips and helpful information on places you visit.',
+                      value: _prefs!.healthReminders,
+                      onChanged: (val) => _updatePref('health', val),
+                    ),
+                    _buildToggleRow(
+                      title: 'Price Drops & Booking Reminders',
+                      subtitle: "Don't miss a price reduction or forget about booking your perfect trip.",
+                      value: _prefs!.systemUpdates,
+                      onChanged: (val) => _updatePref('system', val),
+                    ),
+                    _buildToggleRow(
+                      title: 'Message and Booking Updates',
+                      subtitle: 'Receive notifications when an owner sends you a message or there are requests.',
+                      value: _prefs!.paymentReminders,
+                      onChanged: (val) => _updatePref('payment', val),
+                    ),
+                    
+                    // --- Master Mute Switch ---
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.symmetric(vertical: 25),
+                      decoration: const BoxDecoration(
+                        border: Border(top: BorderSide(color: Color(0xFFF2F2F2), width: 10))
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Do not receive any notifications',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Switch(
+                            value: false, // You can add logic here to turn everything off
+                            onChanged: (val) {},
+                            activeColor: Colors.black,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              const Divider(color: Color(0xFFF0F0F0)),
-              
-              _buildToggleRow(
-                title: 'Weekly Reminders',
-                subtitle: 'Receive a summary of your personal progress and glowing achievements every Sunday.',
-                value: _prefs!.lowStockAlerts,
-                onChanged: (val) {
-                  setState(() => _prefs!.lowStockAlerts = val);
-                  _savePreferences();
-                },
-              ),
-              _buildToggleRow(
-                title: 'Motivation Messages',
-                subtitle: 'Kind words and daily affirmations to keep your spirit high throughout the day.',
-                value: _prefs!.leaveRequests,
-                onChanged: (val) {
-                  setState(() => _prefs!.leaveRequests = val);
-                  _savePreferences();
-                },
-              ),
-              _buildToggleRow(
-                title: 'Wellness Check-ins',
-                subtitle: 'Gentle nudges for mindful pauses, deep breathing, and self-care moments.',
-                value: _prefs!.healthReminders,
-                onChanged: (val) {
-                  setState(() => _prefs!.healthReminders = val);
-                  _savePreferences();
-                },
-              ),
-              _buildToggleRow(
-                title: 'Product Updates',
-                subtitle: 'Be the first to hear about new features and improvements to your experience.',
-                value: _prefs!.systemUpdates,
-                isLast: true,
-                onChanged: (val) {
-                  setState(() => _prefs!.systemUpdates = val);
-                  _savePreferences();
-                },
-              ),
+              _buildBottomNav(),
             ],
           ),
-        ),
-      ),
     );
   }
 
@@ -220,12 +203,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
     required String subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
-    bool isLast = false,
   }) {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: const EdgeInsets.symmetric(vertical: 20),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -233,31 +215,52 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.black),
-                    ),
+                    Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF757575), height: 1.4),
-                    ),
+                    Text(subtitle, style: const TextStyle(fontSize: 14, color: Colors.black54, height: 1.3)),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Switch(
                 value: value,
                 onChanged: onChanged,
-                activeColor: Colors.white,
-                activeTrackColor: const Color(0xFF4A90E2),
-                inactiveThumbColor: Colors.white,
-                inactiveTrackColor: const Color(0xFFE0E0E0),
+                activeColor: Colors.black,
+                activeTrackColor: Colors.black,
               ),
             ],
           ),
         ),
-        if (!isLast) const Divider(color: Color(0xFFF0F0F0), thickness: 1),
+        const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+      ],
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFEEEEEE)))),
+      padding: const EdgeInsets.only(bottom: 30, top: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _navItem(Icons.home_outlined, "Explore", true),
+          _navItem(Icons.search, "Search", false),
+          _navItem(Icons.favorite_border, "Plan", false),
+          _navItem(Icons.edit_outlined, "Review", false),
+        ],
+      ),
+    );
+  }
+
+  Widget _navItem(IconData icon, String label, bool active) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (active) Container(height: 3, width: 35, color: const Color(0xFF34E0A1)),
+        const SizedBox(height: 6),
+        Icon(icon, color: active ? Colors.black : Colors.grey, size: 28),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 12, fontWeight: active ? FontWeight.bold : FontWeight.normal, color: active ? Colors.black : Colors.grey)),
       ],
     );
   }
