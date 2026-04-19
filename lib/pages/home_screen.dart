@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/weather_widget.dart';
 import '../pages/profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -220,92 +221,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
 
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined,
-                            color: Colors.white70, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          'New York City, USA',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.85),
-                            fontSize: 13,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          height: 44,
-                          width: 72,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.cloud,
-                              color: Colors.white70, size: 30),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text(
-                          '24°C',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 48,
-                            fontWeight: FontWeight.w700,
-                            height: 1,
-                          ),
-                        ),
-                        const Spacer(),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Clean/Sunny',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.75),
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              'January 28, 2026 | 13:26',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.55),
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-                    Divider(color: Colors.white.withOpacity(0.12), height: 1),
-                    const SizedBox(height: 14),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _weatherStat('Humidity', '85%'),
-                        _weatherStat('Precipitation', '8 mm'),
-                        _weatherStat('Wind Speed', '13 km/h'),
-                      ],
-                    ),
-                  ],
-                ),
+              const WeatherWidget(
+                lat: 36.72187322222223,
+                lon: -1.3657504444444444,
+                location: 'Nairobi, Kenya',
               ),
             ],
           ),
@@ -331,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
-
+ 
   Widget _buildMyFieldsHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
