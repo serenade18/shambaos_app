@@ -14,6 +14,10 @@ class WeatherWidgetState extends State<WeatherWidget> {
   String fieldName = '';
   bool isLoading = true;
 
+  String _getWeatherIconUrl(String iconCode) {
+    return 'https://openweathermap.org/img/wn/$iconCode@2x.png';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -95,7 +99,16 @@ class WeatherWidgetState extends State<WeatherWidget> {
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.cloud, color: Colors.white70, size: 30),
+              Image.network(
+                'https://openweathermap.org/img/wn/${w.icon}@2x.png',
+                width: 60,
+                height: 60,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.cloud,
+                  color: Colors.white70,
+                  size: 30,
+                ),
+              )
             ],
           ),
 
