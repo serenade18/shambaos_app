@@ -35,6 +35,7 @@ flutter_launcher_icons:
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "images/appicons/appstore.png"
+  remove_alpha_ios: true
   web:
     generate: false
   windows:
