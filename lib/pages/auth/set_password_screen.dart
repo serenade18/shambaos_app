@@ -264,23 +264,6 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> with SingleTicker
     );
   }
 
-  // Future<void> _handleSave() async {
-  //   setState(() => _loading = true);
-  //   final response = await AuthService.resetPassword(
-  //     email: widget.email,
-  //     code: widget.code,
-  //     newPassword: _passwordController.text.trim(),
-  //   );
-  //   if (!mounted) return;
-  //   setState(() => _loading = false);
-
-  //   if (response.success) {
-  //     _showSuccessDialog();
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.message ?? "Error")));
-  //   }
-  // }
-
   Future<void> _handleSave() async {
     setState(() => _loading = true);
     
@@ -313,27 +296,5 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> with SingleTicker
         message: response.message ?? 'Something went wrong. Please try again.',
       );
     }
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: AlertDialog(
-          backgroundColor: Colors.white.withOpacity(0.9),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text("Success!"),
-          content: const Text("Your password has been reset. Please sign in with your new credentials."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-              child: const Text("Back to Login", style: TextStyle(color: Color(0xFF3DBE6E), fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

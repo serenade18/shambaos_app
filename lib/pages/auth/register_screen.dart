@@ -50,7 +50,6 @@ class _RegisterScreenState extends State<RegisterScreen> with SingleTickerProvid
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    final confirm = _confirmPasswordController.text;
 
     if (name.isEmpty || email.isEmpty || password.isEmpty || _phoneNumber.isEmpty) {
       AuthDialog.show(context, type: AuthDialogType.error, title: 'Missing Fields', message: 'Please fill in all fields.');

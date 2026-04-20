@@ -14,10 +14,6 @@ class WeatherWidgetState extends State<WeatherWidget> {
   String fieldName = '';
   bool isLoading = true;
 
-  String _getWeatherIconUrl(String iconCode) {
-    return 'https://openweathermap.org/img/wn/$iconCode@2x.png';
-  }
-
   @override
   void initState() {
     super.initState();

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -22,16 +21,14 @@ class _AppBottomNavState extends State<AppBottomNav> {
   }
 
   void _handleTap(BuildContext context, int index) {
-    // If clicking "More", we don't necessarily want to highlight it as the 
-    // active tab in the background screen, we just want to open the menu.
     if (index == 4) {
       widget.onTap?.call(index);
       Navigator.pushNamed(context, '/more');
-      return; 
+      return;
     }
 
-    if (_currentIndex == index) return; 
-    
+    if (_currentIndex == index) return;
+
     setState(() => _currentIndex = index);
     widget.onTap?.call(index);
 
@@ -50,28 +47,28 @@ class _AppBottomNavState extends State<AppBottomNav> {
         break;
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            height: 68,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E3D1A),
-              borderRadius: BorderRadius.circular(32),
-            ),
+    // Get the system padding (e.g., for the iPhone home indicator)
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      color: const Color(0xFF1E3D1A),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Items Row
+          SizedBox(
+            height: 70,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _navItem(Icons.home_rounded, 'Home', 0, context),
-                _navItem(Icons.grass_rounded, 'sales', 1, context),
+                _navItem(Icons.grass_rounded, 'Community', 1, context),
 
-                // Center → Chat (SVG or fallback PNG)
+                // Center → Chat
                 GestureDetector(
                   onTap: () => _handleTap(context, 2),
                   child: Container(
@@ -91,11 +88,12 @@ class _AppBottomNavState extends State<AppBottomNav> {
                     child: Padding(
                       padding: const EdgeInsets.all(12.0),
                       child: SvgPicture.asset(
-                        'images/assets/icons/comments.svg', // <-- SVG icon from Flaticon
-                        color: Colors.white,
+                        'images/assets/icons/comments.svg',
+                        colorFilter: const ColorFilter.mode(
+                            Colors.white, BlendMode.srcIn),
                         fit: BoxFit.contain,
                         placeholderBuilder: (context) => Image.asset(
-                          'images/assets/icons/live-chat.png', // fallback PNG
+                          'images/assets/icons/live-chat.png',
                           color: Colors.white,
                         ),
                       ),
@@ -104,16 +102,20 @@ class _AppBottomNavState extends State<AppBottomNav> {
                 ),
 
                 _navItem(Icons.document_scanner_outlined, 'Payment', 3, context),
-                _navItem(Icons.more_horiz, 'More', 4, context),
+                _navItem(Icons.menu, 'More', 4, context),
               ],
             ),
           ),
-        ),
+
+          // ✅ Reduced padding: Use 12.0 as a floor or 40% of the system padding
+          // This keeps it tight but prevents it from touching the very bottom edge.
+          SizedBox(height: bottomPadding > 0 ? bottomPadding * 0.4 : 10.0),
+        ],
       ),
     );
   }
-
-  Widget _navItem(IconData icon, String label, int index, BuildContext context) {
+  Widget _navItem(
+      IconData icon, String label, int index, BuildContext context) {
     final selected = _currentIndex == index;
 
     return GestureDetector(
@@ -127,6 +129,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,

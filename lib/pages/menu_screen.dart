@@ -28,7 +28,7 @@ class MenuScreen extends StatelessWidget {
           children: [
             _buildSection(
               context,
-              title: "Farm Management",
+              title: "Animal Management",
               items: [
                 _MenuItem(Icons.dashboard_outlined, "Dashboard"),
                 _MenuItem(Icons.pets_outlined, "Animal Husbandry"),
