@@ -33,9 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
     {'title': 'Analytics', 'icon': Icons.analytics_outlined},
   ];
 
-  final PageController _adPageController = PageController();
-  int _currentAdPage = 0;
-
   final List<Map<String, dynamic>> _adBanners = [
     {
       'title': 'UPGRADE PRO',
@@ -54,10 +51,18 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
+  late PageController _adPageController;
+  int _currentAdPage = 0;
+
   @override
   void initState() {
     super.initState();
     _loadUser();
+    // Set initial page to a middle-ground index for infinite feel
+    _adPageController = PageController(
+      initialPage: _adBanners.length * 100, 
+      viewportFraction: 0.9,
+    );
   }
 
   Future<void> _loadUser() async {
@@ -76,6 +81,100 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadUser(),
       _weatherKey.currentState?.refresh() ?? Future.value(),
     ]);
+  }
+
+
+  // ══════════════════════════════════════════════════════════
+  // HEADER
+  // ══════════════════════════════════════════════════════════
+  Widget _buildHeader(AppColors colors) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.headerBackground,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: _openProfile,
+                    child: Container(
+                      height: 46,
+                      width: 46,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _getAvatarColor(_userName),
+                        border: Border.all(
+                          color: colors.avatarBorder,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          _getInitials(_userName),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hi, ${_userName.isEmpty ? "User" : _userName}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.75),
+                            fontSize: 13,
+                          ),
+                        ),
+                        const Text(
+                          'Welcome back!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    height: 42,
+                    width: 42,
+                    decoration: BoxDecoration(
+                      color: colors.iconOverlay,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              WeatherWidget(key: _weatherKey),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _openProfile() {
@@ -211,14 +310,21 @@ class _HomeScreenState extends State<HomeScreen> {
           width: double.infinity,
           child: PageView.builder(
             controller: _adPageController,
-            physics: const PageScrollPhysics(),
-            padEnds: false,
-            onPageChanged: (int page) => setState(() => _currentAdPage = page),
-            itemCount: _adBanners.length,
+            physics: const BouncingScrollPhysics(),
+            onPageChanged: (int index) {
+              setState(() {
+                // 3. Map the large index back to 0, 1, or 2 for the dots
+                _currentAdPage = index % _adBanners.length;
+              });
+            },
+            // 4. Set a massive number for the item count
+            itemCount: 10000, 
             itemBuilder: (context, index) {
+              // 5. Calculate the actual index for the data
+              final actualIndex = index % _adBanners.length;
               return SizedBox(
                 width: MediaQuery.of(context).size.width,
-                child: _buildAdBanner(_adBanners[index], colors),
+                child: _buildAdBanner(_adBanners[actualIndex], colors),
               );
             },
           ),
@@ -375,11 +481,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: colors.scaffoldBackground,
-      // ✅ Nav is now a proper bottom bar — sticks to edge, handles safe area
       bottomNavigationBar: const AppBottomNav(),
       body: Column(
         children: [
-          _buildHeader(colors),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _onRefresh,
@@ -391,6 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildHeader(colors),
                     const SizedBox(height: 20),
                     _buildAdCarousel(colors),
                     const SizedBox(height: 28),
@@ -407,96 +512,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ══════════════════════════════════════════════════════════
-  // HEADER
-  // ══════════════════════════════════════════════════════════
-  Widget _buildHeader(AppColors colors) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.headerBackground,
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: _openProfile,
-                    child: Container(
-                      height: 46,
-                      width: 46,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _getAvatarColor(_userName),
-                        border: Border.all(
-                          color: colors.avatarBorder,
-                          width: 2,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _getInitials(_userName),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hi, ${_userName.isEmpty ? "User" : _userName}',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.75),
-                            fontSize: 13,
-                          ),
-                        ),
-                        const Text(
-                          'Welcome back!',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    height: 42,
-                    width: 42,
-                    decoration: BoxDecoration(
-                      color: colors.iconOverlay,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              WeatherWidget(key: _weatherKey),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

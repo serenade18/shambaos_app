@@ -87,24 +87,31 @@ class WeatherWidgetState extends State<WeatherWidget> {
               const Icon(Icons.location_on_outlined,
                   color: Colors.white70, size: 16),
               const SizedBox(width: 6),
-              Text(
-                fieldName.isEmpty ? 'Your Field' : fieldName,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.85),
-                  fontSize: 13,
+
+              Expanded(
+                child: Text(
+                  fieldName.isEmpty ? 'Your Field' : fieldName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 13,
+                  ),
                 ),
               ),
-              const Spacer(),
+
+              const SizedBox(width: 6),
+
               Image.network(
                 'https://openweathermap.org/img/wn/${w.icon}@2x.png',
-                width: 60,
-                height: 60,
+                width: 40, // 👈 fixed safe size (don’t over-engineer this)
+                height: 40,
                 errorBuilder: (_, __, ___) => const Icon(
                   Icons.cloud,
                   color: Colors.white70,
                   size: 30,
                 ),
-              )
+              ),
             ],
           ),
 
@@ -121,25 +128,33 @@ class WeatherWidgetState extends State<WeatherWidget> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    w.description,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.75),
-                      fontSize: 13,
+
+              const SizedBox(width: 10),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      w.description,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.75),
+                        fontSize: 13,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '${w.dateTime}',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.55),
-                      fontSize: 11,
+                    Text(
+                      '${w.dateTime}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.55),
+                        fontSize: 11,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
