@@ -43,7 +43,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
         Navigator.pushReplacementNamed(context, '/chat');
         break;
       case 3:
-        Navigator.pushReplacementNamed(context, '/payments');
+        Navigator.pushReplacementNamed(context, '/tasks');
         break;
     }
   }
@@ -101,7 +101,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
                   ),
                 ),
 
-                _navItem(Icons.document_scanner_outlined, 'Payment', 3, context),
+                _navItem(Icons.content_paste_go, 'Tasks', 3, context),
                 _navItem(Icons.menu, 'More', 4, context),
               ],
             ),

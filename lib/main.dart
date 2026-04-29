@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'pages/onboarding/splash_screen.dart';
-import 'pages/home_screen.dart'; // Import your home screen
-import 'pages/menu_screen.dart'; // Import the new menu screen
+import 'screens/onboarding/splash_screen.dart';
+import 'screens/home_screen.dart'; // Import your home screen
+import 'screens/menu_screen.dart'; // Import the new menu screen
 import 'theme_notifier.dart';
 import './services/app_colors.dart';
 

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/weather_widget.dart';
-import '../pages/profile/profile_screen.dart';
+import 'profile/profile_screen.dart';
 import '../services/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
