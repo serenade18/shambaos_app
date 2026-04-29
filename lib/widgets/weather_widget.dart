@@ -55,15 +55,34 @@ class WeatherWidgetState extends State<WeatherWidget> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Color(0xFF4CAF50),
+            ),
+          ),
+        ),
       );
     }
 
     if (weather == null) {
-      return const Text(
-        'Failed to load weather',
-        style: TextStyle(color: Colors.white70),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: const [
+            Icon(Icons.cloud_off_outlined, color: Color(0xFFAAAAAA), size: 18),
+            SizedBox(width: 8),
+            Text(
+              'Weather unavailable',
+              style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 13),
+            ),
+          ],
+        ),
       );
     }
 
@@ -73,102 +92,126 @@ class WeatherWidgetState extends State<WeatherWidget> {
   Widget _buildUI() {
     final w = weather!;
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined,
-                  color: Colors.white70, size: 16),
-              const SizedBox(width: 6),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Row 1: date + location ──────────────────────
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // "Today, Nairobi, Embakasi, E..."
+                  Text(
+                    _buildLocationLabel(w),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF1A1A1A),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  // "Cloudy, No Rain"
+                  Text(
+                    _capitalise(w.description),
+                    style: const TextStyle(
+                      color: Color(0xFF888888),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
 
-              Expanded(
-                child: Text(
-                  fieldName.isEmpty ? 'Your Field' : fieldName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
-                    fontSize: 13,
+            // Temperature + weather icon side by side
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  '${w.temp.round()}°',
+                  style: const TextStyle(
+                    color: Color(0xFF1A1A1A),
+                    fontSize: 36,
+                    fontWeight: FontWeight.w700,
+                    height: 1,
                   ),
                 ),
-              ),
-
-              const SizedBox(width: 6),
-
-              Image.network(
-                'https://openweathermap.org/img/wn/${w.icon}@2x.png',
-                width: 40, // 👈 fixed safe size (don’t over-engineer this)
-                height: 40,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.cloud,
-                  color: Colors.white70,
-                  size: 30,
+                const SizedBox(width: 6),
+                Image.network(
+                  'https://openweathermap.org/img/wn/${w.icon}@2x.png',
+                  width: 46,
+                  height: 46,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.cloud_outlined,
+                    color: Color(0xFFAAAAAA),
+                    size: 36,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
+        ),
 
-          const SizedBox(height: 10),
+        const SizedBox(height: 14),
+        const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
+        const SizedBox(height: 12),
 
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+        // ── Row 2: Humidity · Rain · Wind stats ─────────
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _stat(Icons.water_drop_outlined, 'Humidity', '${w.humidity}%'),
+            _statDivider(),
+            _stat(Icons.umbrella_outlined, 'Rain', '${w.precipitation} mm'),
+            _statDivider(),
+            _stat(Icons.air_outlined, 'Wind', '${w.windSpeed} m/s'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // "Today, Nairobi, Embakasi, E..." — mirrors the screenshot label
+  String _buildLocationLabel(WeatherModel w) {
+    final location = fieldName.isEmpty ? 'Your Field' : fieldName;
+    return 'Today, $location';
+  }
+
+  String _capitalise(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1);
+  }
+
+  Widget _stat(IconData icon, String label, String value) {
+    return Expanded(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 15, color: const Color(0xFF4CAF50)),
+          const SizedBox(width: 5),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${w.temp.toStringAsFixed(1)}°C',
+                label,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 48,
-                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFAAAAAA),
+                  fontSize: 11,
                 ),
               ),
-
-              const SizedBox(width: 10),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      w.description,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.75),
-                        fontSize: 13,
-                      ),
-                    ),
-                    Text(
-                      '${w.dateTime}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.55),
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Color(0xFF1A1A1A),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-          Divider(color: Colors.white.withOpacity(0.12)),
-          const SizedBox(height: 14),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _stat('Humidity', '${w.humidity}%'),
-              _stat('Rain', '${w.precipitation} mm'),
-              _stat('Wind', '${w.windSpeed} m/s'),
             ],
           ),
         ],
@@ -176,18 +219,11 @@ class WeatherWidgetState extends State<WeatherWidget> {
     );
   }
 
-  Widget _stat(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: TextStyle(
-                color: Colors.white.withOpacity(0.55), fontSize: 11)),
-        const SizedBox(height: 2),
-        Text(value,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600)),
-      ],
+  Widget _statDivider() {
+    return Container(
+      width: 1,
+      height: 28,
+      color: const Color(0xFFEEEEEE),
     );
   }
 }

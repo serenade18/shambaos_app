@@ -50,38 +50,41 @@ class _AppBottomNavState extends State<AppBottomNav> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the system padding (e.g., for the iPhone home indicator)
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      color: const Color(0xFF1E3D1A),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+        ),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Items Row
           SizedBox(
-            height: 70,
+            height: 64,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _navItem(Icons.home_rounded, 'Home', 0, context),
-                _navItem(Icons.grass_rounded, 'Community', 1, context),
+                _navItem(Icons.grass_rounded, 'Advisory', 1, context),
 
-                // Center → Chat
+                // ── Centre FAB (chat) ──────────────────────────
                 GestureDetector(
                   onTap: () => _handleTap(context, 2),
                   child: Container(
-                    height: 52,
-                    width: 52,
+                    height: 50,
+                    width: 50,
                     decoration: BoxDecoration(
                       color: const Color(0xFF4CAF50),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.25),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
+                          color: const Color(0xFF4CAF50).withOpacity(0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -107,13 +110,13 @@ class _AppBottomNavState extends State<AppBottomNav> {
             ),
           ),
 
-          // ✅ Reduced padding: Use 12.0 as a floor or 40% of the system padding
-          // This keeps it tight but prevents it from touching the very bottom edge.
-          SizedBox(height: bottomPadding > 0 ? bottomPadding * 0.4 : 10.0),
+          // Safe area bottom padding
+          SizedBox(height: bottomPadding > 0 ? bottomPadding * 0.4 : 8.0),
         ],
       ),
     );
   }
+
   Widget _navItem(
       IconData icon, String label, int index, BuildContext context) {
     final selected = _currentIndex == index;
@@ -122,10 +125,13 @@ class _AppBottomNavState extends State<AppBottomNav> {
       onTap: () => _handleTap(context, index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? Colors.white.withOpacity(0.08) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          // Active pill: light green tint background
+          color: selected
+              ? const Color(0xFF4CAF50).withOpacity(0.10)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -133,16 +139,22 @@ class _AppBottomNavState extends State<AppBottomNav> {
           children: [
             Icon(
               icon,
-              color: selected ? const Color(0xFF4CAF50) : Colors.white54,
+              // Active: solid green. Inactive: muted gray
+              color: selected
+                  ? const Color(0xFF2E7D32)
+                  : const Color(0xFFAAAAAA),
               size: 22,
             ),
             const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                color: selected ? const Color(0xFF4CAF50) : Colors.white54,
+                color: selected
+                    ? const Color(0xFF2E7D32)
+                    : const Color(0xFFAAAAAA),
                 fontSize: 10,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                fontWeight:
+                    selected ? FontWeight.w700 : FontWeight.w400,
               ),
             ),
           ],
