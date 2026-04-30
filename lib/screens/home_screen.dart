@@ -150,43 +150,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: [
           // App logo
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF4CAF50), width: 2),
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                'assets/images/logo.png',
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Center(
-                  child: Text(
-                    'F',
-                    style: TextStyle(
-                      color: Color(0xFF4CAF50),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // "Karibu 👋"
-          Text(
-            'Karibu 👋',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
-            ),
-          ),
-          const Spacer(),
-
           // User avatar (tappable → profile)
           GestureDetector(
             onTap: _openProfile,
@@ -210,6 +173,20 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          const SizedBox(width: 12),
+
+          // "Karibu 👋"
+          Text(
+            'Karibu 👋',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+            ),
+          ),
+          const Spacer(),
+
+         
         ],
       ),
     );

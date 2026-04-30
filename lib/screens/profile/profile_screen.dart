@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../auth/auth_service.dart';
 import '../onboarding/welcome_screens.dart';
 import '../../main.dart';
-import '../../services/app_colors.dart';
 import 'edit_profile_screen.dart';
 import 'notification_screen.dart';
 
@@ -56,217 +56,214 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Color _getAvatarColor(String name) {
-    final colors = [
-      const Color(0xFFF4A03A),
-      const Color(0xFFE57373),
+    final palette = [
+      const Color(0xFF2E7D32),
+      const Color(0xFF1565C0),
       const Color(0xFF4DB6AC),
+      const Color(0xFFF4A03A),
     ];
-    return colors[name.hashCode % colors.length];
+    return palette[name.hashCode % palette.length];
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
 
     return Scaffold(
-      backgroundColor: colors.scaffoldBackground,
-      body: Column(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              _buildHeader(context, colors),
-              Positioned(
-                bottom: -35,
-                left: 0,
-                right: 0,
-                child: _buildProfileCard(colors),
-              ),
-            ],
+      backgroundColor: const Color(0xFFF5F6FA),
+
+      // ── White AppBar — matches MenuScreen exactly ──────
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        centerTitle: false,
+        title: const Text(
+          'Profile',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1A1A1A),
           ),
-          const SizedBox(height: 50),
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                children: [
-                  _buildSectionLabel(
-                    icon: Icons.person_outline_rounded,
-                    label: 'MY ACCOUNT',
-                    trailing: '0 Points  >',
-                    colors: colors,
-                  ),
-                  _buildMenuGroup(colors, [
-                    _MenuItem(
-                      color: const Color(0xFFFF6B35),
-                      icon: Icons.card_membership_rounded,
-                      label: 'Rewards Member',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      color: const Color(0xFF2196F3),
-                      icon: Icons.favorite_outline_rounded,
-                      label: 'Favourites',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      color: const Color(0xFFE91E8C),
-                      icon: Icons.credit_card_outlined,
-                      label: 'Payment Method',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      color: const Color(0xFF4CAF50),
-                      icon: Icons.calendar_today_outlined,
-                      label: 'Scheduled',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      color: const Color(0xFFFFC107),
-                      icon: Icons.business_center_outlined,
-                      label: 'Business Centre',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      color: const Color(0xFF9C27B0),
-                      icon: Icons.group_add_outlined,
-                      label: 'Invite and Earn',
-                      onTap: () {},
-                    ),
-                  ]),
-                  const SizedBox(height: 20),
-                  _buildSectionLabel(
-                    icon: Icons.settings_outlined,
-                    label: 'GENERAL',
-                    colors: colors,
-                  ),
-                  _buildMenuGroup(colors, [
-                    _MenuItem(
-                      color: const Color(0xFFFF6B35),
-                      icon: Icons.shield_outlined,
-                      label: 'Privacy Policy',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      color: const Color(0xFF2196F3),
-                      icon: Icons.description_outlined,
-                      label: 'Terms of Service',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      color: const Color(0xFF4CAF50),
-                      icon: Icons.notifications_outlined,
-                      label: 'Notifications',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const NotificationScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _MenuItem(
-                      color: const Color(0xFF9C27B0),
-                      icon: Icons.language_outlined,
-                      label: 'Language',
-                      onTap: () {},
-                    ),
-                    _MenuItem(
-                      color: Colors.blueGrey,
-                      icon: Icons.dark_mode_outlined,
-                      label: 'Dark Mode',
-                      isToggle: true,
-                      toggleValue: themeNotifier.isDark,
-                      onToggle: (val) => themeNotifier.toggle(val),
-                    ),
-                  ]),
-                  const SizedBox(height: 20),
-                  _buildLogoutTile(colors),
-                  const SizedBox(height: 40),
-                ],
-              ),
+        ),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF2E7D32),
+            size: 20,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          // Notification icon on top right
+          IconButton(
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: Color(0xFF1A1A1A),
+              size: 22,
             ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const NotificationScreen()),
+              );
+            },
           ),
         ],
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
+        ),
+      ),
+
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 40),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Profile identity card ──────────────────
+            _buildProfileCard(),
+
+            const SizedBox(height: 20),
+
+            // ── My Account section ─────────────────────
+            _buildSectionLabel(
+              icon: Icons.person_outline_rounded,
+              label: 'MY ACCOUNT',
+              trailing: '0 Points  ›',
+            ),
+            _buildMenuGroup([
+              _MenuItem(
+                color: const Color(0xFFFF6B35),
+                icon: Icons.card_membership_rounded,
+                label: 'Rewards Member',
+                onTap: () {},
+              ),
+              _MenuItem(
+                color: const Color(0xFF2196F3),
+                icon: Icons.favorite_outline_rounded,
+                label: 'Favourites',
+                onTap: () {},
+              ),
+              _MenuItem(
+                color: const Color(0xFFE91E8C),
+                icon: Icons.credit_card_outlined,
+                label: 'Payment Method',
+                onTap: () {},
+              ),
+              _MenuItem(
+                color: const Color(0xFF4CAF50),
+                icon: Icons.calendar_today_outlined,
+                label: 'Scheduled',
+                onTap: () {},
+              ),
+              _MenuItem(
+                color: const Color(0xFFFFC107),
+                icon: Icons.business_center_outlined,
+                label: 'Business Centre',
+                onTap: () {},
+              ),
+              _MenuItem(
+                color: const Color(0xFF9C27B0),
+                icon: Icons.group_add_outlined,
+                label: 'Invite and Earn',
+                onTap: () {},
+              ),
+            ]),
+
+            const SizedBox(height: 20),
+
+            // ── General section ────────────────────────
+            _buildSectionLabel(
+              icon: Icons.settings_outlined,
+              label: 'GENERAL',
+            ),
+            _buildMenuGroup([
+              _MenuItem(
+                color: const Color(0xFFFF6B35),
+                icon: Icons.shield_outlined,
+                label: 'Privacy Policy',
+                onTap: () {},
+              ),
+              _MenuItem(
+                color: const Color(0xFF2196F3),
+                icon: Icons.description_outlined,
+                label: 'Terms of Service',
+                onTap: () {},
+              ),
+              _MenuItem(
+                color: const Color(0xFF4CAF50),
+                icon: Icons.notifications_outlined,
+                label: 'Notifications',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const NotificationScreen()),
+                  );
+                },
+              ),
+              _MenuItem(
+                color: const Color(0xFF9C27B0),
+                icon: Icons.language_outlined,
+                label: 'Language',
+                onTap: () {},
+              ),
+              _MenuItem(
+                color: Colors.blueGrey,
+                icon: Icons.dark_mode_outlined,
+                label: 'Dark Mode',
+                isToggle: true,
+                toggleValue: themeNotifier.isDark,
+                onToggle: (val) => themeNotifier.toggle(val),
+              ),
+            ]),
+
+            const SizedBox(height: 20),
+
+            // ── Logout ─────────────────────────────────
+            _buildLogoutTile(),
+          ],
+        ),
       ),
     );
   }
 
   // ══════════════════════════════════════════════════════════
-  // HEADER — gradient stays, it's on-brand either mode
+  // PROFILE CARD — avatar, name, email, edit button
   // ══════════════════════════════════════════════════════════
-  Widget _buildHeader(BuildContext context, AppColors colors) {
+  Widget _buildProfileCard() {
     return Container(
-      height: 180,
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1B4332), Color(0xFF2D5A27)],
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  height: 40,
-                  width: 40,
-                  decoration: BoxDecoration(
-                    color: colors.iconOverlay,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.arrow_back, size: 22, color: Colors.white),
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // PROFILE CARD
-  // ══════════════════════════════════════════════════════════
-  Widget _buildProfileCard(AppColors colors) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         children: [
+          // Avatar circle
           Container(
-            height: 52,
-            width: 52,
+            height: 60,
+            width: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: _getAvatarColor(_userName),
+              border: Border.all(
+                color: const Color(0xFF4CAF50).withOpacity(0.35),
+                width: 2.5,
+              ),
             ),
             child: Center(
               child: Text(
@@ -274,32 +271,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 20,
+                  fontSize: 22,
                 ),
               ),
             ),
           ),
           const SizedBox(width: 14),
+
+          // Name + email
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _userName.isEmpty ? 'User' : _userName,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   _userEmail.isEmpty ? 'Farm Administrator' : _userEmail,
-                  style: TextStyle(fontSize: 13, color: colors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF888888),
+                  ),
                 ),
+                if (_userPhone.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    _userPhone,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFAAAAAA),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
+
+          // Edit button
           GestureDetector(
             onTap: () async {
               final updated = await Navigator.push(
@@ -323,9 +337,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.brand,
+                color: const Color(0xFF4CAF50),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Row(
@@ -356,29 +371,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildSectionLabel({
     required IconData icon,
     required String label,
-    required AppColors colors,
     String? trailing,
   }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: colors.textHint),
-          const SizedBox(width: 6),
+          Icon(icon, size: 13, color: const Color(0xFFAAAAAA)),
+          const SizedBox(width: 5),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: colors.textHint,
-              letterSpacing: 1.0,
+              color: Color(0xFFAAAAAA),
+              letterSpacing: 1.1,
             ),
           ),
           const Spacer(),
           if (trailing != null)
             Text(
               trailing,
-              style: TextStyle(fontSize: 12, color: colors.textHint),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF4CAF50),
+                fontWeight: FontWeight.w600,
+              ),
             ),
         ],
       ),
@@ -386,17 +404,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ══════════════════════════════════════════════════════════
-  // MENU GROUP
+  // MENU GROUP — white card, green-tinted icon boxes
   // ══════════════════════════════════════════════════════════
-  Widget _buildMenuGroup(AppColors colors, List<_MenuItem> items) {
+  Widget _buildMenuGroup(List<_MenuItem> items) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -408,9 +427,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final isLast = index == items.length - 1;
           return Column(
             children: [
-              _buildMenuTile(item, colors),
+              _buildMenuTile(item),
               if (!isLast)
-                Divider(height: 1, indent: 64, endIndent: 16, color: colors.divider),
+                const Divider(
+                  height: 1,
+                  indent: 66,
+                  endIndent: 16,
+                  color: Color(0xFFF0F0F0),
+                ),
             ],
           );
         }),
@@ -421,28 +445,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ══════════════════════════════════════════════════════════
   // MENU TILE
   // ══════════════════════════════════════════════════════════
-  Widget _buildMenuTile(_MenuItem item, AppColors colors) {
+  Widget _buildMenuTile(_MenuItem item) {
     return GestureDetector(
       onTap: item.isToggle ? null : item.onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
         child: Row(
           children: [
+            // Colored icon box (rounded square — matches MenuScreen)
             Container(
               height: 38,
               width: 38,
-              decoration:
-                  BoxDecoration(color: item.color, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: item.color,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Icon(item.icon, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 item.label,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: colors.textPrimary,
+                style: const TextStyle(
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
+                  color: Color(0xFF1A1A1A),
                 ),
               ),
             ),
@@ -451,13 +478,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 value: item.toggleValue ?? false,
                 onChanged: item.onToggle,
                 activeColor: Colors.white,
-                activeTrackColor: AppColors.brand,
+                activeTrackColor: const Color(0xFF4CAF50),
                 inactiveThumbColor: Colors.white,
-                inactiveTrackColor: colors.border,
+                inactiveTrackColor: const Color(0xFFDDDDDD),
               )
             else
-              Icon(Icons.arrow_forward_ios_rounded,
-                  size: 14, color: colors.textHint),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: Color(0xFFCCCCCC),
+              ),
           ],
         ),
       ),
@@ -467,18 +497,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ══════════════════════════════════════════════════════════
   // LOGOUT TILE
   // ══════════════════════════════════════════════════════════
-  Widget _buildLogoutTile(AppColors colors) {
+  Widget _buildLogoutTile() {
     return GestureDetector(
       onTap: _showLogoutConfirm,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         decoration: BoxDecoration(
-          color: colors.cardBackground,
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFFFEBEB), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -490,7 +522,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               height: 38,
               width: 38,
               decoration: BoxDecoration(
-                  color: Colors.red.shade400, shape: BoxShape.circle),
+                color: Colors.red.shade400,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child:
                   const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
             ),
@@ -498,10 +532,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               'Log out',
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 color: Colors.red.shade400,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 13,
+              color: Colors.red.shade200,
             ),
           ],
         ),
@@ -509,34 +549,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ══════════════════════════════════════════════════════════
+  // LOGOUT DIALOG
+  // ══════════════════════════════════════════════════════════
   void _showLogoutConfirm() {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Log Out',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+        ),
+        content: const Text(
+          'Are you sure you want to log out?',
+          style: TextStyle(color: Color(0xFF666666), fontSize: 14),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: TextStyle(color: context.appColors.textSecondary)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF888888)),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               AuthService.logout();
               Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const WelcomeScreens()),
+                MaterialPageRoute(
+                    builder: (_) => const WelcomeScreens()),
                 (route) => false,
               );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade400,
+              elevation: 0,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Log Out', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Log Out',
+              style: TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -544,7 +602,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// ── Menu Item Model ─────────────────────────────────────────────
+// ── Menu Item Model ──────────────────────────────────────────────
 class _MenuItem {
   final Color color;
   final IconData icon;
