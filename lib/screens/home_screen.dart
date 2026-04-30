@@ -22,19 +22,16 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _updatesExpanded = true;
 
   final List<Map<String, dynamic>> _quickMenuItems = [
-    {'title': 'Husbandry', 'icon': Icons.pets_outlined},
-    {'title': 'Planting', 'icon': Icons.grass_outlined},
-    {'title': 'Inventory', 'icon': Icons.inventory_2_outlined},
-    {'title': 'Revenue', 'icon': Icons.monetization_on_outlined},
-    {'title': 'Customers', 'icon': Icons.people_outline},
-    {'title': 'Procurement', 'icon': Icons.shopping_cart_outlined},
-    {'title': 'Payments', 'icon': Icons.receipt_long_outlined},
-    {'title': 'Analytics', 'icon': Icons.analytics_outlined},
+    {'title': 'Animal Husbandry',   'icon': 'images/assets/icons/livestock.png'},
+    {'title': 'Plant Husbandry',    'icon': 'images/assets/icons/leaf.png'},
+    {'title': 'Inventory',   'icon': 'images/assets/icons/inventory.png'},
+    {'title': 'Revenue',     'icon': 'images/assets/icons/revenue.png'},
+    {'title': 'Customers',   'icon': 'images/assets/icons/customer.png'},
+    {'title': 'Procurement', 'icon': 'images/assets/icons/procurement.png'},
+    {'title': 'Payments',    'icon': 'images/assets/icons/payment.png'},
+    {'title': 'Analytics',   'icon': 'images/assets/icons/analysis.png'},
   ];
 
-  // Poster items — replaces ad carousel.
-  // Set 'imagePath' to an asset path e.g. 'assets/images/maize_poster.png'
-  // when you have the image ready; leave null to use the decorative placeholder.
   final List<Map<String, dynamic>> _posterItems = [
     {
       'title': 'Choose your\nMaize Seeds',
@@ -136,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0));
 
   // ══════════════════════════════════════════════════════════
-  // 1. HEADER  — white, logo left + "Karibu 👋", avatar right
+  // 1. HEADER
   // ══════════════════════════════════════════════════════════
   Widget _buildHeader(AppColors colors) {
     return Container(
@@ -149,8 +146,40 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          // App logo
-          // User avatar (tappable → profile)
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF4CAF50), width: 2),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'images/logo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Center(
+                  child: Text(
+                    'F',
+                    style: TextStyle(
+                      color: Color(0xFF4CAF50),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Karibu 👋',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+            ),
+          ),
+          const Spacer(),
           GestureDetector(
             onTap: _openProfile,
             child: Container(
@@ -173,20 +202,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
-
-          // "Karibu 👋"
-          Text(
-            'Karibu 👋',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
-            ),
-          ),
-          const Spacer(),
-
-         
         ],
       ),
     );
@@ -212,7 +227,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Tap to expand/collapse
           InkWell(
             onTap: () =>
                 setState(() => _updatesExpanded = !_updatesExpanded),
@@ -243,8 +257,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-
-          // Animated expand/collapse
           AnimatedCrossFade(
             firstChild: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -277,8 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   subtitle: const Text(
                     'Unlock a personalised experience',
-                    style:
-                        TextStyle(fontSize: 12, color: Color(0xFF888888)),
+                    style: TextStyle(fontSize: 12, color: Color(0xFF888888)),
                   ),
                   trailing: Container(
                     width: 36,
@@ -321,7 +332,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
           final itemW = width / cols;
           final boxSize = itemW * 0.62;
-          final iconSize = itemW * 0.36;
           final fontSize = (itemW * 0.12).clamp(10.0, 13.0);
 
           return GridView.builder(
@@ -356,8 +366,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      child: Icon(item['icon'],
-                          color: const Color(0xFF4CAF50), size: iconSize),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Image.asset(
+                          item['icon'] as String,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Color(0xFF4CAF50),
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -382,9 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ══════════════════════════════════════════════════════════
-  // 5. POSTER BANNER (replaces ad carousel)
-  //    Matches the "Choose your Maize Seeds" card in the screenshot.
-  //    Swipeable with dot indicators — same mechanics as old carousel.
+  // 5. POSTER BANNER
   // ══════════════════════════════════════════════════════════
   Widget _buildPosterBanner() {
     return Column(
@@ -440,12 +457,11 @@ class _HomeScreenState extends State<HomeScreen> {
       clipBehavior: Clip.hardEdge,
       child: Stack(
         children: [
-          // ── Left: text + CTA ──────────────────────────
           Positioned(
             left: 20,
             top: 0,
             bottom: 0,
-            right: 155, // leave room for image
+            right: 155,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -489,8 +505,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-
-          // ── Right: circular image (or placeholder) ────
           Positioned(
             right: -10,
             top: 15,
@@ -512,8 +526,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Circular decorative placeholder — same shape as the farmer photo in
-  /// the reference screenshot. Replace by setting imagePath on the poster item.
   Widget _posterPlaceholder(Color accent) {
     return Container(
       decoration: BoxDecoration(
@@ -539,7 +551,6 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left: text + input
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,7 +598,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          // Right: farmer avatar
           Container(
             width: 88,
             height: 88,
@@ -637,18 +647,18 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(colors),          // logo + Karibu + avatar
+              _buildHeader(colors),
               _divider(),
-              _buildWeatherStrip(),          // weather
+              _buildWeatherStrip(),
               _divider(),
               const SizedBox(height: 8),
-              _buildImportantUpdates(colors),// collapsible updates
+              _buildImportantUpdates(colors),
               const SizedBox(height: 8),
-              _buildQuickMenuGrid(colors),   // 4-col icon grid
+              _buildQuickMenuGrid(colors),
               const SizedBox(height: 8),
-              _buildPosterBanner(),          // swipeable poster cards
+              _buildPosterBanner(),
               const SizedBox(height: 8),
-              _buildInviteFriends(colors),   // invite friends
+              _buildInviteFriends(colors),
             ],
           ),
         ),

@@ -33,18 +33,18 @@ const List<_WelcomePage> _pages = [
     headline: 'Your Digital\nFarm Manager,\n24/7.',
     subtitle: 'From poultry to dairy and fish—manage your entire inventory and production records without the paperwork.',
   ),
-  _WelcomePage(
-    image: 'images/auth/cow.jpg',
-    tag: 'SMART INPUTS',
-    headline: 'Save on Costs.\nGrow Your\nProfits.',
-    subtitle: 'Stop wasting expensive fertilizer and water. Our AI tells you exactly what your crops need to thrive.',
-  ),
-  _WelcomePage(
-    image: 'images/auth/chicken.png',
-    tag: 'MARKET ACCESS',
-    headline: 'Direct Markets.\nBetter Prices.\nNo Brokers.',
-    subtitle: 'Connect directly to verified buyers. Take control of your sales and keep the profit you worked for.',
-  ),
+  // _WelcomePage(
+  //   image: 'images/auth/cow.jpg',
+  //   tag: 'SMART INPUTS',
+  //   headline: 'Save on Costs.\nGrow Your\nProfits.',
+  //   subtitle: 'Stop wasting expensive fertilizer and water. Our AI tells you exactly what your crops need to thrive.',
+  // ),
+  // _WelcomePage(
+  //   image: 'images/auth/chicken.png',
+  //   tag: 'MARKET ACCESS',
+  //   headline: 'Direct Markets.\nBetter Prices.\nNo Brokers.',
+  //   subtitle: 'Connect directly to verified buyers. Take control of your sales and keep the profit you worked for.',
+  // ),
 ];
 
 class WelcomeScreens extends StatefulWidget {
