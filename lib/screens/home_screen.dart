@@ -22,14 +22,14 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _updatesExpanded = true;
 
   final List<Map<String, dynamic>> _quickMenuItems = [
+    {'title': 'Dashboard',   'icon': 'images/assets/icons/dashboard.png'},
     {'title': 'Animal Husbandry',   'icon': 'images/assets/icons/livestock.png'},
     {'title': 'Plant Husbandry',    'icon': 'images/assets/icons/leaf.png'},
-    {'title': 'Inventory',   'icon': 'images/assets/icons/inventory.png'},
-    {'title': 'Revenue',     'icon': 'images/assets/icons/revenue.png'},
+    {'title': 'Sales',     'icon': 'images/assets/icons/revenue.png'},
     {'title': 'Customers',   'icon': 'images/assets/icons/customer.png'},
-    {'title': 'Procurement', 'icon': 'images/assets/icons/procurement.png'},
+    {'title': 'Inventory',   'icon': 'images/assets/icons/inventory.png'},
     {'title': 'Payments',    'icon': 'images/assets/icons/payment.png'},
-    {'title': 'Analytics',   'icon': 'images/assets/icons/analysis.png'},
+    {'title': 'Procurement', 'icon': 'images/assets/icons/procurement.png'},
   ];
 
   final List<Map<String, dynamic>> _posterItems = [
@@ -146,40 +146,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFF4CAF50), width: 2),
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                'images/logo.png',
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Center(
-                  child: Text(
-                    'F',
-                    style: TextStyle(
-                      color: Color(0xFF4CAF50),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Karibu 👋',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
-            ),
-          ),
-          const Spacer(),
           GestureDetector(
             onTap: _openProfile,
             child: Container(
@@ -202,6 +168,30 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+       
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Karibu 👋',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
+              ),
+              Text(
+                _userName,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF777777),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+        
         ],
       ),
     );

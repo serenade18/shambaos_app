@@ -79,6 +79,11 @@ flutter:
     - images/assets/icons/subscription.png
     - images/assets/icons/vet.png
     - images/assets/icons/weather.png
+    - images/assets/icons/chicken.png
+    - images/assets/icons/cow.png
+    - images/assets/icons/fish.png
+    - images/assets/icons/goat.png
+    - images/assets/icons/rabbit.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

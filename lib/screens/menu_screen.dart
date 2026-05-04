@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../services/app_colors.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -38,43 +37,19 @@ class MenuScreen extends StatelessWidget {
       ),
 
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSection(
               context,
-              title: 'Animal Management',
+              title: '',
               items: [
-                _MenuItem(Icons.dashboard_outlined, 'Dashboard'),
-                _MenuItem(Icons.pets_outlined, 'Animal Husbandry'),
-                _MenuItem(Icons.grass_outlined, 'Plant Husbandry'),
-                _MenuItem(Icons.inventory_2_outlined, 'Inventory'),
-                _MenuItem(Icons.thermostat_outlined, 'Weather'),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildSection(
-              context,
-              title: 'Sales & Operations',
-              items: [
-                _MenuItem(Icons.monetization_on_outlined, 'Sales & Revenue'),
-                _MenuItem(Icons.people_outline, 'Customers'),
-                _MenuItem(Icons.shopping_cart_outlined, 'Procurement'),
-                _MenuItem(Icons.receipt_long_outlined, 'Payments'),
-                _MenuItem(Icons.analytics_outlined, 'Analytics'),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildExpandableSection(
-              context,
-              title: 'Team & Settings',
-              icon: Icons.settings_outlined,
-              children: [
-                _ListTileItem(Icons.person_outline, 'Profile Settings'),
-                _ListTileItem(Icons.admin_panel_settings_outlined, 'Roles'),
-                _ListTileItem(Icons.key_outlined, 'API Keys'),
-                _ListTileItem(Icons.group_outlined, 'Team Personnel'),
+                _MenuItem(Icons.dashboard_outlined, 'Dairy Cattle'),
+                _MenuItem(Icons.pets_outlined, 'Dairy Goat'),
+                _MenuItem(Icons.grass_outlined, 'Poultry'),
+                _MenuItem(Icons.inventory_2_outlined, 'Rabbits'),
+                _MenuItem(Icons.thermostat_outlined, 'Catfish'),
               ],
             ),
           ],
@@ -179,81 +154,6 @@ class MenuScreen extends StatelessWidget {
     );
   }
 
-  // ── Expandable settings section ───────────────────────────
-  Widget _buildExpandableSection(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
-              letterSpacing: 0.1,
-            ),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Theme(
-            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-            child: ExpansionTile(
-              tilePadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              leading: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4FAF5),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: const Color(0xFF4CAF50).withOpacity(0.15),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(icon, color: const Color(0xFF2E7D32), size: 20),
-              ),
-              title: const Text(
-                'Team & Settings',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              iconColor: const Color(0xFF4CAF50),
-              collapsedIconColor: const Color(0xFFAAAAAA),
-              children: [
-                const Divider(
-                    height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
-                ...children,
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 // ── Data classes ──────────────────────────────────────────────
@@ -262,41 +162,4 @@ class _MenuItem {
   final IconData icon;
   final String label;
   _MenuItem(this.icon, this.label);
-}
-
-class _ListTileItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-
-  const _ListTileItem(this.icon, this.title);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF4FAF5),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icon, size: 18, color: const Color(0xFF2E7D32)),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF333333),
-        ),
-      ),
-      trailing: const Icon(
-        Icons.arrow_forward_ios_rounded,
-        size: 14,
-        color: Color(0xFFCCCCCC),
-      ),
-      onTap: () {},
-    );
-  }
 }
