@@ -332,7 +332,83 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ══════════════════════════════════════════════════════════
-  // 4. QUICK MENU GRID
+  // 4. Markets and vets
+  // ══════════════════════════════════════════════════════════
+  Widget _buildFeatureShortcuts(AppColors colors) {
+    final items = [
+      {
+        'title': 'View Markets',
+        'icon': 'images/assets/icons/market.png',
+      },
+      {
+        'title': 'Bayer Products',
+        'icon': 'images/assets/icons/product.png',
+      },
+      {
+        'title': 'Request Vet',
+        'icon': 'images/assets/icons/vet.png',
+      },
+      {
+        'title': 'Nearby Agro\nDealer',
+        'icon': 'images/assets/icons/dealer.png',
+      },
+    ];
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(
+        16, 12, 16, 16, // 👈 aligned with system
+      ),
+      child: Row(
+        children: items.map((item) {
+          return Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {},
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 64, // 👈 tighter + consistent
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F6FA),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Image.asset(
+                        item['icon']!,
+                        height: 32,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: Color(0xFF4CAF50),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    item['title']!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 11.5, // 👈 tuned for 2-line balance
+                      fontWeight: FontWeight.w500,
+                      height: 1.3,
+                      color: Color(0xFF444444),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 5. QUICK MENU GRID
   // ══════════════════════════════════════════════════════════
   Widget _buildQuickMenuGrid(AppColors colors) {
     return Container(
@@ -416,7 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ══════════════════════════════════════════════════════════
-  // 5. POSTER BANNER
+  // 6. POSTER BANNER
   // ══════════════════════════════════════════════════════════
   Widget _buildPosterBanner() {
     return Column(
@@ -557,7 +633,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ══════════════════════════════════════════════════════════
-  // 6. INVITE FRIENDS
+  // 7. INVITE FRIENDS
   // ══════════════════════════════════════════════════════════
   Widget _buildInviteFriends(AppColors colors) {
     return Container(
@@ -672,6 +748,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 8),
                 _buildImportantUpdates(colors),
               ],
+
+              const SizedBox(height: 8),
+              _divider(),
+              _buildFeatureShortcuts(colors),
 
               const SizedBox(height: 8),
               _buildQuickMenuGrid(colors),
