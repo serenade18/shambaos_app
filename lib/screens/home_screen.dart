@@ -342,8 +342,16 @@ class _HomeScreenState extends State<HomeScreen> {
       {'title': 'Agro Dealer', 'icon': 'images/assets/icons/dealer.png'},
     ];
 
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    final isTablet = screenWidth >= 600;
+    final containerHeight = isTablet ? 220.0 : 180.0;
+    final iconBoxHeight = isTablet ? 80.0 : 70.0;
+    final iconSize = isTablet ? 38.0 : 34.0;
+    final fontSize = isTablet ? 13.0 : 12.0;
+
     return Container(
-      height: 160, // 👈 FIXED HEIGHT
+      height: containerHeight,
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
@@ -353,10 +361,10 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(12),
               onTap: () {},
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly, // 👈 IMPORTANT
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Container(
-                    height: 70, // slightly increased to match 190 layout
+                    height: iconBoxHeight,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF5F6FA),
@@ -365,7 +373,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Center(
                       child: Image.asset(
                         item['icon']!,
-                        height: 34,
+                        height: iconSize,
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => const Icon(
                           Icons.image_not_supported_outlined,
@@ -377,11 +385,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     item['title']!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: fontSize,
                       fontWeight: FontWeight.w500,
                       height: 1.3,
-                      color: Color(0xFF444444),
+                      color: const Color(0xFF444444),
                     ),
                   ),
                 ],
