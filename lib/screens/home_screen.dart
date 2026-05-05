@@ -6,6 +6,7 @@ import '../widgets/weather_widget.dart';
 import 'profile/profile_screen.dart';
 import 'profile/edit_profile_screen.dart';
 import '../services/app_colors.dart';
+import 'animals/animal_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,14 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
       !_userEmail.endsWith('@phone.shamba.local');
 
   final List<Map<String, dynamic>> _quickMenuItems = [
-    {'title': 'Dashboard',        'icon': 'images/assets/icons/dashboard.png'},
-    {'title': 'Animal Husbandry', 'icon': 'images/assets/icons/livestock.png'},
-    {'title': 'Plant Husbandry',  'icon': 'images/assets/icons/leaf.png'},
-    {'title': 'Sales',            'icon': 'images/assets/icons/revenue.png'},
-    {'title': 'Customers',        'icon': 'images/assets/icons/customer.png'},
-    {'title': 'Inventory',        'icon': 'images/assets/icons/inventory.png'},
-    {'title': 'Payments',         'icon': 'images/assets/icons/payment.png'},
-    {'title': 'Procurement',      'icon': 'images/assets/icons/procurement.png'},
+    {'title': 'Dashboard', 'route': null, 'icon': 'images/assets/icons/dashboard.png'},
+    {'title': 'Animal Husbandry', 'route': const AnimalScreen(), 'icon': 'images/assets/icons/livestock.png'},
+    {'title': 'Plant Husbandry',  'route': null, 'icon': 'images/assets/icons/leaf.png'},
+    {'title': 'Sales', 'route': null, 'icon': 'images/assets/icons/revenue.png'},
+    {'title': 'Customers', 'route': null, 'icon': 'images/assets/icons/customer.png'},
+    {'title': 'Inventory', 'route': null, 'icon': 'images/assets/icons/inventory.png'},
+    {'title': 'Payments', 'route': null, 'icon': 'images/assets/icons/payment.png'},
+    {'title': 'Procurement', 'route': null, 'icon': 'images/assets/icons/procurement.png'},
   ];
 
   final List<Map<String, dynamic>> _posterItems = [
@@ -433,7 +434,16 @@ class _HomeScreenState extends State<HomeScreen> {
               final item = _quickMenuItems[index];
               return InkWell(
                 borderRadius: BorderRadius.circular(14),
-                onTap: () {},
+                onTap: () {
+                  if (item['route'] != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => item['route'],
+                      ),
+                    );
+                  }
+                },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
