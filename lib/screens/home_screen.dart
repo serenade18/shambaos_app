@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/weather_widget.dart';
 import 'profile/profile_screen.dart';
+import 'profile/edit_profile_screen.dart';
 import '../services/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,15 +22,20 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userEmail = '';
   bool _updatesExpanded = true;
 
+  bool get _isProfileComplete =>
+      _userName.isNotEmpty &&
+      _userEmail.isNotEmpty &&
+      !_userEmail.endsWith('@phone.shamba.local');
+
   final List<Map<String, dynamic>> _quickMenuItems = [
-    {'title': 'Dashboard',   'icon': 'images/assets/icons/dashboard.png'},
-    {'title': 'Animal Husbandry',   'icon': 'images/assets/icons/livestock.png'},
-    {'title': 'Plant Husbandry',    'icon': 'images/assets/icons/leaf.png'},
-    {'title': 'Sales',     'icon': 'images/assets/icons/revenue.png'},
-    {'title': 'Customers',   'icon': 'images/assets/icons/customer.png'},
-    {'title': 'Inventory',   'icon': 'images/assets/icons/inventory.png'},
-    {'title': 'Payments',    'icon': 'images/assets/icons/payment.png'},
-    {'title': 'Procurement', 'icon': 'images/assets/icons/procurement.png'},
+    {'title': 'Dashboard',        'icon': 'images/assets/icons/dashboard.png'},
+    {'title': 'Animal Husbandry', 'icon': 'images/assets/icons/livestock.png'},
+    {'title': 'Plant Husbandry',  'icon': 'images/assets/icons/leaf.png'},
+    {'title': 'Sales',            'icon': 'images/assets/icons/revenue.png'},
+    {'title': 'Customers',        'icon': 'images/assets/icons/customer.png'},
+    {'title': 'Inventory',        'icon': 'images/assets/icons/inventory.png'},
+    {'title': 'Payments',         'icon': 'images/assets/icons/payment.png'},
+    {'title': 'Procurement',      'icon': 'images/assets/icons/procurement.png'},
   ];
 
   final List<Map<String, dynamic>> _posterItems = [
@@ -108,6 +114,24 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _openEditProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfileScreen(
+          name: _userName,
+          email: _userEmail,
+          phone: '',        // fallback (replace if you have it)
+          username: _userName, // or real username if available
+        ),
+      ),
+    ).then((updated) {
+      if (updated == true) {
+        _loadUser(); // refresh after edit
+      }
+    });
+  }
+
   String _getInitials(String name) {
     if (name.isEmpty) return 'U';
     final parts = name.trim().split(' ');
@@ -168,7 +192,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-       
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +214,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const Spacer(),
-        
         ],
       ),
     );
@@ -209,9 +231,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ══════════════════════════════════════════════════════════
-  // 3. IMPORTANT UPDATES (collapsible)
+  // 3. IMPORTANT UPDATES (collapsible, hidden when profile complete)
   // ══════════════════════════════════════════════════════════
   Widget _buildImportantUpdates(AppColors colors) {
+    // Don't show if the user has a real name and a real email address
+    if (_isProfileComplete) return const SizedBox.shrink();
+
     return Container(
       color: Colors.white,
       child: Column(
@@ -291,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: const Icon(Icons.arrow_forward_rounded,
                         color: Colors.white, size: 18),
                   ),
-                  onTap: () {},
+                  onTap: _openEditProfile,
                 ),
               ),
             ),
@@ -401,8 +426,8 @@ class _HomeScreenState extends State<HomeScreen> {
           child: PageView.builder(
             controller: _posterPageController,
             physics: const BouncingScrollPhysics(),
-            onPageChanged: (i) => setState(
-                () => _currentPosterPage = i % _posterItems.length),
+            onPageChanged: (i) =>
+                setState(() => _currentPosterPage = i % _posterItems.length),
             itemCount: 10000,
             itemBuilder: (context, index) {
               final actual = index % _posterItems.length;
@@ -641,8 +666,13 @@ class _HomeScreenState extends State<HomeScreen> {
               _divider(),
               _buildWeatherStrip(),
               _divider(),
-              const SizedBox(height: 8),
-              _buildImportantUpdates(colors),
+
+              // Only rendered when profile is incomplete
+              if (!_isProfileComplete) ...[
+                const SizedBox(height: 8),
+                _buildImportantUpdates(colors),
+              ],
+
               const SizedBox(height: 8),
               _buildQuickMenuGrid(colors),
               const SizedBox(height: 8),
