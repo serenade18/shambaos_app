@@ -336,29 +336,16 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   Widget _buildFeatureShortcuts(AppColors colors) {
     final items = [
-      {
-        'title': 'View Markets',
-        'icon': 'images/assets/icons/market.png',
-      },
-      {
-        'title': 'Bayer Products',
-        'icon': 'images/assets/icons/product.png',
-      },
-      {
-        'title': 'Request Vet',
-        'icon': 'images/assets/icons/vet.png',
-      },
-      {
-        'title': 'Nearby Agro\nDealer',
-        'icon': 'images/assets/icons/dealer.png',
-      },
+      {'title': 'Markets', 'icon': 'images/assets/icons/market.png'},
+      {'title': 'Products', 'icon': 'images/assets/icons/product.png'},
+      {'title': 'Vet', 'icon': 'images/assets/icons/vet.png'},
+      {'title': 'Agro Dealer', 'icon': 'images/assets/icons/dealer.png'},
     ];
 
     return Container(
+      height: 160, // 👈 FIXED HEIGHT
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(
-        16, 12, 16, 16, // 👈 aligned with system
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
         children: items.map((item) {
           return Expanded(
@@ -366,10 +353,10 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(12),
               onTap: () {},
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly, // 👈 IMPORTANT
                 children: [
                   Container(
-                    height: 64, // 👈 tighter + consistent
+                    height: 70, // slightly increased to match 190 layout
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF5F6FA),
@@ -378,7 +365,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Center(
                       child: Image.asset(
                         item['icon']!,
-                        height: 32,
+                        height: 34,
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => const Icon(
                           Icons.image_not_supported_outlined,
@@ -387,12 +374,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
                   Text(
                     item['title']!,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 11.5, // 👈 tuned for 2-line balance
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                       height: 1.3,
                       color: Color(0xFF444444),
