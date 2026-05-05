@@ -19,7 +19,7 @@ class ApiResponse {
 class ApiService {
   // ⚠️ CHANGE THIS depending on your environment
   // static const String baseUrl = 'https://shambaos.linkworldcargo.com/api';
-  static const String baseUrl = 'http://192.168.1.102:8000/api';
+  static const String baseUrl = 'http://192.168.0.102:8000/api';
 
   static String? _accessToken;
   static String? _refreshToken;

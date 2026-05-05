@@ -76,7 +76,7 @@ class _AnimalScreenState extends State<AnimalScreen> {
           }),
           const SizedBox(width: 12),
           Text(
-            'Animal Services',
+            'Animal Husbandry',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,

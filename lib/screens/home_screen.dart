@@ -7,6 +7,7 @@ import 'profile/profile_screen.dart';
 import 'profile/edit_profile_screen.dart';
 import '../services/app_colors.dart';
 import 'animals/animal_screen.dart';
+import 'plants/plant_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,14 +30,46 @@ class _HomeScreenState extends State<HomeScreen> {
       !_userEmail.endsWith('@phone.shamba.local');
 
   final List<Map<String, dynamic>> _quickMenuItems = [
-    {'title': 'Dashboard', 'route': null, 'icon': 'images/assets/icons/dashboard.png'},
-    {'title': 'Animal Husbandry', 'route': const AnimalScreen(), 'icon': 'images/assets/icons/livestock.png'},
-    {'title': 'Plant Husbandry',  'route': null, 'icon': 'images/assets/icons/leaf.png'},
-    {'title': 'Sales', 'route': null, 'icon': 'images/assets/icons/revenue.png'},
-    {'title': 'Customers', 'route': null, 'icon': 'images/assets/icons/customer.png'},
-    {'title': 'Inventory', 'route': null, 'icon': 'images/assets/icons/inventory.png'},
-    {'title': 'Payments', 'route': null, 'icon': 'images/assets/icons/payment.png'},
-    {'title': 'Procurement', 'route': null, 'icon': 'images/assets/icons/procurement.png'},
+    {
+      'title': 'Dashboard',
+      'route': null,
+      'icon': 'images/assets/icons/dashboard.png',
+    },
+    {
+      'title': 'Animal Husbandry',
+      'route': const AnimalScreen(),
+      'icon': 'images/assets/icons/livestock.png',
+    },
+    {
+      'title': 'Plant Husbandry',
+      'route': const PlantScreen(),
+      'icon': 'images/assets/icons/leaf.png',
+    },
+    {
+      'title': 'Sales',
+      'route': null,
+      'icon': 'images/assets/icons/revenue.png',
+    },
+    {
+      'title': 'Customers',
+      'route': null,
+      'icon': 'images/assets/icons/customer.png',
+    },
+    {
+      'title': 'Inventory',
+      'route': null,
+      'icon': 'images/assets/icons/inventory.png',
+    },
+    {
+      'title': 'Payments',
+      'route': null,
+      'icon': 'images/assets/icons/payment.png',
+    },
+    {
+      'title': 'Procurement',
+      'route': null,
+      'icon': 'images/assets/icons/procurement.png',
+    },
   ];
 
   final List<Map<String, dynamic>> _posterItems = [
@@ -89,8 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = await ApiService.getUser();
     if (user != null) {
       setState(() {
-        _userName =
-            user['name'] ?? user['username'] ?? user['email'] ?? 'User';
+        _userName = user['name'] ?? user['username'] ?? user['email'] ?? 'User';
         _userEmail = user['email'] ?? '';
       });
     }
@@ -107,10 +139,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ProfileScreen(
-          userName: _userName,
-          userEmail: _userEmail,
-        ),
+        builder: (_) =>
+            ProfileScreen(userName: _userName, userEmail: _userEmail),
       ),
     );
   }
@@ -122,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => EditProfileScreen(
           name: _userName,
           email: _userEmail,
-          phone: '',        // fallback (replace if you have it)
+          phone: '', // fallback (replace if you have it)
           username: _userName, // or real username if available
         ),
       ),
@@ -207,10 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Text(
                 _userName,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF777777),
-                ),
+                style: const TextStyle(fontSize: 13, color: Color(0xFF777777)),
               ),
             ],
           ),
@@ -244,11 +271,9 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
-            onTap: () =>
-                setState(() => _updatesExpanded = !_updatesExpanded),
+            onTap: () => setState(() => _updatesExpanded = !_updatesExpanded),
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   const Text('📢', style: TextStyle(fontSize: 20)),
@@ -280,12 +305,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFF4FAF5),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                      color: const Color(0xFFD6ECD9), width: 1),
+                  border: Border.all(color: const Color(0xFFD6ECD9), width: 1),
                 ),
                 child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
                   leading: Container(
                     width: 46,
                     height: 46,
@@ -293,15 +319,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: const Color(0xFFE8F5E9),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.auto_awesome_outlined,
-                        color: Color(0xFF4CAF50), size: 24),
+                    child: const Icon(
+                      Icons.auto_awesome_outlined,
+                      color: Color(0xFF4CAF50),
+                      size: 24,
+                    ),
                   ),
                   title: const Text(
                     'Complete your profile',
                     style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Color(0xFF1A1A1A)),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
                   subtitle: const Text(
                     'Unlock a personalised experience',
@@ -314,8 +344,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Color(0xFF4CAF50),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.arrow_forward_rounded,
-                        color: Colors.white, size: 18),
+                    child: const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                   ),
                   onTap: _openEditProfile,
                 ),
@@ -438,9 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (item['route'] != null) {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => item['route'],
-                      ),
+                      MaterialPageRoute(builder: (_) => item['route']),
                     );
                   }
                 },
@@ -586,7 +617,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -662,28 +695,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Text(
                   'Help your farmer friends by inviting\nthem to the app',
                   style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF888888),
-                      height: 1.4),
+                    fontSize: 13,
+                    color: Color(0xFF888888),
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Container(
                   height: 44,
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: const Color(0xFF4CAF50), width: 1.5),
+                      color: const Color(0xFF4CAF50),
+                      width: 1.5,
+                    ),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: TextField(
                     decoration: const InputDecoration(
                       hintText: 'Enter phone number',
                       hintStyle: TextStyle(
-                          fontSize: 13, color: Color(0xFFAAAAAA)),
+                        fontSize: 13,
+                        color: Color(0xFFAAAAAA),
+                      ),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      suffixIcon: Icon(Icons.send_rounded,
-                          color: Color(0xFF4CAF50), size: 20),
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      suffixIcon: Icon(
+                        Icons.send_rounded,
+                        color: Color(0xFF4CAF50),
+                        size: 20,
+                      ),
                     ),
                     keyboardType: TextInputType.phone,
                     style: const TextStyle(fontSize: 13),
@@ -700,8 +743,9 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: BoxShape.circle,
               color: const Color(0xFFE8F5E9),
               border: Border.all(
-                  color: const Color(0xFF4CAF50).withOpacity(0.3),
-                  width: 1.5),
+                color: const Color(0xFF4CAF50).withOpacity(0.3),
+                width: 1.5,
+              ),
             ),
             child: ClipOval(
               child: Image.asset(
