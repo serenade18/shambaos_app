@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shambaOS/screens/customers/customer_screen.dart';
 import '../services/api_service.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/weather_widget.dart';
@@ -46,14 +47,14 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': 'images/assets/icons/leaf.png',
     },
     {
+      'title': 'Customers',
+      'route': const CustomersScreen(),
+      'icon': 'images/assets/icons/customer.png',
+    },
+    {
       'title': 'Sales',
       'route': null,
       'icon': 'images/assets/icons/revenue.png',
-    },
-    {
-      'title': 'Customers',
-      'route': null,
-      'icon': 'images/assets/icons/customer.png',
     },
     {
       'title': 'Inventory',

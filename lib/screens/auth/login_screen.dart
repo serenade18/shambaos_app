@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (res.success) {
+    if (res.error) {
       // Push OTP verification screen
       Navigator.of(context).push(
         PageRouteBuilder(

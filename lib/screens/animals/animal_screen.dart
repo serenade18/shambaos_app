@@ -13,7 +13,7 @@ class _AnimalScreenState extends State<AnimalScreen> {
   final List<Map<String, String>> animals = [
     {
       'title': 'Dairy Cow',
-      'subtitle': 'Managed milk production',
+      'subtitle': 'Manage dairy cattle farming operations',
       'image': 'images/assets/icons/cow.png',
     },
     {

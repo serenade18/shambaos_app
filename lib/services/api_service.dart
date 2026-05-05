@@ -3,13 +3,15 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiResponse {
-  final bool success;
+  // final bool success;
+  final bool error;
   final dynamic data;
   final String? message;
   final int statusCode;
 
   ApiResponse({
-    required this.success,
+    // required this.success,
+    required this.error,
     this.data,
     this.message,
     required this.statusCode,
@@ -108,7 +110,7 @@ class ApiService {
       // ✅ SUCCESS
       if (statusCode >= 200 && statusCode < 300) {
         return ApiResponse(
-          success: true,
+          error: true,
           data: data,
           message: data is Map ? data['message'] : null,
           statusCode: statusCode,
@@ -127,14 +129,14 @@ class ApiService {
 
       // ❌ FAILURE
       return ApiResponse(
-        success: false,
+        error: false,
         data: data,
         message: data is Map ? data['detail'] ?? data['message'] : null,
         statusCode: statusCode,
       );
     } catch (e) {
       return ApiResponse(
-        success: false,
+        error: false,
         message: e.toString(),
         statusCode: 500,
       );

@@ -54,7 +54,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _fetchProfile() async {
     final response = await ProfileService.getProfile();
-    if (response.success && response.data != null) {
+    if (response.error && response.data != null) {
       final data = response.data;
       setState(() {
         nameController.text = data['name'] ?? widget.name;
@@ -78,7 +78,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     setState(() => isLoading = false);
 
-    if (response.success) {
+    if (response.error) {
       AuthDialog.show(
         context,
         type: AuthDialogType.success,

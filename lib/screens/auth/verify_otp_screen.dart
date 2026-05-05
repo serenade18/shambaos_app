@@ -124,7 +124,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     if (!mounted) return;
     setState(() => _isVerifying = false);
 
-    if (res.success) {
+    if (res.error) {
       // ✅ Navigate to HomeScreen — clear the entire auth stack
       Navigator.of(context).pushAndRemoveUntil(
         PageRouteBuilder(
@@ -155,7 +155,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     if (!mounted) return;
     setState(() => _isResending = false);
 
-    if (res.success) {
+    if (res.error) {
       _startCountdown();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         backgroundColor: _Brand.brand,

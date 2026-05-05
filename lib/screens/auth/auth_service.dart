@@ -37,7 +37,7 @@ class AuthService {
       requiresAuth: false,
     );
 
-    if (response.success && response.data != null) {
+    if (response.error && response.data != null) {
       final token = response.data['token'] ??
           response.data['access'] ??
           response.data['auth_token'];
@@ -47,7 +47,7 @@ class AuthService {
 
         // ✅ Reload user after refresh
         final userRes = await getUserInfo();
-        if (userRes.success && userRes.data != null) {
+        if (userRes.error && userRes.data != null) {
           await ApiService.setUser(userRes.data);
         }
       }
@@ -72,7 +72,7 @@ class AuthService {
         requiresAuth: true,
       );
 
-      if (response.success) return true;
+      if (response.error) return true;
     } catch (e) {
       // Optional: log error
       // print('Access token failed: $e');
@@ -84,7 +84,7 @@ class AuthService {
         refresh: refreshToken, // ✅ FIXED
       );
 
-      if (refreshRes.success) return true;
+      if (refreshRes.error) return true;
     } catch (e) {
       // print('Refresh token failed: $e');
     }
@@ -106,7 +106,7 @@ class AuthService {
       requiresAuth: false,
     );
 
-    if (response.success && response.data != null) {
+    if (response.error && response.data != null) {
       final access = response.data['access'] ??
           response.data['token'] ??
           response.data['auth_token'];
@@ -123,7 +123,7 @@ class AuthService {
       }
 
       final userRes = await getUserInfo();
-      if (userRes.success && userRes.data != null) {
+      if (userRes.error && userRes.data != null) {
         await ApiService.setUser(userRes.data);
       }
     }
@@ -201,7 +201,7 @@ class AuthService {
       requiresAuth: false,
     );
 
-    if (response.success && response.data != null) {
+    if (response.error && response.data != null) {
       final access = response.data['access'];
       final refresh = response.data['refresh'];
 
@@ -213,7 +213,7 @@ class AuthService {
       }
 
       // Persist refresh token if your ApiService supports it
-      // await ApiService.setRefreshToken(refresh.toString());
+      await ApiService.setRefreshToken(refresh.toString());
     }
 
     return response;

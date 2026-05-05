@@ -131,7 +131,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     setState(() => _isLoading = true);
     try {
       final response = await ProfileService.setNotification();
-      if (response.success && response.data != null) {
+      if (response.error && response.data != null) {
         setState(() {
           _prefs = NotificationPrefs.fromJson(response.data['data']);
           _isLoading = false;
@@ -155,7 +155,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     try {
       final response = await ProfileService.patchNotification(key, value);
-      if (response.success && response.data != null) {
+      if (response.error && response.data != null) {
         setState(() {
           _prefs = NotificationPrefs.fromJson(response.data['data']);
         });
