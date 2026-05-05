@@ -173,4 +173,49 @@ class AuthService {
       requiresAuth: false,
     );
   }
+
+  // ─────────────────────────────────────────────
+  // Add these two methods inside AuthService
+  // (in lib/services/auth_service.dart)
+  // ─────────────────────────────────────────────
+
+  // PHONE OTP — REQUEST
+  static Future<ApiResponse> requestOtp({
+    required String phone,
+  }) {
+    return ApiService.post(
+      '/mobile/auth/request-otp/',
+      {'phone': phone},
+      requiresAuth: false,
+    );
+  }
+
+  // PHONE OTP — VERIFY (signs in or creates account)
+  static Future<ApiResponse> verifyOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    final response = await ApiService.post(
+      '/mobile/auth/verify-otp/',
+      {'phone': phone, 'otp': otp},
+      requiresAuth: false,
+    );
+
+    if (response.success && response.data != null) {
+      final access = response.data['access'];
+      final refresh = response.data['refresh'];
+
+      if (access != null) {
+        await ApiService.setToken(access.toString());
+      }
+      if (response.data['user'] != null) {
+        await ApiService.setUser(response.data['user']);
+      }
+
+      // Persist refresh token if your ApiService supports it
+      // await ApiService.setRefreshToken(refresh.toString());
+    }
+
+    return response;
+  }
 }
