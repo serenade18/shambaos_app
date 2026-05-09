@@ -17,9 +17,19 @@ class _PlantScreenState extends State<PlantScreen> {
       'image': 'images/assets/icons/corn.png',
     },
     {
+      'title': 'Beans',
+      'subtitle': 'Manage your beans',
+      'image': 'images/assets/icons/beans.png',
+    },
+    {
       'title': 'Bananas',
       'subtitle': 'Manage your bananas',
       'image': 'images/assets/icons/banana.png',
+    },
+    {
+      'title': 'Avocados',
+      'subtitle': 'Manage your avocados',
+      'image': 'images/assets/icons/avocado.png',
     },
     {
       'title': 'Rice',

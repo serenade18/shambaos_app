@@ -26,7 +26,7 @@ class AuthService {
   }
 
   // ─────────────────────────────────────────────
-  // REFRESH TOKEN (RENAMED)
+  // REFRESH TOKEN
   // ─────────────────────────────────────────────
   static Future<ApiResponse> refreshAuthToken({
     required String refresh,
@@ -37,7 +37,8 @@ class AuthService {
       requiresAuth: false,
     );
 
-    if (response.error && response.data != null) {
+    // !response.error = request succeeded
+    if (!response.error && response.data != null) {
       final token = response.data['token'] ??
           response.data['access'] ??
           response.data['auth_token'];
@@ -45,9 +46,8 @@ class AuthService {
       if (token != null) {
         await ApiService.setToken(token.toString());
 
-        // ✅ Reload user after refresh
         final userRes = await getUserInfo();
-        if (userRes.error && userRes.data != null) {
+        if (!userRes.error && userRes.data != null) {
           await ApiService.setUser(userRes.data);
         }
       }
@@ -57,14 +57,13 @@ class AuthService {
   }
 
   // ─────────────────────────────────────────────
-  // VALIDATE TOKEN (FIXED)
+  // VALIDATE TOKEN
   // ─────────────────────────────────────────────
   static Future<bool> validateToken({
     required String accessToken,
     required String refreshToken,
   }) async {
     try {
-      // 1️⃣ Try access token
       await ApiService.setToken(accessToken);
 
       final response = await ApiService.get(
@@ -72,24 +71,17 @@ class AuthService {
         requiresAuth: true,
       );
 
-      if (response.error) return true;
-    } catch (e) {
-      // Optional: log error
-      // print('Access token failed: $e');
-    }
+      // !response.error = token is valid
+      if (!response.error) return true;
+    } catch (_) {}
 
-    // 2️⃣ Try refresh token
     try {
-      final refreshRes = await refreshAuthToken(
-        refresh: refreshToken, // ✅ FIXED
-      );
+      final refreshRes = await refreshAuthToken(refresh: refreshToken);
 
-      if (refreshRes.error) return true;
-    } catch (e) {
-      // print('Refresh token failed: $e');
-    }
+      // !refreshRes.error = refresh succeeded
+      if (!refreshRes.error) return true;
+    } catch (_) {}
 
-    // 3️⃣ Fully invalid session
     return false;
   }
 
@@ -106,7 +98,8 @@ class AuthService {
       requiresAuth: false,
     );
 
-    if (response.error && response.data != null) {
+    // !response.error = login succeeded
+    if (!response.error && response.data != null) {
       final access = response.data['access'] ??
           response.data['token'] ??
           response.data['auth_token'];
@@ -117,13 +110,12 @@ class AuthService {
         await ApiService.setToken(access.toString());
       }
 
-      if (access != null && refresh != null) {
-        response.data['access'] = access;
-        response.data['refresh'] = refresh;
+      if (refresh != null) {
+        await ApiService.setRefreshToken(refresh.toString());
       }
 
       final userRes = await getUserInfo();
-      if (userRes.error && userRes.data != null) {
+      if (!userRes.error && userRes.data != null) {
         await ApiService.setUser(userRes.data);
       }
     }
@@ -142,7 +134,7 @@ class AuthService {
   // LOGOUT
   // ─────────────────────────────────────────────
   static void logout() {
-    ApiService.clearToken();
+    ApiService.clearAll();
   }
 
   // ─────────────────────────────────────────────
@@ -175,11 +167,8 @@ class AuthService {
   }
 
   // ─────────────────────────────────────────────
-  // Add these two methods inside AuthService
-  // (in lib/services/auth_service.dart)
-  // ─────────────────────────────────────────────
-
   // PHONE OTP — REQUEST
+  // ─────────────────────────────────────────────
   static Future<ApiResponse> requestOtp({
     required String phone,
   }) {
@@ -190,7 +179,9 @@ class AuthService {
     );
   }
 
-  // PHONE OTP — VERIFY (signs in or creates account)
+  // ─────────────────────────────────────────────
+  // PHONE OTP — VERIFY
+  // ─────────────────────────────────────────────
   static Future<ApiResponse> verifyOtp({
     required String phone,
     required String otp,
@@ -201,19 +192,20 @@ class AuthService {
       requiresAuth: false,
     );
 
-    if (response.error && response.data != null) {
+    // !response.error = OTP verified successfully
+    if (!response.error && response.data != null) {
       final access = response.data['access'];
       final refresh = response.data['refresh'];
 
       if (access != null) {
         await ApiService.setToken(access.toString());
       }
+      if (refresh != null) {
+        await ApiService.setRefreshToken(refresh.toString());
+      }
       if (response.data['user'] != null) {
         await ApiService.setUser(response.data['user']);
       }
-
-      // Persist refresh token if your ApiService supports it
-      await ApiService.setRefreshToken(refresh.toString());
     }
 
     return response;

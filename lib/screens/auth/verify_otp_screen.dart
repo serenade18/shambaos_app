@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import '../home_screen.dart';
+import 'package:sms_autofill/sms_autofill.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Brand tokens (keep in sync with login_screen.dart)
@@ -35,7 +36,8 @@ class VerifyOtpScreen extends StatefulWidget {
 }
 
 class _VerifyOtpScreenState extends State<VerifyOtpScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, CodeAutoFill {
+
   final List<TextEditingController> _ctrls =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _foci = List.generate(6, (_) => FocusNode());
@@ -44,20 +46,25 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
-  bool _isVerifying = false;
-  bool _isResending = false;
+  bool _isVerifying  = false;
+  bool _isResending  = false;
+  bool _isAutoFilling = false; // FIX #3: guard against listener race during autofill
   String? _errorMsg;
 
   int _resendSeconds = 60;
   Timer? _countdownTimer;
 
+  // ── Lifecycle ───────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
 
+    // FIX #5: small delay so the SMS listener is registered before the SMS arrives
+    Future.delayed(const Duration(milliseconds: 200), listenForCode);
+
     _animCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
-    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+    _fadeAnim  = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
         .animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
 
@@ -69,15 +76,41 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     }
   }
 
+  // ── SMS autofill callback ───────────────────────────────────────────────────
+  @override
+  void codeUpdated() {
+    final receivedCode = code;
+    if (receivedCode == null || receivedCode.length != 6) return;
+
+    // FIX #3: set flag before populating controllers so the change listener
+    // doesn't race and call _verifyOtp a second time.
+    _isAutoFilling = true;
+    for (int i = 0; i < 6; i++) {
+      _ctrls[i].text = receivedCode[i];
+    }
+    _isAutoFilling = false;
+
+    if (mounted) FocusScope.of(context).unfocus();
+
+    _verifyOtp();
+  }
+
   @override
   void dispose() {
+    cancel();
     _countdownTimer?.cancel();
-    for (final c in _ctrls) { c.removeListener(_onDigitChanged); c.dispose(); }
-    for (final f in _foci) { f.dispose(); }
+    for (final c in _ctrls) {
+      c.removeListener(_onDigitChanged);
+      c.dispose();
+    }
+    for (final f in _foci) {
+      f.dispose();
+    }
     _animCtrl.dispose();
     super.dispose();
   }
 
+  // ── Countdown timer ─────────────────────────────────────────────────────────
   void _startCountdown() {
     _countdownTimer?.cancel();
     setState(() => _resendSeconds = 60);
@@ -88,18 +121,25 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     });
   }
 
+  // ── Helpers ─────────────────────────────────────────────────────────────────
   String get _otpValue => _ctrls.map((c) => c.text).join();
 
   void _onDigitChanged() {
+    // FIX #3: skip when autofill is populating boxes to avoid double-call
+    if (_isAutoFilling) return;
     if (_otpValue.length == 6 && !_isVerifying) {
       _verifyOtp();
     }
   }
 
   void _onKey(int index, String value) {
+    // Handle paste of full 6-digit code into a single box
     if (value.length == 6) {
+      _isAutoFilling = true;
       for (int i = 0; i < 6; i++) _ctrls[i].text = value[i];
+      _isAutoFilling = false;
       _foci[5].requestFocus();
+      _verifyOtp();
       return;
     }
     if (value.isNotEmpty && index < 5) _foci[index + 1].requestFocus();
@@ -112,10 +152,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     }
   }
 
-  // ── Verify OTP ─────────────────────────────────────────────────────────────
+  // ── Verify OTP ──────────────────────────────────────────────────────────────
   Future<void> _verifyOtp() async {
     final otp = _otpValue;
-    if (otp.length < 6) return;
+    if (otp.length < 6 || _isVerifying) return;
 
     setState(() { _isVerifying = true; _errorMsg = null; });
 
@@ -124,8 +164,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     if (!mounted) return;
     setState(() => _isVerifying = false);
 
-    if (res.error) {
-      // ✅ Navigate to HomeScreen — clear the entire auth stack
+    // api_service sets error:true on 200 (success) and error:false on 4xx (failure)
+    if (res.statusCode == 200 && res.error) {
       Navigator.of(context).pushAndRemoveUntil(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const HomeScreen(),
@@ -133,7 +173,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
               FadeTransition(opacity: anim, child: child),
           transitionDuration: const Duration(milliseconds: 400),
         ),
-        (_) => false, // removes all previous routes (login + otp)
+        (_) => false,
       );
     } else {
       // Clear boxes and refocus on error
@@ -143,7 +183,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     }
   }
 
-  // ── Resend OTP ─────────────────────────────────────────────────────────────
+  // ── Resend OTP ──────────────────────────────────────────────────────────────
   Future<void> _resendOtp() async {
     if (_resendSeconds > 0 || _isResending) return;
 
@@ -155,7 +195,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     if (!mounted) return;
     setState(() => _isResending = false);
 
-    if (res.error) {
+    // FIX #1: same inversion fix — !res.error means the request succeeded
+    if (!res.error) {
       _startCountdown();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         backgroundColor: _Brand.brand,
@@ -166,6 +207,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     }
   }
 
+  // ── Build ───────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -177,9 +219,14 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
           icon: const Icon(Icons.arrow_back_rounded, color: _Brand.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Verification',
-            style: TextStyle(color: _Brand.textPrimary, fontSize: 16,
-                fontWeight: FontWeight.w700)),
+        title: const Text(
+          'Verification',
+          style: TextStyle(
+            color: _Brand.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(1),
           child: Divider(height: 1, thickness: 1, color: _Brand.divider),
@@ -192,7 +239,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
             position: _slideAnim,
             child: Column(
               children: [
-                // ── Header card ──────────────────────────────────────────
+
+                // ── Header card ──────────────────────────────────────────────
                 Container(
                   width: double.infinity,
                   color: _Brand.card,
@@ -203,29 +251,41 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                       Container(
                         width: 64, height: 64,
                         decoration: BoxDecoration(
-                            color: _Brand.brandLight,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: _Brand.brandBorder, width: 1.5)),
-                        child: const Icon(Icons.sms_outlined,
-                            color: _Brand.brand, size: 30),
+                          color: _Brand.brandLight,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: _Brand.brandBorder, width: 1.5),
+                        ),
+                        child: const Icon(
+                            Icons.sms_outlined, color: _Brand.brand, size: 30),
                       ),
                       const SizedBox(height: 16),
-                      const Text('Enter the 6-digit code',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800,
-                              color: _Brand.textPrimary, height: 1.2)),
+                      const Text(
+                        'Enter the 6-digit code',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: _Brand.textPrimary,
+                          height: 1.2,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       RichText(
                         textAlign: TextAlign.center,
                         text: TextSpan(
-                          style: const TextStyle(fontSize: 14,
-                              color: _Brand.textSecondary, height: 1.5),
+                          style: const TextStyle(
+                              fontSize: 14,
+                              color: _Brand.textSecondary,
+                              height: 1.5),
                           children: [
                             const TextSpan(text: 'Sent via SMS to\n'),
                             TextSpan(
                               text: widget.displayPhone,
                               style: const TextStyle(
-                                  color: _Brand.textPrimary, fontWeight: FontWeight.w700),
+                                color: _Brand.textPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ],
                         ),
@@ -241,60 +301,80 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                     padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
                     child: Column(
                       children: [
-                        // ── OTP boxes ────────────────────────────────────
+
+                        // ── OTP boxes ────────────────────────────────────────
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: List.generate(6, (i) => _OtpBox(
-                            controller: _ctrls[i],
-                            focusNode: _foci[i],
-                            hasError: _errorMsg != null,
-                            onChanged: (v) => _onKey(i, v),
-                            onBackspace: () => _onBackspace(i),
-                          )),
+                          children: List.generate(
+                            6,
+                            (i) => _OtpBox(
+                              controller: _ctrls[i],
+                              focusNode: _foci[i],
+                              hasError: _errorMsg != null,
+                              onChanged: (v) => _onKey(i, v),
+                              onBackspace: () => _onBackspace(i),
+                            ),
+                          ),
                         ),
 
                         if (_errorMsg != null) ...[
                           const SizedBox(height: 12),
-                          Row(children: [
-                            const Icon(Icons.error_outline_rounded,
-                                color: _Brand.errorRed, size: 15),
-                            const SizedBox(width: 6),
-                            Expanded(child: Text(_errorMsg!,
-                                style: const TextStyle(
-                                    color: _Brand.errorRed, fontSize: 12))),
-                          ]),
+                          Row(
+                            children: [
+                              const Icon(Icons.error_outline_rounded,
+                                  color: _Brand.errorRed, size: 15),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _errorMsg!,
+                                  style: const TextStyle(
+                                      color: _Brand.errorRed, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
 
                         const SizedBox(height: 32),
 
-                        // ── Resend row ────────────────────────────────────
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          const Text("Didn't receive a code? ",
-                              style: TextStyle(color: _Brand.textSecondary, fontSize: 13)),
-                          _isResending
-                              ? const SizedBox(width: 16, height: 16,
-                                  child: CircularProgressIndicator(
-                                      color: _Brand.brand, strokeWidth: 2))
-                              : GestureDetector(
-                                  onTap: _resendSeconds > 0 ? null : _resendOtp,
-                                  child: Text(
-                                    _resendSeconds > 0
-                                        ? 'Resend in ${_resendSeconds}s'
-                                        : 'Resend',
-                                    style: TextStyle(
-                                      color: _resendSeconds > 0
-                                          ? _Brand.textHint
-                                          : _Brand.brand,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
+                        // ── Resend row ───────────────────────────────────────
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "Didn't receive a code? ",
+                              style: TextStyle(
+                                  color: _Brand.textSecondary, fontSize: 13),
+                            ),
+                            _isResending
+                                ? const SizedBox(
+                                    width: 16, height: 16,
+                                    child: CircularProgressIndicator(
+                                        color: _Brand.brand, strokeWidth: 2),
+                                  )
+                                : GestureDetector(
+                                    onTap: _resendSeconds > 0
+                                        ? null
+                                        : _resendOtp,
+                                    child: Text(
+                                      _resendSeconds > 0
+                                          ? 'Resend in ${_resendSeconds}s'
+                                          : 'Resend',
+                                      style: TextStyle(
+                                        color: _resendSeconds > 0
+                                            ? _Brand.textHint
+                                            : _Brand.brand,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
-                                ),
-                        ]),
+                          ],
+                        ),
 
                         const SizedBox(height: 28),
 
-                        // ── Security note ─────────────────────────────────
+                        // ── Security note ────────────────────────────────────
                         Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
@@ -302,55 +382,72 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: _Brand.brandBorder),
                           ),
-                          child: Row(children: [
-                            const Icon(Icons.info_outline_rounded,
-                                color: _Brand.brand, size: 18),
-                            const SizedBox(width: 10),
-                            const Expanded(child: Text(
-                              'This code expires in 10 minutes.\nNever share it with anyone.',
-                              style: TextStyle(color: _Brand.brand,
-                                  fontSize: 12, height: 1.5),
-                            )),
-                          ]),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded,
+                                  color: _Brand.brand, size: 18),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'This code expires in 10 minutes.\nNever share it with anyone.',
+                                  style: TextStyle(
+                                    color: _Brand.brand,
+                                    fontSize: 12,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                // ── Verify button ─────────────────────────────────────────
+                // ── Verify button ────────────────────────────────────────────
                 Container(
                   color: _Brand.card,
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Divider(height: 1, thickness: 1, color: _Brand.divider),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                      child: SizedBox(
-                        width: double.infinity, height: 52,
-                        child: ElevatedButton(
-                          onPressed: (_isVerifying || _otpValue.length < 6)
-                              ? null
-                              : _verifyOtp,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _Brand.brand,
-                            disabledBackgroundColor: _Brand.brand.withOpacity(0.35),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            textStyle: const TextStyle(
-                                fontSize: 15, fontWeight: FontWeight.w700),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Divider(
+                          height: 1, thickness: 1, color: _Brand.divider),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: (_isVerifying || _otpValue.length < 6)
+                                ? null
+                                : _verifyOtp,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _Brand.brand,
+                              disabledBackgroundColor:
+                                  _Brand.brand.withOpacity(0.35),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              textStyle: const TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w700),
+                            ),
+                            child: _isVerifying
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white, strokeWidth: 2.5),
+                                  )
+                                : const Text('Verify & Sign In'),
                           ),
-                          child: _isVerifying
-                              ? const SizedBox(width: 22, height: 22,
-                                  child: CircularProgressIndicator(
-                                      color: Colors.white, strokeWidth: 2.5))
-                              : const Text('Verify & Sign In'),
                         ),
                       ),
-                    ),
-                  ]),
+                    ],
+                  ),
                 ),
+
               ],
             ),
           ),
@@ -381,7 +478,8 @@ class _OtpBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 46, height: 56,
+      width: 46,
+      height: 56,
       child: KeyboardListener(
         focusNode: FocusNode(),
         onKeyEvent: (e) {
@@ -403,8 +501,10 @@ class _OtpBox extends StatelessWidget {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               onChanged: onChanged,
               style: const TextStyle(
-                  fontSize: 22, fontWeight: FontWeight.w800,
-                  color: _Brand.textPrimary),
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: _Brand.textPrimary,
+              ),
               decoration: InputDecoration(
                 counterText: '',
                 filled: true,
