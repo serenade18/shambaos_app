@@ -43,6 +43,41 @@ class _AnimalScreenState extends State<AnimalScreen> {
     },
   ];
 
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  List<Map<String, String>> get _filteredAnimals {
+    if (_searchQuery.isEmpty) return animals;
+    final query = _searchQuery.toLowerCase();
+    return animals.where((item) {
+      return item['title']!.toLowerCase().contains(query) ||
+          item['subtitle']!.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  void _startSearch() {
+    setState(() => _isSearching = true);
+    Future.microtask(() => _searchFocusNode.requestFocus());
+  }
+
+  void _stopSearch() {
+    setState(() {
+      _isSearching = false;
+      _searchQuery = '';
+      _searchController.clear();
+    });
+    _searchFocusNode.unfocus();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
@@ -72,21 +107,54 @@ class _AnimalScreenState extends State<AnimalScreen> {
       child: Row(
         children: [
           _circleButton(Icons.arrow_back_ios_new, () {
-            Navigator.pop(context);
+            if (_isSearching) {
+              _stopSearch();
+            } else {
+              Navigator.pop(context);
+            }
           }),
           const SizedBox(width: 12),
-          Text(
-            'Animal Husbandry',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: colors.textPrimary,
+          if (!_isSearching)
+            Expanded(
+              child: Text(
+                'Animal Husbandry',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
+              ),
             ),
-          ),
-          const Spacer(),
-          _circleButton(Icons.search, () {
-            // TODO: search action
-          }),
+          if (_isSearching)
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onChanged: (value) => setState(() => _searchQuery = value),
+                style: TextStyle(
+                  fontSize: 15,
+                  color: colors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search animals...',
+                  hintStyle: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 15,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ),
+          if (_isSearching && _searchQuery.isNotEmpty)
+            _circleButton(Icons.close, () {
+              _searchController.clear();
+              setState(() => _searchQuery = '');
+              _searchFocusNode.requestFocus();
+            }),
+          if (!_isSearching)
+            _circleButton(Icons.search, _startSearch),
         ],
       ),
     );
@@ -98,8 +166,8 @@ class _AnimalScreenState extends State<AnimalScreen> {
       child: Container(
         width: 42,
         height: 42,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F6FA),
+        decoration: const BoxDecoration(
+          color: Color(0xFFF5F6FA),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, size: 18, color: Colors.black87),
@@ -111,11 +179,36 @@ class _AnimalScreenState extends State<AnimalScreen> {
   // LIST VIEW
   // ══════════════════════════════════════════════════════════
   Widget _buildList(AppColors colors) {
+    final items = _filteredAnimals;
+
+    if (items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.search_off_rounded,
+              size: 52,
+              color: Color(0xFFCCCCCC),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No animals found for "$_searchQuery"',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFFAAAAAA),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      itemCount: animals.length,
+      itemCount: items.length,
       itemBuilder: (_, i) {
-        final item = animals[i];
+        final item = items[i];
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -137,8 +230,8 @@ class _AnimalScreenState extends State<AnimalScreen> {
               Container(
                 width: 56,
                 height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE8F5E9),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -161,9 +254,10 @@ class _AnimalScreenState extends State<AnimalScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    _highlightText(
                       item['title']!,
-                      style: TextStyle(
+                      _searchQuery,
+                      TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
                         color: colors.textPrimary,
@@ -191,6 +285,38 @@ class _AnimalScreenState extends State<AnimalScreen> {
           ),
         );
       },
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // HIGHLIGHT MATCHING TEXT
+  // ══════════════════════════════════════════════════════════
+  Widget _highlightText(String text, String query, TextStyle baseStyle) {
+    if (query.isEmpty) return Text(text, style: baseStyle);
+
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final matchIndex = lowerText.indexOf(lowerQuery);
+
+    if (matchIndex == -1) return Text(text, style: baseStyle);
+
+    return RichText(
+      text: TextSpan(
+        style: baseStyle,
+        children: [
+          if (matchIndex > 0)
+            TextSpan(text: text.substring(0, matchIndex)),
+          TextSpan(
+            text: text.substring(matchIndex, matchIndex + query.length),
+            style: baseStyle.copyWith(
+              color: const Color(0xFF4CAF50),
+              backgroundColor: const Color(0xFFE8F5E9),
+            ),
+          ),
+          if (matchIndex + query.length < text.length)
+            TextSpan(text: text.substring(matchIndex + query.length)),
+        ],
+      ),
     );
   }
 }
