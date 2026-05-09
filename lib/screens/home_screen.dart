@@ -9,6 +9,7 @@ import 'profile/edit_profile_screen.dart';
 import '../services/app_colors.dart';
 import 'animals/animal_screen.dart';
 import 'plants/plant_screen.dart';
+import 'markets/market_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -370,10 +371,10 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   Widget _buildFeatureShortcuts(AppColors colors) {
     final items = [
-      {'title': 'Markets', 'icon': 'images/assets/icons/market.png'},
-      {'title': 'Products', 'icon': 'images/assets/icons/product.png'},
-      {'title': 'Vet', 'icon': 'images/assets/icons/vet.png'},
-      {'title': 'Agro Dealer', 'icon': 'images/assets/icons/dealer.png'},
+      {'title': 'Markets', 'route': const MarketScreen(), 'icon': 'images/assets/icons/market.png'},
+      {'title': 'Products', 'route': null, 'icon': 'images/assets/icons/product.png'},
+      {'title': 'Vet', 'route': null, 'icon': 'images/assets/icons/vet.png'},
+      {'title': 'Agro Dealer', 'route': null, 'icon': 'images/assets/icons/dealer.png'},
     ];
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -405,7 +406,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 return Expanded(
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () {},
+                    onTap: () {
+                      if (item['route'] != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => item['route'] as Widget,
+                          ),
+                        );
+                      }
+                    },
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -418,7 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           child: Center(
                             child: Image.asset(
-                              item['icon']!,
+                              item['icon'] as String,
                               height: iconSize,
                               fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) => const Icon(
@@ -429,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Text(
-                          item['title']!,
+                          item['title'] as String,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: fontSize,
