@@ -23,7 +23,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
   void _handleTap(BuildContext context, int index) {
     if (index == 4) {
       widget.onTap?.call(index);
-      Navigator.pushNamed(context, '/more');
+      Navigator.pushNamed(context, '/profile');
       return;
     }
 
@@ -37,13 +37,10 @@ class _AppBottomNavState extends State<AppBottomNav> {
         Navigator.pushReplacementNamed(context, '/home');
         break;
       case 1:
-        Navigator.pushReplacementNamed(context, '/sales');
-        break;
-      case 2:
         Navigator.pushReplacementNamed(context, '/chat');
         break;
-      case 3:
-        Navigator.pushReplacementNamed(context, '/tasks');
+      case 2:
+        Navigator.pushReplacementNamed(context, '/profile');
         break;
     }
   }
@@ -63,20 +60,19 @@ class _AppBottomNavState extends State<AppBottomNav> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 64,
+            height: 72, // was 64
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _navItem(Icons.home_rounded, 'Home', 0, context),
-                _navItem(Icons.grass_rounded, 'Advisory', 1, context),
 
                 // ── Centre FAB (chat) ──────────────────────────
                 GestureDetector(
                   onTap: () => _handleTap(context, 2),
                   child: Container(
-                    height: 50,
-                    width: 50,
+                    height: 56, // was 50
+                    width: 56,  // was 50
                     decoration: BoxDecoration(
                       color: const Color(0xFF4CAF50),
                       shape: BoxShape.circle,
@@ -89,7 +85,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
                       ],
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.all(13.0), // was 12.0
                       child: SvgPicture.asset(
                         'images/assets/icons/comments.svg',
                         colorFilter: const ColorFilter.mode(
@@ -104,8 +100,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
                   ),
                 ),
 
-                _navItem(Icons.content_paste_go, 'Tasks', 3, context),
-                _navItem(Icons.menu, 'More', 4, context),
+                _navItem(Icons.person, 'Profile', 4, context),
               ],
             ),
           ),
@@ -125,9 +120,8 @@ class _AppBottomNavState extends State<AppBottomNav> {
       onTap: () => _handleTap(context, index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7), // was 14, 6
         decoration: BoxDecoration(
-          // Active pill: light green tint background
           color: selected
               ? const Color(0xFF4CAF50).withOpacity(0.10)
               : Colors.transparent,
@@ -139,11 +133,10 @@ class _AppBottomNavState extends State<AppBottomNav> {
           children: [
             Icon(
               icon,
-              // Active: solid green. Inactive: muted gray
               color: selected
                   ? const Color(0xFF2E7D32)
                   : const Color(0xFFAAAAAA),
-              size: 22,
+              size: 26, // was 22
             ),
             const SizedBox(height: 3),
             Text(
@@ -152,7 +145,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
                 color: selected
                     ? const Color(0xFF2E7D32)
                     : const Color(0xFFAAAAAA),
-                fontSize: 10,
+                fontSize: 14, // was 10
                 fontWeight:
                     selected ? FontWeight.w700 : FontWeight.w400,
               ),

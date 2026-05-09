@@ -153,13 +153,13 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (_) => EditProfileScreen(
           name: _userName,
           email: _userEmail,
-          phone: '', // fallback (replace if you have it)
-          username: _userName, // or real username if available
+          phone: '',
+          username: _userName,
         ),
       ),
     ).then((updated) {
       if (updated == true) {
-        _loadUser(); // refresh after edit
+        _loadUser();
       }
     });
   }
@@ -263,7 +263,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // 3. IMPORTANT UPDATES (collapsible, hidden when profile complete)
   // ══════════════════════════════════════════════════════════
   Widget _buildImportantUpdates(AppColors colors) {
-    // Don't show if the user has a real name and a real email address
     if (_isProfileComplete) return const SizedBox.shrink();
 
     return Container(
@@ -367,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ══════════════════════════════════════════════════════════
-  // 4. Markets and vets
+  // 4. FEATURE SHORTCUTS
   // ══════════════════════════════════════════════════════════
   Widget _buildFeatureShortcuts(AppColors colors) {
     final items = [
@@ -378,9 +377,8 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     final screenWidth = MediaQuery.of(context).size.width;
-
     final isTablet = screenWidth >= 600;
-    final containerHeight = isTablet ? 220.0 : 180.0;
+    final containerHeight = isTablet ? 260.0 : 220.0; // increased to fit title
     final iconBoxHeight = isTablet ? 80.0 : 70.0;
     final iconSize = isTablet ? 38.0 : 34.0;
     final fontSize = isTablet ? 13.0 : 12.0;
@@ -389,49 +387,65 @@ class _HomeScreenState extends State<HomeScreen> {
       height: containerHeight,
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      child: Row(
-        children: items.map((item) {
-          return Expanded(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {},
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Container(
-                    height: iconBoxHeight,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F6FA),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Image.asset(
-                        item['icon']!,
-                        height: iconSize,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.image_not_supported_outlined,
-                          color: Color(0xFF4CAF50),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    item['title']!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: fontSize,
-                      fontWeight: FontWeight.w500,
-                      height: 1.3,
-                      color: const Color(0xFF444444),
-                    ),
-                  ),
-                ],
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Explore',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
             ),
-          );
-        }).toList(),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Row(
+              children: items.map((item) {
+                return Expanded(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {},
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Container(
+                          height: iconBoxHeight,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F6FA),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Image.asset(
+                              item['icon']!,
+                              height: iconSize,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.image_not_supported_outlined,
+                                color: Color(0xFF4CAF50),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Text(
+                          item['title']!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
+                            color: const Color(0xFF444444),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -443,86 +457,114 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          int cols = 4;
-          if (width < 360) cols = 3;
-          if (width > 600) cols = 5;
-
-          final itemW = width / cols;
-          final boxSize = itemW * 0.62;
-          final fontSize = (itemW * 0.12).clamp(10.0, 13.0);
-
-          return GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _quickMenuItems.length,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: cols,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 6,
-              childAspectRatio: 0.82,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 0, 12),
+            child: Text(
+              'Quick Actions',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+              ),
             ),
-            itemBuilder: (context, index) {
-              final item = _quickMenuItems[index];
-              return InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () {
-                  if (item['route'] != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => item['route']),
-                    );
-                  }
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      height: boxSize,
-                      width: boxSize,
-                      decoration: BoxDecoration(
-                        color: colors.cardBackground,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Image.asset(
-                          item['icon'] as String,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.image_not_supported_outlined,
-                            color: Color(0xFF4CAF50),
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              int cols = 4;
+              if (width < 360) cols = 3;
+              if (width > 600) cols = 5;
+
+              final itemW = width / cols;
+              final boxSize = itemW * 0.62;
+              final fontSize = (itemW * 0.12).clamp(10.0, 13.0);
+
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _quickMenuItems.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: cols,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 6,
+                  childAspectRatio: 0.78,
+                ),
+                itemBuilder: (context, index) {
+                  final item = _quickMenuItems[index];
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () {
+                      if (item['route'] != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => item['route']),
+                        );
+                      }
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Center(
+                            child: Container(
+                              width: boxSize,
+                              decoration: BoxDecoration(
+                                color: colors.cardBackground,
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: AspectRatio(
+                                aspectRatio: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Image.asset(
+                                    item['icon'] as String,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.image_not_supported_outlined,
+                                      color: Color(0xFF4CAF50),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 6),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            item['title'],
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.w500,
+                              color: colors.textPrimary,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      item['title'],
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.w500,
-                        color: colors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+        ],
       ),
     );
   }
