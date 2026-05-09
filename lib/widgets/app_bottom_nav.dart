@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../screens/tulip/tulip_screen.dart';
+import '../screens/profile/profile_screen.dart';
 
 class AppBottomNav extends StatefulWidget {
   final int currentIndex;
@@ -20,30 +22,36 @@ class _AppBottomNavState extends State<AppBottomNav> {
     _currentIndex = widget.currentIndex;
   }
 
-  void _handleTap(BuildContext context, int index) {
-    if (index == 4) {
-      widget.onTap?.call(index);
-      Navigator.pushNamed(context, '/profile');
-      return;
-    }
+ void _handleTap(BuildContext context, int index) {
+  if (_currentIndex == index) return;
 
-    if (_currentIndex == index) return;
+  setState(() => _currentIndex = index);
+  widget.onTap?.call(index);
 
-    setState(() => _currentIndex = index);
-    widget.onTap?.call(index);
+  switch (index) {
+    case 0:
+      Navigator.pushReplacementNamed(context, '/home');
+      break;
 
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/home');
-        break;
-      case 1:
-        Navigator.pushReplacementNamed(context, '/chat');
-        break;
-      case 2:
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-    }
+    case 1:
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const TulipAiScreen(),
+        ),
+      );
+      break;
+
+    case 2:
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const ProfileScreen(),
+        ),
+      );
+      break;
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +77,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
 
                 // ── Centre FAB (chat) ──────────────────────────
                 GestureDetector(
-                  onTap: () => _handleTap(context, 2),
+                  onTap: () => _handleTap(context, 1),
                   child: Container(
                     height: 56, // was 50
                     width: 56,  // was 50
