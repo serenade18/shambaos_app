@@ -46,9 +46,9 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
-  bool _isVerifying  = false;
-  bool _isResending  = false;
-  bool _isAutoFilling = false; // FIX #3: guard against listener race during autofill
+  bool _isVerifying   = false;
+  bool _isResending   = false;
+  bool _isAutoFilling = false;
   String? _errorMsg;
 
   int _resendSeconds = 60;
@@ -59,7 +59,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
   void initState() {
     super.initState();
 
-    // FIX #5: small delay so the SMS listener is registered before the SMS arrives
     Future.delayed(const Duration(milliseconds: 200), listenForCode);
 
     _animCtrl = AnimationController(
@@ -82,8 +81,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     final receivedCode = code;
     if (receivedCode == null || receivedCode.length != 6) return;
 
-    // FIX #3: set flag before populating controllers so the change listener
-    // doesn't race and call _verifyOtp a second time.
     _isAutoFilling = true;
     for (int i = 0; i < 6; i++) {
       _ctrls[i].text = receivedCode[i];
@@ -125,7 +122,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
   String get _otpValue => _ctrls.map((c) => c.text).join();
 
   void _onDigitChanged() {
-    // FIX #3: skip when autofill is populating boxes to avoid double-call
     if (_isAutoFilling) return;
     if (_otpValue.length == 6 && !_isVerifying) {
       _verifyOtp();
@@ -164,7 +160,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     if (!mounted) return;
     setState(() => _isVerifying = false);
 
-    // api_service sets error:true on 200 (success) and error:false on 4xx (failure)
     if (res.statusCode == 200 && res.error) {
       Navigator.of(context).pushAndRemoveUntil(
         PageRouteBuilder(
@@ -176,7 +171,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
         (_) => false,
       );
     } else {
-      // Clear boxes and refocus on error
       for (final c in _ctrls) { c.clear(); }
       _foci[0].requestFocus();
       setState(() => _errorMsg = res.message ?? 'Invalid code. Please try again.');
@@ -195,7 +189,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     if (!mounted) return;
     setState(() => _isResending = false);
 
-    // FIX #1: same inversion fix — !res.error means the request succeeded
     if (!res.error) {
       _startCountdown();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -299,108 +292,122 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
-                    child: Column(
-                      children: [
+                    // ── TABLET FIX: cap content width and center it ──────────
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: Column(
+                          children: [
 
-                        // ── OTP boxes ────────────────────────────────────────
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: List.generate(
-                            6,
-                            (i) => _OtpBox(
-                              controller: _ctrls[i],
-                              focusNode: _foci[i],
-                              hasError: _errorMsg != null,
-                              onChanged: (v) => _onKey(i, v),
-                              onBackspace: () => _onBackspace(i),
-                            ),
-                          ),
-                        ),
-
-                        if (_errorMsg != null) ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              const Icon(Icons.error_outline_rounded,
-                                  color: _Brand.errorRed, size: 15),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  _errorMsg!,
-                                  style: const TextStyle(
-                                      color: _Brand.errorRed, fontSize: 12),
+                            // ── OTP boxes ──────────────────────────────────────
+                            // TABLET FIX: boxes are fixed-size inside a capped,
+                            // centered row — no stretching on wide screens.
+                            Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 340),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: List.generate(
+                                    6,
+                                    (i) => _OtpBox(
+                                      controller: _ctrls[i],
+                                      focusNode: _foci[i],
+                                      hasError: _errorMsg != null,
+                                      onChanged: (v) => _onKey(i, v),
+                                      onBackspace: () => _onBackspace(i),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ],
-
-                        const SizedBox(height: 32),
-
-                        // ── Resend row ───────────────────────────────────────
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Didn't receive a code? ",
-                              style: TextStyle(
-                                  color: _Brand.textSecondary, fontSize: 13),
                             ),
-                            _isResending
-                                ? const SizedBox(
-                                    width: 16, height: 16,
-                                    child: CircularProgressIndicator(
-                                        color: _Brand.brand, strokeWidth: 2),
-                                  )
-                                : GestureDetector(
-                                    onTap: _resendSeconds > 0
-                                        ? null
-                                        : _resendOtp,
+
+                            if (_errorMsg != null) ...[
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  const Icon(Icons.error_outline_rounded,
+                                      color: _Brand.errorRed, size: 15),
+                                  const SizedBox(width: 6),
+                                  Expanded(
                                     child: Text(
-                                      _resendSeconds > 0
-                                          ? 'Resend in ${_resendSeconds}s'
-                                          : 'Resend',
+                                      _errorMsg!,
+                                      style: const TextStyle(
+                                          color: _Brand.errorRed, fontSize: 12),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+
+                            const SizedBox(height: 32),
+
+                            // ── Resend row ─────────────────────────────────────
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "Didn't receive a code? ",
+                                  style: TextStyle(
+                                      color: _Brand.textSecondary, fontSize: 13),
+                                ),
+                                _isResending
+                                    ? const SizedBox(
+                                        width: 16, height: 16,
+                                        child: CircularProgressIndicator(
+                                            color: _Brand.brand, strokeWidth: 2),
+                                      )
+                                    : GestureDetector(
+                                        onTap: _resendSeconds > 0
+                                            ? null
+                                            : _resendOtp,
+                                        child: Text(
+                                          _resendSeconds > 0
+                                              ? 'Resend in ${_resendSeconds}s'
+                                              : 'Resend',
+                                          style: TextStyle(
+                                            color: _resendSeconds > 0
+                                                ? _Brand.textHint
+                                                : _Brand.brand,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            // ── Security note ──────────────────────────────────
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: _Brand.brandLight,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: _Brand.brandBorder),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.info_outline_rounded,
+                                      color: _Brand.brand, size: 18),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'This code expires in 10 minutes.\nNever share it with anyone.',
                                       style: TextStyle(
-                                        color: _resendSeconds > 0
-                                            ? _Brand.textHint
-                                            : _Brand.brand,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
+                                        color: _Brand.brand,
+                                        fontSize: 12,
+                                        height: 1.5,
                                       ),
                                     ),
                                   ),
+                                ],
+                              ),
+                            ),
+
                           ],
                         ),
-
-                        const SizedBox(height: 28),
-
-                        // ── Security note ────────────────────────────────────
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: _Brand.brandLight,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: _Brand.brandBorder),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.info_outline_rounded,
-                                  color: _Brand.brand, size: 18),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'This code expires in 10 minutes.\nNever share it with anyone.',
-                                  style: TextStyle(
-                                    color: _Brand.brand,
-                                    fontSize: 12,
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -415,32 +422,38 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                           height: 1, thickness: 1, color: _Brand.divider),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton(
-                            onPressed: (_isVerifying || _otpValue.length < 6)
-                                ? null
-                                : _verifyOtp,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _Brand.brand,
-                              disabledBackgroundColor:
-                                  _Brand.brand.withOpacity(0.35),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              textStyle: const TextStyle(
-                                  fontSize: 15, fontWeight: FontWeight.w700),
+                        // ── TABLET FIX: cap button width on wide screens ─────
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 480),
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: (_isVerifying || _otpValue.length < 6)
+                                    ? null
+                                    : _verifyOtp,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _Brand.brand,
+                                  disabledBackgroundColor:
+                                      _Brand.brand.withOpacity(0.35),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  textStyle: const TextStyle(
+                                      fontSize: 15, fontWeight: FontWeight.w700),
+                                ),
+                                child: _isVerifying
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                            color: Colors.white, strokeWidth: 2.5),
+                                      )
+                                    : const Text('Verify & Sign In'),
+                              ),
                             ),
-                            child: _isVerifying
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                        color: Colors.white, strokeWidth: 2.5),
-                                  )
-                                : const Text('Verify & Sign In'),
                           ),
                         ),
                       ),

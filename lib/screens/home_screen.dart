@@ -792,7 +792,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: ClipOval(
               child: Image.asset(
-                'assets/images/farmer_avatar.png',
+                'images/assets/icons/farmer.png',
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => const Icon(
                   Icons.person_outline_rounded,
