@@ -1,32 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-class ChatMessage {
-  final String text;
-  final bool isUser;
-  final DateTime timestamp;
-
-  ChatMessage({
-    required this.text,
-    required this.isUser,
-    required this.timestamp,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'text': text,
-        'isUser': isUser,
-        'timestamp': timestamp.toIso8601String(),
-      };
-
-  factory ChatMessage.fromJson(Map<String, dynamic> json) {
-    return ChatMessage(
-      text: json['text'],
-      isUser: json['isUser'],
-      timestamp: DateTime.parse(json['timestamp']),
-    );
-  }
-}
+import '../../models/chat_message_model.dart';
 
 class TulipAiScreen extends StatefulWidget {
   const TulipAiScreen({super.key});
@@ -102,15 +77,6 @@ class _TulipAiScreenState extends State<TulipAiScreen> {
     );
   }
 
-  void _clearChat() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_storageKey);
-
-    setState(() {
-      _messages.clear();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -139,7 +105,7 @@ class _TulipAiScreenState extends State<TulipAiScreen> {
                       ),
                     ),
                   ),
-                  _circleButton(Icons.delete_outline, _clearChat),
+                  _circleButton(Icons.history_rounded, () {}),
                 ],
               ),
             ),

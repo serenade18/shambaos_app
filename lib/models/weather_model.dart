@@ -2,7 +2,7 @@ class WeatherModel {
   final double temp;
   final String condition;
   final String description;
-  final String icon; // ✅ ADD THIS
+  final String icon; 
   final int humidity;
   final double windSpeed;
   final double precipitation;
@@ -12,7 +12,7 @@ class WeatherModel {
     required this.temp,
     required this.condition,
     required this.description,
-    required this.icon, // ✅ ADD
+    required this.icon, 
     required this.humidity,
     required this.windSpeed,
     required this.precipitation,
