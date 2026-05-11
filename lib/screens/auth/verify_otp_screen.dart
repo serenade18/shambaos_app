@@ -160,7 +160,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     if (!mounted) return;
     setState(() => _isVerifying = false);
 
-    if (res.statusCode == 200 && res.error) {
+    if (res.statusCode == 200 && !res.error) {
       Navigator.of(context).pushAndRemoveUntil(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => const HomeScreen(),
@@ -292,7 +292,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
-                    // ── TABLET FIX: cap content width and center it ──────────
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 480),
@@ -300,8 +299,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                           children: [
 
                             // ── OTP boxes ──────────────────────────────────────
-                            // TABLET FIX: boxes are fixed-size inside a capped,
-                            // centered row — no stretching on wide screens.
                             Center(
                               child: ConstrainedBox(
                                 constraints: const BoxConstraints(maxWidth: 340),
@@ -422,7 +419,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                           height: 1, thickness: 1, color: _Brand.divider),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                        // ── TABLET FIX: cap button width on wide screens ─────
                         child: Center(
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 480),

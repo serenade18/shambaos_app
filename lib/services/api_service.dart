@@ -21,7 +21,7 @@ class ApiResponse {
 class ApiService {
   // ⚠️ CHANGE THIS depending on your environment
   // static const String baseUrl = 'https://shambaos.linkworldcargo.com/api';
-  static const String baseUrl = 'http://192.168.0.103:8000/api';
+  static const String baseUrl = 'http://192.168.1.102:8000/api';
 
   static String? _accessToken;
   static String? _refreshToken;
@@ -110,7 +110,7 @@ class ApiService {
       // ✅ SUCCESS
       if (statusCode >= 200 && statusCode < 300) {
         return ApiResponse(
-          error: true,
+          error: false,
           data: data,
           message: data is Map ? data['message'] : null,
           statusCode: statusCode,
@@ -129,7 +129,7 @@ class ApiService {
 
       // ❌ FAILURE
       return ApiResponse(
-        error: false,
+        error: true,
         data: data,
         message: data is Map ? data['detail'] ?? data['message'] : null,
         statusCode: statusCode,

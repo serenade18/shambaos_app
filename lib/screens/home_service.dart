@@ -21,7 +21,7 @@ class HomeService {
       requiresAuth: true,
     );
 
-    if (!response.error || response.data == null) {
+    if (response.error || response.data == null) {
       return [];
     }
 
@@ -49,7 +49,7 @@ class HomeService {
       requiresAuth: true,
     );
 
-    if (!response.error || response.data == null) {
+    if (response.error || response.data == null) {
       return [];
     }
 

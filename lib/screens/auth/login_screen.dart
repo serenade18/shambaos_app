@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import 'verify_otp_screen.dart';
-// import '../home/home_screen.dart'; // uncomment when navigating after login
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Brand tokens
@@ -55,14 +54,14 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   _Country _selectedCountry = _countries.first;
-  final _phoneCtrl = TextEditingController();
+  final _phoneCtrl  = TextEditingController();
   final _phoneFocus = FocusNode();
 
   late AnimationController _animCtrl;
   late List<Animation<double>> _fadeAnims;
   late List<Animation<Offset>> _slideAnims;
 
-  bool _isLoading = false;
+  bool    _isLoading = false;
   String? _errorMsg;
 
   static const int _n = 5;
@@ -81,12 +80,16 @@ class _LoginScreenState extends State<LoginScreen>
     _fadeAnims = List.generate(_n, (i) {
       final s = i * 0.12, e = (s + 0.5).clamp(0.0, 1.0);
       return Tween<double>(begin: 0, end: 1).animate(
-          CurvedAnimation(parent: _animCtrl, curve: Interval(s, e, curve: Curves.easeOut)));
+          CurvedAnimation(parent: _animCtrl,
+              curve: Interval(s, e, curve: Curves.easeOut)));
     });
     _slideAnims = List.generate(_n, (i) {
       final s = i * 0.12, e = (s + 0.5).clamp(0.0, 1.0);
-      return Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
-          CurvedAnimation(parent: _animCtrl, curve: Interval(s, e, curve: Curves.easeOut)));
+      return Tween<Offset>(
+              begin: const Offset(0, 0.08), end: Offset.zero)
+          .animate(CurvedAnimation(
+              parent: _animCtrl,
+              curve: Interval(s, e, curve: Curves.easeOut)));
     });
 
     Future.delayed(const Duration(milliseconds: 60), () {
@@ -107,14 +110,12 @@ class _LoginScreenState extends State<LoginScreen>
       position: _slideAnims[i],
       child: FadeTransition(opacity: _fadeAnims[i], child: child));
 
-  // ── Normalise to E.164 matching your backend _normalize_phone logic ────────
+  // ── Normalise to E.164 ────────────────────────────────────────────────────
   String _normalizedPhone() {
     final raw = _phoneCtrl.text.trim();
-    // If user typed local format (07xx), prepend dial code without leading zero
     if (raw.startsWith('0')) {
       return _selectedCountry.dialCode + raw.substring(1);
     }
-    // If user typed without country code at all
     if (!raw.startsWith('+')) {
       return '${_selectedCountry.dialCode}$raw';
     }
@@ -132,29 +133,33 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() { _isLoading = true; _errorMsg = null; });
 
     final phone = _normalizedPhone();
-    final res = await AuthService.requestOtp(phone: phone);
+    final res   = await AuthService.requestOtp(phone: phone);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (res.error) {
-      // Push OTP verification screen
+    final sent = res.data is Map ? res.data['sent'] == true : false;
+
+    if (!res.error && sent) {
       Navigator.of(context).push(
         PageRouteBuilder(
-          pageBuilder: (_, __, ___) =>
-              VerifyOtpScreen(phone: phone, displayPhone: '${_selectedCountry.dialCode} $raw'),
-          transitionsBuilder: (_, anim, __, child) =>
-              SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0), end: Offset.zero,
-                ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
-                child: child,
-              ),
+          pageBuilder: (_, __, ___) => VerifyOtpScreen(
+            phone: phone,
+            displayPhone: '${_selectedCountry.dialCode} $raw',
+          ),
+          transitionsBuilder: (_, anim, __, child) => SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0), end: Offset.zero,
+            ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut)),
+            child: child,
+          ),
           transitionDuration: const Duration(milliseconds: 350),
         ),
       );
     } else {
-      setState(() => _errorMsg = res.message ?? 'Failed to send OTP. Try again.');
+      setState(() => _errorMsg = res.data is Map
+          ? res.data['message'] ?? 'Failed to send OTP. Try again.'
+          : res.message ?? 'Failed to send OTP. Try again.');
     }
   }
 
@@ -169,8 +174,10 @@ class _LoginScreenState extends State<LoginScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 12),
-          Container(width: 36, height: 4,
-              decoration: BoxDecoration(color: _Brand.divider,
+          Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                  color: _Brand.divider,
                   borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 18),
           const Text('Select Country',
@@ -183,10 +190,13 @@ class _LoginScreenState extends State<LoginScreen>
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _countries.length,
             itemBuilder: (_, i) {
-              final c = _countries[i];
+              final c   = _countries[i];
               final sel = c.dialCode == _selectedCountry.dialCode;
               return ListTile(
-                onTap: () { setState(() => _selectedCountry = c); Navigator.pop(context); },
+                onTap: () {
+                  setState(() => _selectedCountry = c);
+                  Navigator.pop(context);
+                },
                 tileColor: sel ? _Brand.brandLight : null,
                 leading: Text(c.flag, style: const TextStyle(fontSize: 22)),
                 title: Text(c.name,
@@ -214,15 +224,20 @@ class _LoginScreenState extends State<LoginScreen>
         backgroundColor: _Brand.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Need Help?',
-            style: TextStyle(color: _Brand.textPrimary, fontWeight: FontWeight.w700)),
+            style: TextStyle(
+                color: _Brand.textPrimary, fontWeight: FontWeight.w700)),
         content: const Text(
-          'Enter your phone number (e.g. 0712 123456).\nWe\'ll send a 6-digit SMS code to log in or create your account.',
-          style: TextStyle(color: _Brand.textSecondary, height: 1.5, fontSize: 14),
+          'Enter your phone number (e.g. 0712 123456).\n'
+          'We\'ll send a 6-digit SMS code to log in or create your account.',
+          style: TextStyle(
+              color: _Brand.textSecondary, height: 1.5, fontSize: 14),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
               child: const Text('Got it',
-                  style: TextStyle(color: _Brand.brand, fontWeight: FontWeight.w700))),
+                  style: TextStyle(
+                      color: _Brand.brand, fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -245,28 +260,35 @@ class _LoginScreenState extends State<LoginScreen>
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                         color: _Brand.brandLight,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: _Brand.brandBorder)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: const [
-                      Icon(Icons.agriculture_rounded, color: _Brand.brand, size: 13),
+                      Icon(Icons.agriculture_rounded,
+                          color: _Brand.brand, size: 13),
                       SizedBox(width: 5),
                       Text('FARM INTELLIGENCE',
-                          style: TextStyle(color: _Brand.brand, fontSize: 10,
+                          style: TextStyle(
+                              color: _Brand.brand, fontSize: 10,
                               fontWeight: FontWeight.w700, letterSpacing: 1.0)),
                     ]),
                   ),
                   const SizedBox(height: 18),
                   const Text("What's your phone number?",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800,
+                      style: TextStyle(
+                          fontSize: 30, fontWeight: FontWeight.w800,
                           color: _Brand.textPrimary, height: 1.15)),
                   const SizedBox(height: 8),
                   const Text('We use it to create your account',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: _Brand.textSecondary, height: 1.5)),
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: _Brand.textSecondary,
+                          height: 1.5)),
                 ],
               ),
             )),
@@ -279,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen>
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                 child: Column(
                   children: [
-                    // Phone input
+                    // Phone input card
                     _stagger(1, AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       decoration: BoxDecoration(
@@ -291,55 +313,73 @@ class _LoginScreenState extends State<LoginScreen>
                               : focused ? _Brand.brand : _Brand.divider,
                           width: focused || _errorMsg != null ? 1.5 : 1.0,
                         ),
-                        boxShadow: [BoxShadow(
-                          color: focused
-                              ? _Brand.brand.withOpacity(0.10)
-                              : Colors.black.withOpacity(0.04),
-                          blurRadius: focused ? 14 : 6,
-                          offset: const Offset(0, 2),
-                        )],
+                        boxShadow: [
+                          BoxShadow(
+                            color: focused
+                                ? _Brand.brand.withOpacity(0.10)
+                                : Colors.black.withOpacity(0.04),
+                            blurRadius: focused ? 14 : 6,
+                            offset: const Offset(0, 2),
+                          )
+                        ],
                       ),
                       child: Row(children: [
                         // Country selector
                         GestureDetector(
                           onTap: _showCountryPicker,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 16),
                             decoration: const BoxDecoration(
-                                border: Border(right: BorderSide(color: _Brand.divider))),
-                            child: Row(mainAxisSize: MainAxisSize.min, children: [
-                              Text(_selectedCountry.flag,
-                                  style: const TextStyle(fontSize: 20)),
-                              const SizedBox(width: 6),
-                              Text(_selectedCountry.dialCode,
-                                  style: const TextStyle(color: _Brand.textPrimary,
-                                      fontSize: 14, fontWeight: FontWeight.w600)),
-                              const SizedBox(width: 2),
-                              const Icon(Icons.keyboard_arrow_down_rounded,
-                                  color: _Brand.textSecondary, size: 18),
-                            ]),
+                                border: Border(
+                                    right: BorderSide(color: _Brand.divider))),
+                            child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(_selectedCountry.flag,
+                                      style: const TextStyle(fontSize: 20)),
+                                  const SizedBox(width: 6),
+                                  Text(_selectedCountry.dialCode,
+                                      style: const TextStyle(
+                                          color: _Brand.textPrimary,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600)),
+                                  const SizedBox(width: 2),
+                                  const Icon(Icons.keyboard_arrow_down_rounded,
+                                      color: _Brand.textSecondary, size: 18),
+                                ]),
                           ),
                         ),
                         // Number field
-                        Expanded(child: TextField(
-                          controller: _phoneCtrl,
-                          focusNode: _phoneFocus,
-                          keyboardType: TextInputType.phone,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(10),
-                          ],
-                          onChanged: (_) { if (_errorMsg != null) setState(() => _errorMsg = null); },
-                          style: const TextStyle(color: _Brand.textPrimary,
-                              fontSize: 15, fontWeight: FontWeight.w500),
-                          decoration: const InputDecoration(
-                            hintText: '712 123456',
-                            hintStyle: TextStyle(color: _Brand.textHint, fontSize: 14),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                        Expanded(
+                          child: TextField(
+                            controller: _phoneCtrl,
+                            focusNode: _phoneFocus,
+                            keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
+                            onChanged: (_) {
+                              if (_errorMsg != null) {
+                                setState(() => _errorMsg = null);
+                              }
+                            },
+                            style: const TextStyle(
+                                color: _Brand.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500),
+                            decoration: const InputDecoration(
+                              hintText: '712 123456',
+                              hintStyle: TextStyle(
+                                  color: _Brand.textHint, fontSize: 14),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 16),
+                            ),
+                            cursorColor: _Brand.brand,
                           ),
-                          cursorColor: _Brand.brand,
-                        )),
+                        ),
                       ]),
                     )),
 
@@ -350,8 +390,11 @@ class _LoginScreenState extends State<LoginScreen>
                         const Icon(Icons.error_outline_rounded,
                             color: _Brand.errorRed, size: 15),
                         const SizedBox(width: 6),
-                        Expanded(child: Text(_errorMsg!,
-                            style: const TextStyle(color: _Brand.errorRed, fontSize: 12))),
+                        Expanded(
+                          child: Text(_errorMsg!,
+                              style: const TextStyle(
+                                  color: _Brand.errorRed, fontSize: 12)),
+                        ),
                       ])),
                     ],
 
@@ -362,34 +405,48 @@ class _LoginScreenState extends State<LoginScreen>
                       onTap: _showHelp,
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
                           color: _Brand.card,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: _Brand.divider),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03),
-                              blurRadius: 6, offset: const Offset(0, 2))],
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2))
+                          ],
                         ),
                         child: Row(children: [
-                          Container(width: 44, height: 44,
-                            decoration: BoxDecoration(color: _Brand.brandLight,
+                          Container(
+                            width: 44, height: 44,
+                            decoration: BoxDecoration(
+                                color: _Brand.brandLight,
                                 borderRadius: BorderRadius.circular(12)),
                             child: const Icon(Icons.help_outline_rounded,
                                 color: _Brand.brand, size: 22),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Need help to connect?',
-                                  style: TextStyle(color: _Brand.textPrimary,
-                                      fontWeight: FontWeight.w600, fontSize: 14)),
-                              SizedBox(height: 2),
-                              Text('Learn how SMS login works',
-                                  style: TextStyle(color: _Brand.textSecondary, fontSize: 12)),
-                            ],
-                          )),
-                          Container(width: 34, height: 34,
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Need help to connect?',
+                                    style: TextStyle(
+                                        color: _Brand.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14)),
+                                SizedBox(height: 2),
+                                Text('Learn how SMS login works',
+                                    style: TextStyle(
+                                        color: _Brand.textSecondary,
+                                        fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 34, height: 34,
                             decoration: const BoxDecoration(
                                 color: _Brand.brand, shape: BoxShape.circle),
                             child: const Icon(Icons.arrow_forward_rounded,
@@ -398,9 +455,6 @@ class _LoginScreenState extends State<LoginScreen>
                         ]),
                       ),
                     )),
-
-                   
-                   
                   ],
                 ),
               ),
@@ -417,34 +471,46 @@ class _LoginScreenState extends State<LoginScreen>
                     RichText(
                       textAlign: TextAlign.center,
                       text: const TextSpan(
-                        style: TextStyle(color: _Brand.textHint, fontSize: 11, height: 1.5),
+                        style: TextStyle(
+                            color: _Brand.textHint, fontSize: 11, height: 1.5),
                         children: [
                           TextSpan(text: 'By continuing you agree to our '),
-                          TextSpan(text: 'Terms of Service',
-                              style: TextStyle(color: _Brand.brand, fontWeight: FontWeight.w600)),
+                          TextSpan(
+                              text: 'Terms of Service',
+                              style: TextStyle(
+                                  color: _Brand.brand,
+                                  fontWeight: FontWeight.w600)),
                           TextSpan(text: ' and '),
-                          TextSpan(text: 'Privacy Policy',
-                              style: TextStyle(color: _Brand.brand, fontWeight: FontWeight.w600)),
+                          TextSpan(
+                              text: 'Privacy Policy',
+                              style: TextStyle(
+                                  color: _Brand.brand,
+                                  fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
-                      width: double.infinity, height: 52,
+                      width: double.infinity,
+                      height: 52,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleContinue,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _Brand.brand,
-                          disabledBackgroundColor: _Brand.brand.withOpacity(0.45),
+                          disabledBackgroundColor:
+                              _Brand.brand.withOpacity(0.45),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                           textStyle: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 0.3),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3),
                         ),
                         child: _isLoading
-                            ? const SizedBox(width: 22, height: 22,
+                            ? const SizedBox(
+                                width: 22, height: 22,
                                 child: CircularProgressIndicator(
                                     color: Colors.white, strokeWidth: 2.5))
                             : const Text('Continue'),
