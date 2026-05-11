@@ -24,12 +24,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _userName = '';
   String _userEmail = '';
+  bool _isFarmSetup = false;
   bool _updatesExpanded = true;
 
   bool get _isProfileComplete =>
       _userName.isNotEmpty &&
       _userEmail.isNotEmpty &&
       !_userEmail.endsWith('@phone.shamba.local');
+
+  // Section hides only when BOTH conditions are satisfied
+  bool get _allUpdatesComplete => _isProfileComplete && _isFarmSetup;
 
   final List<Map<String, dynamic>> _quickMenuItems = [
     {
@@ -108,6 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadUser();
+    _loadFarmStatus();
     _posterPageController = PageController(
       initialPage: _posterItems.length * 100,
       viewportFraction: 1.0,
@@ -130,9 +135,20 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadFarmStatus() async {
+    final response = await ApiService.get('/farms/', requiresAuth: true);
+    if (!response.error && response.data != null) {
+      final List farms = response.data?['data'] ?? response.data ?? [];
+      setState(() {
+        _isFarmSetup = farms.isNotEmpty;
+      });
+    }
+  }
+
   Future<void> _onRefresh() async {
     await Future.wait([
       _loadUser(),
+      _loadFarmStatus(),
       _weatherKey.currentState?.refresh() ?? Future.value(),
     ]);
   }
@@ -261,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ══════════════════════════════════════════════════════════
-  // 3. IMPORTANT UPDATES (collapsible, hidden when profile complete)
+  // 3. IMPORTANT UPDATES (collapsible, hidden when all complete)
   // ══════════════════════════════════════════════════════════
   Widget _buildUpdateItem({
     required IconData icon,
@@ -310,7 +326,46 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildImportantUpdates(AppColors colors) {
-    if (_isProfileComplete) return const SizedBox.shrink();
+    // Guard: nothing to show
+    if (_allUpdatesComplete) return const SizedBox.shrink();
+
+    // Build only the items that are still pending
+    final List<Widget> pendingItems = [];
+
+    if (!_isProfileComplete) {
+      pendingItems.add(
+        _buildUpdateItem(
+          icon: Icons.auto_awesome_outlined,
+          title: 'Complete your profile',
+          subtitle: 'Unlock a personalised experience',
+          onTap: _openEditProfile,
+        ),
+      );
+    }
+
+    if (!_isFarmSetup) {
+      if (pendingItems.isNotEmpty) {
+        pendingItems.add(
+          const Divider(
+            height: 1,
+            thickness: 1,
+            indent: 14,
+            endIndent: 14,
+            color: Color(0xFFE0EDE2),
+          ),
+        );
+      }
+      pendingItems.add(
+        _buildUpdateItem(
+          icon: Icons.agriculture_outlined,
+          title: 'Setup your farm',
+          subtitle: 'Add your farm details to get started',
+          onTap: () {
+            // TODO: Navigate to farm setup screen
+          },
+        ),
+      );
+    }
 
     return Container(
       color: Colors.white,
@@ -354,31 +409,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0xFFD6ECD9), width: 1),
                 ),
-                child: Column(
-                  children: [
-                    _buildUpdateItem(
-                      icon: Icons.auto_awesome_outlined,
-                      title: 'Complete your profile',
-                      subtitle: 'Unlock a personalised experience',
-                      onTap: _openEditProfile,
-                    ),
-                    const Divider(
-                      height: 1,
-                      thickness: 1,
-                      indent: 14,
-                      endIndent: 14,
-                      color: Color(0xFFE0EDE2),
-                    ),
-                    _buildUpdateItem(
-                      icon: Icons.agriculture_outlined,
-                      title: 'Setup your farm',
-                      subtitle: 'Add your farm details to get started',
-                      onTap: () {
-                        // TODO: Navigate to farm setup screen
-                      },
-                    ),
-                  ],
-                ),
+                // Uses dynamic pendingItems — only shows what's incomplete
+                child: Column(children: pendingItems),
               ),
             ),
             secondChild: const SizedBox.shrink(),
@@ -870,8 +902,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildWeatherStrip(),
               _divider(),
 
-              // Only rendered when profile is incomplete
-              if (!_isProfileComplete) ...[
+              // Hidden only when BOTH profile is complete AND farm is set up
+              if (!_allUpdatesComplete) ...[
                 const SizedBox(height: 8),
                 _buildImportantUpdates(colors),
               ],
