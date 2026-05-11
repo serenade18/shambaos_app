@@ -263,6 +263,52 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   // 3. IMPORTANT UPDATES (collapsible, hidden when profile complete)
   // ══════════════════════════════════════════════════════════
+  Widget _buildUpdateItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      leading: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F5E9),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: const Color(0xFF4CAF50), size: 24),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+          color: Color(0xFF1A1A1A),
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 12, color: Color(0xFF888888)),
+      ),
+      trailing: Container(
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: Color(0xFF4CAF50),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.arrow_forward_rounded,
+          color: Colors.white,
+          size: 18,
+        ),
+      ),
+      onTap: onTap,
+    );
+  }
+
   Widget _buildImportantUpdates(AppColors colors) {
     if (_isProfileComplete) return const SizedBox.shrink();
 
@@ -308,50 +354,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0xFFD6ECD9), width: 1),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  leading: Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
-                      borderRadius: BorderRadius.circular(12),
+                child: Column(
+                  children: [
+                    _buildUpdateItem(
+                      icon: Icons.auto_awesome_outlined,
+                      title: 'Complete your profile',
+                      subtitle: 'Unlock a personalised experience',
+                      onTap: _openEditProfile,
                     ),
-                    child: const Icon(
-                      Icons.auto_awesome_outlined,
-                      color: Color(0xFF4CAF50),
-                      size: 24,
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      indent: 14,
+                      endIndent: 14,
+                      color: Color(0xFFE0EDE2),
                     ),
-                  ),
-                  title: const Text(
-                    'Complete your profile',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Color(0xFF1A1A1A),
+                    _buildUpdateItem(
+                      icon: Icons.agriculture_outlined,
+                      title: 'Setup your farm',
+                      subtitle: 'Add your farm details to get started',
+                      onTap: () {
+                        // TODO: Navigate to farm setup screen
+                      },
                     ),
-                  ),
-                  subtitle: const Text(
-                    'Unlock a personalised experience',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF888888)),
-                  ),
-                  trailing: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF4CAF50),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                  ),
-                  onTap: _openEditProfile,
+                  ],
                 ),
               ),
             ),
@@ -379,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth >= 600;
-    final containerHeight = isTablet ? 260.0 : 220.0; // increased to fit title
+    final containerHeight = isTablet ? 260.0 : 220.0;
     final iconBoxHeight = isTablet ? 80.0 : 70.0;
     final iconSize = isTablet ? 38.0 : 34.0;
     final fontSize = isTablet ? 13.0 : 12.0;
