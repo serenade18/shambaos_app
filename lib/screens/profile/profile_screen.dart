@@ -5,6 +5,7 @@ import '../onboarding/welcome_screens.dart';
 import '../../main.dart';
 import 'edit_profile_screen.dart';
 import 'notification_screen.dart';
+import '../../services/api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userName;
@@ -38,6 +39,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _userPhone = widget.userPhone;
     _username = widget.username;
     themeNotifier.addListener(_onThemeChange);
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    // First try cached user from SharedPreferences
+    final cached = await ApiService.getUser();
+    if (cached != null && mounted) {
+      setState(() {
+        _userName  = cached['name']  ?? _userName;
+        _userEmail = cached['email'] ?? _userEmail;
+        _userPhone = cached['phone'] ?? _userPhone;
+        _username  = cached['username'] ?? _username;
+      });
+    }
+
+    // Then fetch fresh from API
+    final res = await ApiService.get('/userinfo/', requiresAuth: true);
+    if (!res.error && res.data != null && mounted) {
+      final data = res.data;
+      await ApiService.setUser(data); // update cache
+      setState(() {
+        _userName  = data['name']  ?? _userName;
+        _userEmail = data['email'] ?? _userEmail;
+        _userPhone = data['phone'] ?? _userPhone;
+        _username  = data['username'] ?? _username;
+      });
+    }
   }
 
   @override

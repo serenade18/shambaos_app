@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/onboarding/splash_screen.dart';
 import 'screens/home_screen.dart'; // Import your home screen
 import 'screens/profile/profile_screen.dart'; // Import the profile screen
+import 'screens/tulip/tulip_screen.dart';
 import 'theme_notifier.dart';
 import './services/app_colors.dart';
 
@@ -56,10 +57,8 @@ class MyApp extends StatelessWidget {
           routes: {
             '/': (context) => const SplashScreen(),
             '/home': (context) => const HomeScreen(),
+            '/chat': (context) => const TulipAiScreen(),
             '/profile': (context) => const ProfileScreen(),
-            // Add other routes as needed:
-            // '/sales': (context) => const SalesScreen(),
-            // '/chat': (context) => const ChatScreen(),
           },
         );
       },

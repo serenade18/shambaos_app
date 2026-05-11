@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../screens/tulip/tulip_screen.dart';
-import '../screens/profile/profile_screen.dart';
 
 class AppBottomNav extends StatefulWidget {
   final int currentIndex;
@@ -22,36 +20,24 @@ class _AppBottomNavState extends State<AppBottomNav> {
     _currentIndex = widget.currentIndex;
   }
 
- void _handleTap(BuildContext context, int index) {
+  void _handleTap(BuildContext context, int index) {
   if (_currentIndex == index) return;
 
-  setState(() => _currentIndex = index);
-  widget.onTap?.call(index);
+    setState(() => _currentIndex = index);
+    widget.onTap?.call(index);
 
-  switch (index) {
-    case 0:
-      Navigator.pushReplacementNamed(context, '/home');
-      break;
-
-    case 1:
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const TulipAiScreen(),
-        ),
-      );
-      break;
-
-    case 2:
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const ProfileScreen(),
-        ),
-      );
-      break;
+    switch (index) {
+      case 0:
+        Navigator.pushReplacementNamed(context, '/home'); // home replaces
+        break;
+      case 1:
+        Navigator.pushNamed(context, '/chat');            // push, can go back
+        break;
+      case 2:
+        Navigator.pushNamed(context, '/profile');         // push, can go back
+        break;
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +54,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 72, // was 64
+            height: 72,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -79,10 +65,12 @@ class _AppBottomNavState extends State<AppBottomNav> {
                 GestureDetector(
                   onTap: () => _handleTap(context, 1),
                   child: Container(
-                    height: 56, // was 50
-                    width: 56,  // was 50
+                    height: 56,
+                    width: 56,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50),
+                      color: _currentIndex == 1
+                          ? const Color(0xFF2E7D32)
+                          : const Color(0xFF4CAF50),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -93,7 +81,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
                       ],
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(13.0), // was 12.0
+                      padding: const EdgeInsets.all(13.0),
                       child: SvgPicture.asset(
                         'images/assets/icons/comments.svg',
                         colorFilter: const ColorFilter.mode(
@@ -108,12 +96,11 @@ class _AppBottomNavState extends State<AppBottomNav> {
                   ),
                 ),
 
-                _navItem(Icons.person, 'Profile', 4, context),
+                _navItem(Icons.person, 'Profile', 2, context),
               ],
             ),
           ),
 
-          // Safe area bottom padding
           SizedBox(height: bottomPadding > 0 ? bottomPadding * 0.4 : 8.0),
         ],
       ),
@@ -128,7 +115,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
       onTap: () => _handleTap(context, index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7), // was 14, 6
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
           color: selected
               ? const Color(0xFF4CAF50).withOpacity(0.10)
@@ -144,7 +131,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
               color: selected
                   ? const Color(0xFF2E7D32)
                   : const Color(0xFFAAAAAA),
-              size: 26, // was 22
+              size: 26,
             ),
             const SizedBox(height: 3),
             Text(
@@ -153,7 +140,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
                 color: selected
                     ? const Color(0xFF2E7D32)
                     : const Color(0xFFAAAAAA),
-                fontSize: 14, // was 10
+                fontSize: 14,
                 fontWeight:
                     selected ? FontWeight.w700 : FontWeight.w400,
               ),
