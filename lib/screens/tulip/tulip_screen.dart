@@ -10,249 +10,378 @@ class TulipAiScreen extends StatefulWidget {
   State<TulipAiScreen> createState() => _TulipAiScreenState();
 }
 
-class _TulipAiScreenState extends State<TulipAiScreen> {
-  final TextEditingController _controller = TextEditingController();
-
-  List<ChatMessage> _messages = [];
-
-  static const _storageKey = "tulip_ai_chat_history";
+class _TulipAiScreenState extends State<TulipAiScreen>
+    with SingleTickerProviderStateMixin {
+  bool _chatStarted = false;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
-    _loadMessages();
-  }
-
-  Future<void> _loadMessages() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_storageKey);
-
-    if (raw != null) {
-      final decoded = jsonDecode(raw) as List;
-      setState(() {
-        _messages = decoded
-            .map((e) => ChatMessage.fromJson(e))
-            .toList()
-            .cast<ChatMessage>();
-      });
-    }
-  }
-
-  Future<void> _saveMessages() async {
-    final prefs = await SharedPreferences.getInstance();
-    final encoded = jsonEncode(
-      _messages.map((e) => e.toJson()).toList(),
-    );
-    await prefs.setString(_storageKey, encoded);
-  }
-
-  Future<void> _addMessage(ChatMessage msg) async {
-    setState(() => _messages.add(msg));
-    await _saveMessages();
-  }
-
-  Future<void> _sendMessage() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-
-    _controller.clear();
-
-    await _addMessage(
-      ChatMessage(
-        text: text,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ),
-    );
-
-    // Simulated AI response (replace later with backend/API)
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    await _addMessage(
-      ChatMessage(
-        text: "I received: $text",
-        isUser: false,
-        timestamp: DateTime.now(),
-      ),
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
 
   @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // WELCOME SCREEN
+  // ══════════════════════════════════════════════════════════
+  @override
   Widget build(BuildContext context) {
+    if (_chatStarted) {
+      return _buildChatScreen();
+    }
+    return _buildWelcomeScreen();
+  }
+
+  Widget _buildWelcomeScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            // ═════════ HEADER ═════════
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-              child: Row(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1A1A1A)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Chat with Tulip',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1A1A1A),
+          ),
+        ),
+        centerTitle: true,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
+        ),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
                 children: [
-                  _circleButton(
-                    Icons.arrow_back_ios_new_rounded,
-                    () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Tulip AI',
+                  // ── Chip ──
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'YOUR FARM ASSISTANT',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
+                        color: Color(0xFF2E7D32),
+                        letterSpacing: 1.5,
                       ),
                     ),
                   ),
-                  _circleButton(Icons.history_rounded, () {}),
+                  const SizedBox(height: 16),
+
+                  // ── Title ──
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: const TextSpan(
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1A1A1A),
+                        height: 1.25,
+                        letterSpacing: -0.5,
+                      ),
+                      children: [
+                        TextSpan(text: 'Welcome to '),
+                        TextSpan(
+                          text: 'Tulip AI',
+                          style: TextStyle(color: Color(0xFF4CAF50)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Your intelligent farming companion,\nalways ready to help',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF888888),
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // ── Avatar ──
+                  ScaleTransition(
+                    scale: _pulseAnimation,
+                    child: Container(
+                      width: 170,
+                      height: 170,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFFE8F5E9),
+                        border: Border.all(
+                          color: const Color(0xFFA5D6A7),
+                          width: 2,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Image.asset(
+                          'images/assets/icons/tulip.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.eco_rounded,
+                            color: Color(0xFF4CAF50),
+                            size: 72,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // ── Status badges ──
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _badge(
+                        icon: Icons.circle,
+                        iconColor: const Color(0xFF4CAF50),
+                        label: 'Online now',
+                      ),
+                      const SizedBox(width: 10),
+                      _badge(
+                        icon: Icons.access_time_rounded,
+                        iconColor: const Color(0xFF4CAF50),
+                        label: '24 / 7',
+                      ),
+                      const SizedBox(width: 10),
+                      _badge(
+                        icon: Icons.bolt_rounded,
+                        iconColor: const Color(0xFF4CAF50),
+                        label: 'Instant',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // ── Description card ──
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFE8E8E8),
+                        width: 1,
+                      ),
+                    ),
+                    child: RichText(
+                      textAlign: TextAlign.center,
+                      text: const TextSpan(
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: Color(0xFF555555),
+                          height: 1.65,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Tulip AI ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          TextSpan(
+                            text:
+                                'is your personal farming assistant. Get advice on crops, livestock, markets, and weather — all in one place.',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
+          ),
 
-            // ═════════ CHAT LIST ═════════
-            Expanded(
-              child: ListView.builder(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  final msg = _messages[index];
-
-                  return Align(
-                    alignment: msg.isUser
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: msg.isUser
-                            ? const Color(0xFF4CAF50)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        msg.text,
-                        style: TextStyle(
-                          color: msg.isUser
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
+          // ── Footer CTA ──
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+            child: Column(
+              children: [
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Color(0xFFF0F0F0),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: ElevatedButton.icon(
+                    onPressed: () => setState(() => _chatStarted = true),
+                    icon: const Icon(
+                      Icons.chat_bubble_rounded,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Start Chatting',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: -0.2,
                       ),
                     ),
-                  );
-                },
-              ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Powered by ShambaOS · Available in Swahili & English',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: Color(0xFFBDBDBD)),
+                ),
+              ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // ═════════ INPUT BAR ═════════
-            SafeArea(
-              top: false,
-              child: Container(
-                color: Colors.white,
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F6FA),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    children: [
-                      _inputButton(Icons.add_rounded, () {
-                        debugPrint("Attach file");
-                      }),
-                      const SizedBox(width: 10),
+  Widget _badge({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F6FA),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE8E8E8)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 9, color: iconColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF444444),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          decoration: const InputDecoration(
-                            hintText: 'Ask Tulip AI...',
-                            border: InputBorder.none,
-                          ),
-                          onSubmitted: (_) => _sendMessage(),
-                        ),
-                      ),
-
-                      _inputButton(Icons.image_outlined, () {
-                        debugPrint("Open gallery/camera");
-                      }),
-                      const SizedBox(width: 8),
-
-                      _inputButton(Icons.mic_none_rounded, () {
-                        debugPrint("Voice input");
-                      }),
-
-                      const SizedBox(width: 8),
-
-                      GestureDetector(
-                        onTap: _sendMessage,
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF4CAF50),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.arrow_upward_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
+  // ══════════════════════════════════════════════════════════
+  // CHAT SCREEN (placeholder — wire up your chat logic here)
+  // ══════════════════════════════════════════════════════════
+  Widget _buildChatScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1A1A1A)),
+          onPressed: () => setState(() => _chatStarted = false),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFE8F5E9),
+                border: Border.all(color: const Color(0xFFA5D6A7)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(5),
+                child: Image.asset(
+                  'images/assets/icons/tulip.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.eco_rounded,
+                    color: Color(0xFF4CAF50),
+                    size: 18,
                   ),
                 ),
               ),
             ),
+            const SizedBox(width: 10),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tulip AI',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                Text(
+                  'Online',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF4CAF50),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  // ═════════ HELPERS ═════════
-
-  static Widget _circleButton(
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF5F6FA),
-          shape: BoxShape.circle,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
         ),
-        child: Icon(icon, size: 18),
       ),
-    );
-  }
-
-  static Widget _inputButton(
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: const Color(0xFF666666),
+      body: const Center(
+        child: Text(
+          'Chat UI goes here',
+          style: TextStyle(color: Color(0xFF888888)),
         ),
       ),
     );

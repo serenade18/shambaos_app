@@ -10,6 +10,8 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - sms_autofill (0.0.1):
+    - Flutter
 
 DEPENDENCIES:
   - biometric_signature (from `.symlinks/plugins/biometric_signature/ios`)
@@ -17,6 +19,7 @@ DEPENDENCIES:
   - flutter_secure_storage (from `.symlinks/plugins/flutter_secure_storage/ios`)
   - local_auth_darwin (from `.symlinks/plugins/local_auth_darwin/darwin`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - sms_autofill (from `.symlinks/plugins/sms_autofill/ios`)
 
 EXTERNAL SOURCES:
   biometric_signature:
@@ -29,6 +32,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/local_auth_darwin/darwin"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+  sms_autofill:
+    :path: ".symlinks/plugins/sms_autofill/ios"
 
 SPEC CHECKSUMS:
   biometric_signature: d901377e027c8bf710c1beb75a58eb9b584583a3
@@ -36,6 +41,7 @@ SPEC CHECKSUMS:
   flutter_secure_storage: 2c2ff13db9e0a5647389bff88b0ecac56e3f3418
   local_auth_darwin: c3ee6cce0a8d56be34c8ccb66ba31f7f180aaebb
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
+  sms_autofill: b36b2147535657fea83d7f3898d7831de70bd8e4
 
 PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
 
