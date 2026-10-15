@@ -7,6 +7,7 @@ import '../../main.dart';
 import 'edit_profile_screen.dart';
 import 'notification_screen.dart';
 import '../../services/api_service.dart';
+import '../../services/biometric_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userName;
@@ -31,6 +32,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late String _userEmail;
   late String _userPhone;
   late String _username;
+  bool _biometricAvailable = false;
+  bool _biometricOn = false;
 
   @override
   void initState() {
@@ -41,6 +44,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _username = widget.username;
     themeNotifier.addListener(_onThemeChange);
     _loadUser();
+    _loadBiometric();
+  }
+
+  Future<void> _loadBiometric() async {
+    final available = await BiometricService.isAvailable();
+    final on = await AuthService.isBiometricEnabled();
+    if (!mounted) return;
+    setState(() {
+      _biometricAvailable = available;
+      _biometricOn = on;
+    });
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    String? problem;
+    if (value) {
+      problem = await AuthService.enableBiometricLogin();
+    } else {
+      await AuthService.disableBiometricLogin();
+    }
+    if (!mounted) return;
+    setState(() => _biometricOn = value && problem == null);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(problem ??
+          (value
+              ? 'Biometric login is on. Next time, sign in with your fingerprint or face.'
+              : 'Biometric login is off.')),
+    ));
   }
 
   Future<void> _loadUser() async {
@@ -249,6 +280,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 toggleValue: themeNotifier.isDark,
                 onToggle: (val) => themeNotifier.toggle(val),
               ),
+              if (_biometricAvailable)
+                _MenuItem(
+                  color: const Color(0xFF00897B),
+                  icon: Icons.fingerprint_rounded,
+                  label: 'Biometric Login',
+                  isToggle: true,
+                  toggleValue: _biometricOn,
+                  onToggle: _toggleBiometric,
+                ),
             ]),
 
             const SizedBox(height: 20),

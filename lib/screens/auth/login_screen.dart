@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import 'verify_otp_screen.dart';
+import '../home_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Brand tokens
@@ -63,6 +64,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   bool    _isLoading = false;
   String? _errorMsg;
+  bool    _biometricReady = false;
+  bool    _biometricBusy  = false;
 
   static const int _n = 5;
 
@@ -96,6 +99,45 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) _animCtrl.forward();
     });
     _phoneFocus.addListener(() => setState(() {}));
+    _checkBiometric();
+  }
+
+  // ── Biometric login ────────────────────────────────────────────────────────
+  Future<void> _checkBiometric() async {
+    final ready = await AuthService.canUseBiometricLogin();
+    if (!mounted) return;
+    setState(() => _biometricReady = ready);
+    // Offer it straight away; the phone number stays available if they cancel.
+    if (ready) Future.delayed(const Duration(milliseconds: 500), _handleBiometric);
+  }
+
+  Future<void> _handleBiometric() async {
+    if (_biometricBusy || !mounted) return;
+    setState(() { _biometricBusy = true; _errorMsg = null; });
+
+    final res = await AuthService.biometricLogin();
+    if (!mounted) return;
+    setState(() => _biometricBusy = false);
+
+    if (!res.error) {
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const HomeScreen(),
+          transitionsBuilder: (_, anim, __, child) =>
+              FadeTransition(opacity: anim, child: child),
+          transitionDuration: const Duration(milliseconds: 400),
+        ),
+        (_) => false,
+      );
+    } else {
+      final ready = await AuthService.canUseBiometricLogin();
+      if (!mounted) return;
+      setState(() {
+        _biometricReady = ready;
+        // A cancelled prompt needs no message.
+        _errorMsg = res.message == 'Biometric check was cancelled.' ? null : res.message;
+      });
+    }
   }
 
   @override
@@ -516,6 +558,31 @@ class _LoginScreenState extends State<LoginScreen>
                             : const Text('Continue'),
                       ),
                     ),
+                    if (_biometricReady) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: OutlinedButton.icon(
+                          onPressed: _biometricBusy || _isLoading ? null : _handleBiometric,
+                          icon: _biometricBusy
+                              ? const SizedBox(
+                                  width: 20, height: 20,
+                                  child: CircularProgressIndicator(
+                                      color: _Brand.brand, strokeWidth: 2.2))
+                              : const Icon(Icons.fingerprint_rounded, size: 24),
+                          label: const Text('Sign in with biometrics'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _Brand.brand,
+                            side: const BorderSide(color: _Brand.brand, width: 1.2),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            textStyle: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
                   ]),
                 ),
               ]),

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'biometric_service.dart';
+
 class ApiResponse {
   // final bool success;
   final bool error;
@@ -53,6 +55,17 @@ class ApiService {
     _refreshToken = token;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('refresh_token', token);
+
+    // Refresh tokens rotate and the old one is blacklisted, so the copy kept for
+    // biometric sign-in must follow every rotation (it is only written if enabled).
+    final user = await getUser();
+    if (user?['id'] != null) {
+      await BiometricService.refreshTokensForUser(
+        userId: user!['id'].toString(),
+        access: _accessToken ?? '',
+        refresh: token,
+      );
+    }
   }
 
   static Future<void> setOrgId(String orgId) async {
