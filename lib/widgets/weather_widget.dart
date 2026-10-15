@@ -34,13 +34,8 @@ class WeatherWidgetState extends State<WeatherWidget> {
     }
 
     final first = polygons.first;
-    final lat = first.center[1];
-    final lon = first.center[0];
 
-    final result = await HomeService.getCurrentWeather(
-      lat: lat,
-      lon: lon,
-    );
+    final result = await HomeService.getCurrentWeather(farmId: first.id);
 
     setState(() {
       weather = result;
@@ -161,15 +156,15 @@ class WeatherWidgetState extends State<WeatherWidget> {
         const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
         const SizedBox(height: 12),
 
-        // ── Row 2: Humidity · Rain · Wind stats ─────────
+        // ── Row 2: Rain chance · Rain · Low stats ───────
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _stat(Icons.water_drop_outlined, 'Humidity', '${w.humidity}%'),
+            _stat(Icons.water_drop_outlined, 'Chance', '${w.rainProbability}%'),
             _statDivider(),
             _stat(Icons.umbrella_outlined, 'Rain', '${w.precipitation} mm'),
             _statDivider(),
-            _stat(Icons.air_outlined, 'Wind', '${w.windSpeed} m/s'),
+            _stat(Icons.thermostat_outlined, 'Low', '${w.tempMin.round()}°'),
           ],
         ),
       ],

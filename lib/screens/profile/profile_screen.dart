@@ -55,7 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     // Then fetch fresh from API
-    final res = await ApiService.get('/userinfo/', requiresAuth: true);
+    final res = await ApiService.get('/me', requiresAuth: true);
     if (!res.error && res.data != null && mounted) {
       final data = res.data;
       await ApiService.setUser(data); // update cache

@@ -1,53 +1,44 @@
 import '../../services/api_service.dart';
 
 class CustomerService {
-  // FETCH ALL CUSTOMERS
+  // FETCH ALL CUSTOMERS — the API pages them as {next, previous, results}.
   static Future<ApiResponse> getCustomers() async {
     final response = await ApiService.get(
-      '/customers/',
+      '/customers',
       requiresAuth: true,
     );
 
+    if (!response.error && response.data is Map) {
+      return ApiResponse(
+        error: false,
+        data: response.data['results'] ?? [],
+        message: response.message,
+        statusCode: response.statusCode,
+      );
+    }
     return response;
   }
 
-  //CREATE CUSTOMER
+  // CREATE CUSTOMER — the API keeps a name and a phone number.
   static Future<ApiResponse> createCustomer({
     required String name,
-    String? email,
     required String phone,
-    String? town,
   }) async {
-    final payload = {
-      'name': name,
-      'phone': phone,
-      if (email != null && email.isNotEmpty) 'email': email,
-      if (town != null && town.isNotEmpty) 'town': town,
-    };
-
     return ApiService.post(
-      '/customers/',
-      payload,
+      '/customers',
+      {'name': name, 'phone': phone},
       requiresAuth: true,
     );
   }
 
-  // UPDATE CUSTOMER (PATCH — not PUT)
+  // UPDATE CUSTOMER (PATCH — name and/or phone). Ids are UUIDs.
   static Future<ApiResponse> updateCustomer({
-    required int id,
+    required String id,
     required Map<String, dynamic> updates,
   }) async {
     return ApiService.patch(
-      '/customers/$id/',   // 👈 IMPORTANT
+      '/customers/$id',
       updates,
-      requiresAuth: true,
-    );
-  }
-
-  //DELETE CUSTOMER
-  static Future<ApiResponse> deleteCustomer(int id) async {
-    return ApiService.delete(
-      '/customers/$id/',
       requiresAuth: true,
     );
   }

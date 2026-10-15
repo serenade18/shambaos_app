@@ -5,11 +5,13 @@ import 'screens/profile/profile_screen.dart'; // Import the profile screen
 import 'screens/tulip/tulip_screen.dart';
 import 'theme_notifier.dart';
 import './services/app_colors.dart';
+import './services/api_service.dart';
 
 final ThemeNotifier themeNotifier = ThemeNotifier();
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ApiService.init();
   runApp(const MyApp());
 }
 

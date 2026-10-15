@@ -1,25 +1,74 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../services/api_service.dart';
 
 class AuthService {
+  static const String _appVersion = '1.0.0';
 
   // ─────────────────────────────────────────────
-  // REGISTER
+  // DEVICE — sent with every sign-in. The API binds tokens to it, so the
+  // install id must stay the same for the life of the install.
+  // ─────────────────────────────────────────────
+  static Future<Map<String, dynamic>> _device() async {
+    final prefs = await SharedPreferences.getInstance();
+    var installId = prefs.getString('install_id');
+    if (installId == null) {
+      final rnd = Random.secure();
+      installId = List.generate(16, (_) => rnd.nextInt(256).toRadixString(16).padLeft(2, '0')).join();
+      await prefs.setString('install_id', installId);
+    }
+
+    final platform = kIsWeb
+        ? 'web'
+        : defaultTargetPlatform == TargetPlatform.iOS
+            ? 'ios'
+            : 'android';
+
+    return {'install_id': installId, 'platform': platform, 'app_version': _appVersion};
+  }
+
+  // Stores the tokens, user and organisation from a sign-in response.
+  static Future<void> _saveSignIn(dynamic data) async {
+    if (data is! Map) return;
+
+    final access = data['access'];
+    final refresh = data['refresh'];
+    if (access != null) await ApiService.setToken(access.toString());
+    if (refresh != null) await ApiService.setRefreshToken(refresh.toString());
+    if (data['user'] is Map) {
+      await ApiService.setUser(Map<String, dynamic>.from(data['user']));
+    }
+
+    // A farmer signing up gets an organisation of their own; an invited worker
+    // joins the inviter's. Requests act on the first one.
+    final memberships = data['memberships'];
+    if (memberships is List && memberships.isNotEmpty) {
+      await ApiService.setOrgId(memberships.first['organisation_id'].toString());
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // REGISTER (email and password, as on the web portal)
   // ─────────────────────────────────────────────
   static Future<ApiResponse> register({
     required String name,
     required String phone,
     required String email,
     required String password,
-    String role = 'farm_admin',
+    String? username,
   }) {
     return ApiService.post(
-      '/users/',
+      '/auth/register',
       {
         'name': name,
         'phone': phone,
         'email': email,
-        'role': role,
+        'username': username ?? email.split('@').first,
         'password': password,
+        'locale': 'en',
       },
       requiresAuth: false,
     );
@@ -32,19 +81,21 @@ class AuthService {
     required String refresh,
   }) async {
     final response = await ApiService.post(
-      '/refresh_token/',
+      '/auth/token/refresh',
       {'refresh': refresh},
       requiresAuth: false,
     );
 
     // !response.error = request succeeded
     if (!response.error && response.data != null) {
-      final token = response.data['token'] ??
-          response.data['access'] ??
-          response.data['auth_token'];
+      final token = response.data['access'];
+      final newRefresh = response.data['refresh'];
 
       if (token != null) {
         await ApiService.setToken(token.toString());
+        if (newRefresh != null) {
+          await ApiService.setRefreshToken(newRefresh.toString());
+        }
 
         final userRes = await getUserInfo();
         if (!userRes.error && userRes.data != null) {
@@ -66,10 +117,7 @@ class AuthService {
     try {
       await ApiService.setToken(accessToken);
 
-      final response = await ApiService.get(
-        '/validate-token/',
-        requiresAuth: true,
-      );
+      final response = await ApiService.get('/me', requiresAuth: true);
 
       // !response.error = token is valid
       if (!response.error) return true;
@@ -86,39 +134,20 @@ class AuthService {
   }
 
   // ─────────────────────────────────────────────
-  // LOGIN
+  // LOGIN (email or username, and password)
   // ─────────────────────────────────────────────
   static Future<ApiResponse> login({
     required String email,
     required String password,
   }) async {
     final response = await ApiService.post(
-      '/gettoken/',
-      {'username': email, 'password': password},
+      '/auth/login',
+      {'identifier': email, 'password': password, 'device': await _device()},
       requiresAuth: false,
     );
 
     // !response.error = login succeeded
-    if (!response.error && response.data != null) {
-      final access = response.data['access'] ??
-          response.data['token'] ??
-          response.data['auth_token'];
-
-      final refresh = response.data['refresh'];
-
-      if (access != null) {
-        await ApiService.setToken(access.toString());
-      }
-
-      if (refresh != null) {
-        await ApiService.setRefreshToken(refresh.toString());
-      }
-
-      final userRes = await getUserInfo();
-      if (!userRes.error && userRes.data != null) {
-        await ApiService.setUser(userRes.data);
-      }
-    }
+    if (!response.error) await _saveSignIn(response.data);
 
     return response;
   }
@@ -127,41 +156,42 @@ class AuthService {
   // USER INFO
   // ─────────────────────────────────────────────
   static Future<ApiResponse> getUserInfo() {
-    return ApiService.get('/userinfo/');
+    return ApiService.get('/me');
   }
 
   // ─────────────────────────────────────────────
-  // LOGOUT
+  // LOGOUT — revokes this device's refresh token, then forgets it locally.
   // ─────────────────────────────────────────────
-  static void logout() {
-    ApiService.clearAll();
+  static Future<void> logout() async {
+    final refresh = ApiService.refreshToken;
+    if (refresh != null) {
+      await ApiService.post('/auth/logout', {'refresh': refresh});
+    }
+    await ApiService.clearAll();
   }
 
   // ─────────────────────────────────────────────
-  // PASSWORD RESET
+  // PASSWORD RESET — the API emails a link; the reset itself takes the
+  // uid and token from that link.
   // ─────────────────────────────────────────────
   static Future<ApiResponse> forgotPassword({
     required String email,
   }) {
     return ApiService.post(
-      '/forgot-password/',
-      {'email': email},
+      '/auth/password/forgot',
+      {'email': email, 'locale': 'en'},
       requiresAuth: false,
     );
   }
 
   static Future<ApiResponse> resetPassword({
-    required String email,
-    required String code,
+    required String uid,
+    required String token,
     required String newPassword,
   }) {
     return ApiService.post(
-      '/reset-password/',
-      {
-        'email': email,
-        'code': code,
-        'new_password': newPassword,
-      },
+      '/auth/password/reset',
+      {'uid': uid, 'token': token, 'password': newPassword},
       requiresAuth: false,
     );
   }
@@ -171,42 +201,41 @@ class AuthService {
   // ─────────────────────────────────────────────
   static Future<ApiResponse> requestOtp({
     required String phone,
-  }) {
-    return ApiService.post(
-      '/mobile/auth/request-otp/',
-      {'phone': phone},
+  }) async {
+    final response = await ApiService.post(
+      '/auth/otp/request',
+      {'phone': phone, 'locale': 'en'},
       requiresAuth: false,
     );
+
+    // The API answers 202 {phone, expires_in}; the login screen looks for `sent`.
+    if (!response.error && response.data is Map) {
+      return ApiResponse(
+        error: false,
+        data: {...response.data as Map, 'sent': true},
+        message: response.message,
+        statusCode: response.statusCode,
+      );
+    }
+    return response;
   }
 
   // ─────────────────────────────────────────────
-  // PHONE OTP — VERIFY
+  // PHONE OTP — VERIFY. Signs in, creating the account (and its farm
+  // account) the first time a number is used.
   // ─────────────────────────────────────────────
   static Future<ApiResponse> verifyOtp({
     required String phone,
     required String otp,
   }) async {
     final response = await ApiService.post(
-      '/mobile/auth/verify-otp/',
-      {'phone': phone, 'otp': otp},
+      '/auth/otp/verify',
+      {'phone': phone, 'code': otp, 'locale': 'en', 'device': await _device()},
       requiresAuth: false,
     );
 
     // !response.error = OTP verified successfully
-    if (!response.error && response.data != null) {
-      final access = response.data['access'];
-      final refresh = response.data['refresh'];
-
-      if (access != null) {
-        await ApiService.setToken(access.toString());
-      }
-      if (refresh != null) {
-        await ApiService.setRefreshToken(refresh.toString());
-      }
-      if (response.data['user'] != null) {
-        await ApiService.setUser(response.data['user']);
-      }
-    }
+    if (!response.error) await _saveSignIn(response.data);
 
     return response;
   }

@@ -136,9 +136,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadFarmStatus() async {
-    final response = await ApiService.get('/farms/', requiresAuth: true);
-    if (!response.error && response.data != null) {
-      final List farms = response.data?['data'] ?? response.data ?? [];
+    final response = await ApiService.get('/farms', requiresAuth: true);
+    if (!response.error && response.data is Map) {
+      final List farms = response.data['results'] ?? [];
       setState(() {
         _isFarmSetup = farms.isNotEmpty;
       });

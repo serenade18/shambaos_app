@@ -3,39 +3,42 @@ import '../models/agro_polygon_model.dart';
 import '../services/api_service.dart';
 
 class HomeService {
-  // ✅ Extract lat/lon from GeoJSON center [lng, lat]
-  static Map<String, double> _extractLatLon(List<double> center) {
-    return {
-      "lat": center[1], // GeoJSON → [lng, lat]
-      "lon": center[0],
-    };
+  // ================= FARMS =================
+  /// The organisation's farms, main farm first. The API pages them as {results}.
+  static Future<List<Map<String, dynamic>>> listFarms() async {
+    final response = await ApiService.get('/farms', requiresAuth: true);
+
+    if (response.error || response.data is! Map) return [];
+
+    final List data = response.data['results'] ?? [];
+    return data.map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
   // ================= FORECAST =================
+  /// The farm's forecast, today first. Weather is looked up by farm: the
+  /// server uses the farm's boundary or location.
   static Future<List<WeatherModel>> getForecast({
-    required double lat,
-    required double lon,
+    required String farmId,
   }) async {
     final response = await ApiService.get(
-      '/weather/forecast/?lat=$lat&lon=$lon',
+      '/weather?farm_id=$farmId',
       requiresAuth: true,
     );
 
-    if (response.error || response.data == null) {
+    if (response.error || response.data is! Map) {
       return [];
     }
 
-    final List data = response.data;
+    final List data = response.data['forecast'] ?? [];
 
     return data.map((e) => WeatherModel.fromJson(e)).toList();
   }
 
   // ================= CURRENT WEATHER =================
   static Future<WeatherModel?> getCurrentWeather({
-    required double lat,
-    required double lon,
+    required String farmId,
   }) async {
-    final forecast = await getForecast(lat: lat, lon: lon);
+    final forecast = await getForecast(farmId: farmId);
 
     if (forecast.isEmpty) return null;
 
@@ -44,18 +47,8 @@ class HomeService {
 
   // ================= POLYGONS =================
   static Future<List<AgroPolygon>> listPolygons() async {
-    final response = await ApiService.get(
-      '/weather/polygons/',
-      requiresAuth: true,
-    );
-
-    if (response.error || response.data == null) {
-      return [];
-    }
-
-    final List data = response.data;
-
-    return data.map((e) => AgroPolygon.fromJson(e)).toList();
+    final farms = await listFarms();
+    return farms.map((e) => AgroPolygon.fromJson(e)).toList();
   }
 
   // ================= FULL FLOW (IMPORTANT) =================
@@ -64,14 +57,7 @@ class HomeService {
 
     if (polygons.isEmpty) return null;
 
-    final first = polygons.first;
-
-    final coords = _extractLatLon(first.center);
-
-    return getCurrentWeather(
-      lat: coords["lat"]!,
-      lon: coords["lon"]!,
-    );
+    return getCurrentWeather(farmId: polygons.first.id);
   }
 
   static Future<List<WeatherModel>> getForecastFromFirstPolygon() async {
@@ -79,13 +65,6 @@ class HomeService {
 
     if (polygons.isEmpty) return [];
 
-    final first = polygons.first;
-
-    final coords = _extractLatLon(first.center);
-
-    return getForecast(
-      lat: coords["lat"]!,
-      lon: coords["lon"]!,
-    );
+    return getForecast(farmId: polygons.first.id);
   }
 }

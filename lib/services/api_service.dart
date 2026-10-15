@@ -19,19 +19,28 @@ class ApiResponse {
 }
 
 class ApiService {
-  // ⚠️ CHANGE THIS depending on your environment
-  // static const String baseUrl = 'https://shambaos.linkworldcargo.com/api';
-  static const String baseUrl = 'http://192.168.0.103:8000/api';
+  // Shamba OS Django API. Override per build:
+  //   flutter run --dart-define=API_BASE_URL=http://192.168.0.102:8000/api/v1
+  // The default reaches runserver on the host from the Android emulator.
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://192.168.0.101:8000/api/v1',
+  );
 
   static String? _accessToken;
   static String? _refreshToken;
+  // The organisation (farm account) requests act on, sent as X-Org-Id.
+  static String? _orgId;
 
   // ================= INIT =================
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
     _refreshToken = prefs.getString('refresh_token');
+    _orgId = prefs.getString('org_id');
   }
+
+  static String? get refreshToken => _refreshToken;
 
   // ================= TOKEN STORAGE =================
   static Future<void> setToken(String token) async {
@@ -44,6 +53,12 @@ class ApiService {
     _refreshToken = token;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('refresh_token', token);
+  }
+
+  static Future<void> setOrgId(String orgId) async {
+    _orgId = orgId;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('org_id', orgId);
   }
 
   static Future<void> setUser(Map<String, dynamic> user) async {
@@ -74,10 +89,12 @@ class ApiService {
   static Future<void> clearAll() async {
     _accessToken = null;
     _refreshToken = null;
+    _orgId = null;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
+    await prefs.remove('org_id');
     await prefs.remove('user');
   }
 
@@ -85,8 +102,10 @@ class ApiService {
   static Map<String, String> _headers({bool requiresAuth = true}) {
     return {
       'Content-Type': 'application/json',
+      'Accept-Language': 'en',
       if (requiresAuth && _accessToken != null)
         'Authorization': 'Bearer $_accessToken',
+      if (requiresAuth && _orgId != null) 'X-Org-Id': _orgId!,
     };
   }
 
@@ -123,7 +142,7 @@ class ApiService {
 
         if (refreshed) {
           // 🔁 Retry original request once
-          return _request(requestFn, requiresAuth: requiresAuth, retry: false);
+          return await _request(requestFn, requiresAuth: requiresAuth, retry: false);
         }
       }
 
@@ -131,16 +150,29 @@ class ApiService {
       return ApiResponse(
         error: true,
         data: data,
-        message: data is Map ? data['detail'] ?? data['message'] : null,
+        message: _errorMessage(data),
         statusCode: statusCode,
       );
     } catch (e) {
       return ApiResponse(
-        error: false,
+        error: true,
         message: e.toString(),
         statusCode: 500,
       );
     }
+  }
+
+  // Errors are {code, message, params, fields}; field errors are {field: [messages]}.
+  static String? _errorMessage(dynamic data) {
+    if (data is! Map) return null;
+    final message = data['message'] ?? data['detail'];
+    if (message != null) return message.toString();
+    final fields = data['fields'] is Map ? data['fields'] as Map : data;
+    for (final value in fields.values) {
+      if (value is List && value.isNotEmpty) return value.first.toString();
+      if (value is String) return value;
+    }
+    return null;
   }
 
   // ================= TOKEN REFRESH =================
@@ -149,7 +181,7 @@ class ApiService {
 
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/token/refresh/'),
+        Uri.parse('$baseUrl/auth/token/refresh'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refresh': _refreshToken}),
       );
@@ -157,9 +189,12 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final newAccess = data['access'];
+        // Refresh tokens rotate: the old one stops working once used.
+        final newRefresh = data['refresh'];
 
         if (newAccess != null) {
           await setToken(newAccess);
+          if (newRefresh != null) await setRefreshToken(newRefresh);
           return true;
         }
       }
