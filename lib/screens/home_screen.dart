@@ -7,6 +7,8 @@ import '../widgets/weather_widget.dart';
 import 'profile/profile_screen.dart';
 import 'profile/edit_profile_screen.dart';
 import '../services/app_colors.dart';
+import '../services/app_type.dart';
+import '../widgets/ledger.dart';
 import 'animals/animal_screen.dart';
 import 'plants/plant_screen.dart';
 import 'markets/market_screen.dart';
@@ -93,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'subtitle': 'Elevate your productivity today',
       'cta': 'Upgrade Now',
       'bgColor': const Color(0xFFE8F5E9),
-      'ctaColor': const Color(0xFF2E7D32),
+      'ctaColor': AppColors.brand,
       'imagePath': null,
     },
     {
@@ -189,17 +191,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
-  Color _getAvatarColor(String name) {
-    final palette = [
-      Colors.green,
-      Colors.blue,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-    ];
-    return palette[name.hashCode % palette.length];
-  }
-
   // ══════════════════════════════════════════════════════════
   // HELPERS
   // ══════════════════════════════════════════════════════════
@@ -227,17 +218,12 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 42,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _getAvatarColor(_userName),
-                border: Border.all(color: Colors.white, width: 2),
+                color: colors.shamba,
               ),
               child: Center(
                 child: Text(
                   _getInitials(_userName),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+                  style: AppType.label.copyWith(color: colors.onShamba),
                 ),
               ),
             ),
@@ -246,18 +232,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Karibu 👋',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                ),
-              ),
-              Text(
-                _userName,
-                style: TextStyle(fontSize: 13, color: context.appColors.textSecondary),
-              ),
+              Text('Karibu', style: AppType.titleL.copyWith(color: colors.textPrimary)),
+              Text(_userName, style: AppType.caption.copyWith(color: colors.textSecondary)),
             ],
           ),
           const Spacer(),
@@ -286,6 +262,19 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    // Its own Material, so the tap ripple shows on the tinted box behind it.
+    return Material(
+      type: MaterialType.transparency,
+      child: _updateTile(icon: icon, title: title, subtitle: subtitle, onTap: onTap),
+    );
+  }
+
+  Widget _updateTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       leading: Container(
@@ -295,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
           color: context.appColors.brandSoft,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: const Color(0xFF4CAF50), size: 24),
+        child: Icon(icon, color: context.appColors.brandText, size: 24),
       ),
       title: Text(
         title,
@@ -313,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
         width: 36,
         height: 36,
         decoration: const BoxDecoration(
-          color: Color(0xFF4CAF50),
+          color: AppColors.brand,
           shape: BoxShape.circle,
         ),
         child: const Icon(
@@ -379,10 +368,8 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  const Text('📢', style: TextStyle(fontSize: 20)),
-                  const SizedBox(width: 8),
                   Text(
-                    'Important Updates!',
+                    'Important updates',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -394,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _updatesExpanded
                         ? Icons.keyboard_arrow_up_rounded
                         : Icons.keyboard_arrow_down_rounded,
-                    color: const Color(0xFF4CAF50),
+                    color: context.appColors.brandText,
                     size: 26,
                   ),
                 ],
@@ -490,9 +477,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               item['icon'] as String,
                               height: iconSize,
                               fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const Icon(
+                              errorBuilder: (_, __, ___) => Icon(
                                 Icons.image_not_supported_outlined,
-                                color: Color(0xFF4CAF50),
+                                color: context.appColors.brandText,
                               ),
                             ),
                           ),
@@ -600,9 +587,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Image.asset(
                                     item['icon'] as String,
                                     fit: BoxFit.contain,
-                                    errorBuilder: (_, __, ___) => const Icon(
+                                    errorBuilder: (_, __, ___) => Icon(
                                       Icons.image_not_supported_outlined,
-                                      color: Color(0xFF4CAF50),
+                                      color: context.appColors.brandText,
                                     ),
                                   ),
                                 ),
@@ -670,7 +657,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: _currentPosterPage == i ? 20 : 6,
               decoration: BoxDecoration(
                 color: _currentPosterPage == i
-                    ? const Color(0xFF4CAF50)
+                    ? AppColors.brand
                     : Colors.grey.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(3),
               ),
@@ -817,7 +804,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: const Color(0xFF4CAF50),
+                      color: AppColors.brand,
                       width: 1.5,
                     ),
                     borderRadius: BorderRadius.circular(10),
@@ -836,7 +823,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       suffixIcon: Icon(
                         Icons.send_rounded,
-                        color: Color(0xFF4CAF50),
+                        color: context.appColors.brandText,
                         size: 20,
                       ),
                     ),
@@ -855,7 +842,7 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: BoxShape.circle,
               color: context.appColors.brandSoft,
               border: Border.all(
-                color: const Color(0xFF4CAF50).withOpacity(0.3),
+                color: AppColors.brand.withOpacity(0.3),
                 width: 1.5,
               ),
             ),
@@ -863,9 +850,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Image.asset(
                 'images/assets/icons/farmer.png',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
+                errorBuilder: (_, __, ___) => Icon(
                   Icons.person_outline_rounded,
-                  color: Color(0xFF4CAF50),
+                  color: context.appColors.brandText,
                   size: 48,
                 ),
               ),
@@ -902,6 +889,10 @@ class _HomeScreenState extends State<HomeScreen> {
               _divider(),
               _buildWeatherStrip(),
               _divider(),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: SlSeasonStrip(),
+              ),
 
               // Hidden only when BOTH profile is complete AND farm is set up
               if (!_allUpdatesComplete) ...[

@@ -239,9 +239,9 @@ class _AnimalScreenState extends State<AnimalScreen> {
                     item['image']!,
                     height: 28,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(
+                    errorBuilder: (_, __, ___) => Icon(
                       Icons.pets,
-                      color: Color(0xFF4CAF50),
+                      color: context.appColors.brandText,
                     ),
                   ),
                 ),
@@ -309,7 +309,7 @@ class _AnimalScreenState extends State<AnimalScreen> {
           TextSpan(
             text: text.substring(matchIndex, matchIndex + query.length),
             style: baseStyle.copyWith(
-              color: const Color(0xFF4CAF50),
+              color: context.appColors.brandText,
               backgroundColor: context.appColors.brandSoft,
             ),
           ),

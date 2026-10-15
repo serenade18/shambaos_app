@@ -4,7 +4,7 @@ import 'screens/home_screen.dart'; // Import your home screen
 import 'screens/profile/profile_screen.dart'; // Import the profile screen
 import 'screens/tulip/tulip_screen.dart';
 import 'theme_notifier.dart';
-import './services/app_colors.dart';
+import './services/app_theme.dart';
 import './services/api_service.dart';
 
 final ThemeNotifier themeNotifier = ThemeNotifier();
@@ -28,31 +28,8 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           themeMode: themeNotifier.mode,
 
-          // ── Light ──────────────────────────────────────
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF109641),
-              brightness: Brightness.light,
-            ),
-            scaffoldBackgroundColor: AppColors.light.scaffoldBackground,
-            cardColor: AppColors.light.cardBackground,
-            dividerColor: AppColors.light.divider,
-            useMaterial3: true,
-            extensions: const [AppColors.light],
-          ),
-
-          // ── Dark ───────────────────────────────────────
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF109641),
-              brightness: Brightness.dark,
-            ),
-            scaffoldBackgroundColor: AppColors.dark.scaffoldBackground,
-            cardColor: AppColors.dark.cardBackground,
-            dividerColor: AppColors.dark.divider,
-            useMaterial3: true,
-            extensions: const [AppColors.dark],
-          ),
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
 
           // Define named routes here
           initialRoute: '/',

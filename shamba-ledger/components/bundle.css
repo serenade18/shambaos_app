@@ -1,0 +1,147 @@
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Zilla+Slab:wght@500;600;700&display=swap");
+
+/* Shamba Ledger components. Every colour, size and radius comes from tokens.css. */
+
+.sl {
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+.sl *, .sl *::before, .sl *::after { box-sizing: inherit; }
+.sl svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sl-num { font-variant-numeric: tabular-nums lining-nums; }
+.sl-eyebrow { font: 700 12px/16px var(--font-text); letter-spacing: 0.08em; color: var(--ink-muted); }
+.sl-caption { font: 400 13px/18px var(--font-text); color: var(--ink-muted); }
+
+/* ── Button ───────────────────────────────────────── */
+.sl-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: 52px; padding: 0 20px; border-radius: var(--radius-m);
+  border: 1.5px solid transparent; font: 700 16px/20px var(--font-text);
+  cursor: pointer; text-decoration: none; transition: background-color 160ms ease-out;
+}
+.sl-btn--lg { min-height: var(--tap-primary); font-size: 17px; }
+.sl-btn--block { width: 100%; }
+.sl-btn--primary { background: var(--shamba); color: var(--on-shamba); }
+.sl-btn--secondary { background: var(--sheet); color: var(--ink); border-color: var(--rule-strong); }
+.sl-btn--quiet { background: transparent; color: var(--shamba-ink); padding: 0 var(--space-2); min-height: var(--tap-min); }
+.sl-btn--danger { background: var(--sheet); color: var(--danger-ink); border-color: var(--danger-ink); }
+.sl-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sl-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Key figure ───────────────────────────────────── */
+.sl-figure { display: flex; flex-direction: column; gap: var(--space-1); }
+.sl-figure__value { display: flex; align-items: baseline; gap: 6px; font: 600 40px/44px var(--font-display); letter-spacing: -0.01em; color: var(--ink); font-variant-numeric: tabular-nums lining-nums; }
+.sl-figure__cur { font: 700 15px/20px var(--font-text); color: var(--ink-muted); align-self: flex-start; margin-top: 6px; }
+.sl-figure__unit { font: 400 17px/22px var(--font-text); color: var(--ink-muted); }
+.sl-figure__delta { display: flex; align-items: center; gap: 6px; font: 400 15px/22px var(--font-text); color: var(--ink-muted); }
+.sl-figure__delta strong { font-weight: 700; }
+.sl-figure__delta--up strong { color: var(--good-ink); }
+.sl-figure__delta--down strong { color: var(--danger-ink); }
+.sl-figure--band { background: var(--shamba); color: var(--on-shamba); border-radius: var(--radius-m); padding: var(--space-4); }
+.sl-figure--band .sl-eyebrow,
+.sl-figure--band .sl-figure__value,
+.sl-figure--band .sl-figure__cur,
+.sl-figure--band .sl-figure__unit,
+.sl-figure--band .sl-figure__delta,
+.sl-figure--band .sl-figure__delta strong { color: var(--on-shamba); }
+
+/* ── Ledger and its rows ──────────────────────────── */
+.sl-ledger { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-m); overflow: hidden; }
+.sl-ledger__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); padding: 14px var(--space-4) 10px; }
+.sl-ledger__title { font: 600 19px/24px var(--font-display); color: var(--ink); margin: 0; }
+.sl-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-3) var(--space-4); border-top: 1px solid var(--rule); }
+.sl-row__title { font: 700 15px/20px var(--font-text); color: var(--ink); }
+.sl-row__meta { font: 400 13px/18px var(--font-text); color: var(--ink-muted); margin-top: 2px; }
+.sl-row__end { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-1); text-align: right; }
+.sl-row__fig { font: 600 17px/22px var(--font-display); color: var(--ink); font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
+.sl-row__unit { font: 400 13px/18px var(--font-text); color: var(--ink-muted); margin-left: var(--space-1); }
+.sl-row__fig--loss { color: var(--danger-ink); }
+.sl-row--total { border-top: 3px double var(--rule-strong); }
+.sl-row--total .sl-row__title, .sl-row--total .sl-row__fig { font-weight: 700; }
+.sl-code { font: 400 13px/18px var(--font-mono); letter-spacing: 0.02em; color: var(--ink-muted); }
+
+/* ── Status tag ───────────────────────────────────── */
+.sl-tag { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px 0 8px; border-radius: var(--radius-pill); font: 700 12px/16px var(--font-text); white-space: nowrap; }
+.sl-tag svg.i { width: 14px; height: 14px; stroke-width: 2.4; }
+.sl-tag--good { background: var(--good-tint); color: var(--good-ink); }
+.sl-tag--warn { background: var(--warn-tint); color: var(--warn-ink); }
+.sl-tag--danger { background: var(--danger-tint); color: var(--danger-ink); }
+.sl-tag--info { background: var(--rain-tint); color: var(--rain-ink); }
+.sl-tag--neutral { background: var(--sheet-sunk); color: var(--ink-muted); }
+
+/* ── Tally stepper ────────────────────────────────── */
+.sl-tally { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-m); padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); }
+.sl-tally__label { display: flex; justify-content: space-between; align-items: baseline; }
+.sl-tally__row { display: grid; grid-template-columns: var(--tap-primary) minmax(0, 1fr) var(--tap-primary); align-items: center; gap: var(--space-2); }
+.sl-tally__btn { width: var(--tap-primary); height: var(--tap-primary); border-radius: var(--radius-s); border: 1.5px solid var(--rule-strong); background: var(--sheet-sunk); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.sl-tally__btn--add { background: var(--shamba); border-color: var(--shamba); color: var(--on-shamba); }
+.sl-tally__btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sl-tally__value { text-align: center; }
+.sl-tally__num { display: block; font: 600 28px/32px var(--font-display); color: var(--ink); font-variant-numeric: tabular-nums lining-nums; }
+.sl-tally__packs { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.sl-chip { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: var(--radius-pill); border: 1.5px solid var(--rule-strong); background: var(--sheet); color: var(--ink); font: 700 13px/18px var(--font-text); cursor: pointer; }
+.sl-chip[aria-pressed="true"] { background: var(--shamba-tint); border-color: var(--shamba-ink); color: var(--shamba-ink); }
+
+/* ── Phone field ──────────────────────────────────── */
+.sl-field { display: flex; flex-direction: column; gap: 6px; }
+.sl-field__label { font: 700 15px/20px var(--font-text); color: var(--ink); }
+.sl-field__box { display: flex; align-items: stretch; height: var(--tap-primary); background: var(--sheet); border: 1.5px solid var(--rule-strong); border-radius: var(--radius-m); overflow: hidden; }
+.sl-field__box:focus-within { outline: 3px solid var(--focus); outline-offset: 1px; }
+.sl-field__prefix { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-3); background: var(--sheet-sunk); border-right: 1px solid var(--rule); font: 500 17px/24px var(--font-mono); color: var(--ink); }
+.sl-field__input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0 14px; font: 500 19px/24px var(--font-mono); letter-spacing: 0.04em; color: var(--ink); outline: none; }
+.sl-field__input::placeholder { color: var(--ink-faint); }
+.sl-field__hint { font: 400 13px/18px var(--font-text); color: var(--ink-muted); }
+.sl-field--error .sl-field__box { border-color: var(--danger-ink); }
+.sl-field--error .sl-field__hint { color: var(--danger-ink); }
+
+/* ── Alert row ────────────────────────────────────── */
+.sl-alert { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--space-3); padding: 14px var(--space-4); border-top: 1px solid var(--rule); }
+.sl-alert__icon { width: 40px; height: 40px; border-radius: var(--radius-s); display: grid; place-items: center; }
+.sl-alert__icon--warn { background: var(--warn-tint); color: var(--warn-ink); }
+.sl-alert__icon--danger { background: var(--danger-tint); color: var(--danger-ink); }
+.sl-alert__icon--info { background: var(--rain-tint); color: var(--rain-ink); }
+.sl-alert__text { font: 400 15px/22px var(--font-text); color: var(--ink); margin: 0; }
+.sl-alert__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: 6px; }
+.sl-link { font: 700 14px/20px var(--font-text); color: var(--shamba-ink); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center; }
+
+/* ── Season strip ─────────────────────────────────── */
+.sl-season { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-m); padding: 14px var(--space-4) var(--space-3); }
+.sl-season__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
+.sl-season__name { font: 600 19px/24px var(--font-display); color: var(--ink); margin: 2px 0 0; }
+.sl-season__track { position: relative; margin-top: 14px; }
+.sl-season__months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; height: 28px; }
+.sl-season__m { border-radius: var(--radius-s); background: var(--sheet-sunk); }
+.sl-season__m--rain { background: var(--season-rain); }
+.sl-season__now { position: absolute; top: -6px; bottom: -6px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--maize); }
+.sl-season__letters { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; margin-top: 6px; text-align: center; font: 700 11px/14px var(--font-text); color: var(--ink-faint); }
+.sl-season__letters .is-now { color: var(--maize-ink); }
+.sl-season__legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 10px; font: 400 13px/18px var(--font-text); color: var(--ink-muted); }
+.sl-season__key { display: inline-flex; align-items: center; gap: 6px; }
+.sl-season__swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--season-rain); }
+.sl-season__swatch--dry { background: var(--sheet-sunk); border: 1px solid var(--rule); }
+
+/* ── Enterprise tile ──────────────────────────────── */
+.sl-ent { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); min-height: 72px; padding: 14px var(--space-4); background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-m); color: inherit; text-decoration: none; }
+.sl-ent:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sl-ent__icon { width: 48px; height: 48px; border-radius: var(--radius-s); background: var(--shamba-tint); color: var(--shamba-ink); display: grid; place-items: center; }
+.sl-ent__icon svg.i { width: 26px; height: 26px; }
+.sl-ent__title { font: 700 15px/20px var(--font-text); color: var(--ink); }
+.sl-ent__meta { font: 400 13px/18px var(--font-text); color: var(--ink-muted); margin-top: 2px; }
+.sl-ent__end { text-align: right; }
+.sl-ent__fig { display: block; font: 600 20px/24px var(--font-display); color: var(--ink); font-variant-numeric: tabular-nums lining-nums; }
+
+/* ── Bottom nav ───────────────────────────────────── */
+.sl-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); height: 64px; background: var(--sheet); border-top: 1px solid var(--rule); }
+.sl-nav__item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--ink-faint); font: 700 12px/14px var(--font-text); text-decoration: none; }
+.sl-nav__item[aria-current="page"] { color: var(--shamba-ink); }
+.sl-nav__item[aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--maize); }
+.sl-nav__item:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sl-btn { transition: none; }
+}

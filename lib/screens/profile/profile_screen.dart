@@ -115,16 +115,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
-  Color _getAvatarColor(String name) {
-    final palette = [
-      const Color(0xFF2E7D32),
-      const Color(0xFF1565C0),
-      const Color(0xFF4DB6AC),
-      const Color(0xFFF4A03A),
-    ];
-    return palette[name.hashCode % palette.length];
-  }
-
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(context.overlayStyle);
@@ -215,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {},
               ),
               _MenuItem(
-                color: const Color(0xFF4CAF50),
+                color: AppColors.brand,
                 icon: Icons.calendar_today_outlined,
                 label: 'Scheduled',
                 onTap: () {},
@@ -255,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {},
               ),
               _MenuItem(
-                color: const Color(0xFF4CAF50),
+                color: AppColors.brand,
                 icon: Icons.notifications_outlined,
                 label: 'Notifications',
                 onTap: () {
@@ -328,11 +318,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: 60,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _getAvatarColor(_userName),
-              border: Border.all(
-                color: const Color(0xFF4CAF50).withOpacity(0.35),
-                width: 2.5,
-              ),
+              color: AppColors.brand,
             ),
             child: Center(
               child: Text(
@@ -409,8 +395,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50),
-                borderRadius: BorderRadius.circular(20),
+                color: AppColors.brand,
+                borderRadius: BorderRadius.circular(10),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -461,9 +447,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (trailing != null)
             Text(
               trailing,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF4CAF50),
+                color: context.appColors.brandText,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -521,15 +507,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
         child: Row(
           children: [
-            // Colored icon box (rounded square — matches MenuScreen)
+            // A green icon well, the same for every item: colour is kept for states.
             Container(
               height: 38,
               width: 38,
               decoration: BoxDecoration(
-                color: item.color,
-                borderRadius: BorderRadius.circular(10),
+                color: context.appColors.brandSoft,
+                borderRadius: BorderRadius.circular(6),
               ),
-              child: Icon(item.icon, color: Colors.white, size: 18),
+              child: Icon(item.icon, color: context.appColors.brandText, size: 20),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -547,7 +533,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 value: item.toggleValue ?? false,
                 onChanged: item.onToggle,
                 activeColor: Colors.white,
-                activeTrackColor: const Color(0xFF4CAF50),
+                activeTrackColor: AppColors.brand,
                 inactiveThumbColor: Colors.white,
                 inactiveTrackColor: context.appColors.border,
               )

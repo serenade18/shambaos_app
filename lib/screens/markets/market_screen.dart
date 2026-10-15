@@ -283,10 +283,10 @@ class _MarketScreenState extends State<MarketScreen> {
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFF2D7A3A) : Colors.transparent,
+                    color: isActive ? AppColors.brand : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isActive ? const Color(0xFF2D7A3A) : context.appColors.border,
+                      color: isActive ? AppColors.brand : context.appColors.border,
                       width: 0.5,
                     ),
                   ),
@@ -378,7 +378,7 @@ class _MarketScreenState extends State<MarketScreen> {
           color: colors.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2D7A3A) : Colors.transparent,
+            color: isSelected ? AppColors.brand : Colors.transparent,
             width: isSelected ? 1.5 : 0,
           ),
           boxShadow: [
@@ -525,7 +525,7 @@ class _MarketScreenState extends State<MarketScreen> {
                 style: TextButton.styleFrom(
                   backgroundColor: isSelected
                       ? context.appColors.brandSoft
-                      : const Color(0xFF2D7A3A),
+                      : AppColors.brand,
                   padding: const EdgeInsets.symmetric(vertical: 11),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -659,7 +659,7 @@ class _MarketScreenState extends State<MarketScreen> {
                       icon: const Icon(Icons.send_rounded, size: 17),
                       label: const Text('Confirm Market'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2D7A3A),
+                        backgroundColor: AppColors.brand,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         textStyle: const TextStyle(
@@ -686,7 +686,7 @@ class _MarketScreenState extends State<MarketScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('✓ Listed at ${market['name']}!'),
-        backgroundColor: const Color(0xFF1B5E20),
+        backgroundColor: AppColors.brand,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),

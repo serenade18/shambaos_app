@@ -97,11 +97,11 @@ class _CustomersScreenState extends State<CustomersScreen> {
           color: context.appColors.surfaceMuted,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const TextField(
+        child: TextField(
           decoration: InputDecoration(
             hintText: 'Search customers...',
             border: InputBorder.none,
-            prefixIcon: Icon(Icons.search, color: Color(0xFF4CAF50)),
+            prefixIcon: Icon(Icons.search, color: context.appColors.brandText),
           ),
         ),
       ),

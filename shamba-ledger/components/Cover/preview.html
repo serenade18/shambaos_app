@@ -1,0 +1,38 @@
+<!-- @dsCard height=300 -->
+<style>
+  .cv { position: relative; width: 960px; height: 300px; background: var(--paper); overflow: hidden; }
+  .cv svg { position: absolute; left: 480px; top: 0; width: 480px; height: 300px; }
+  .cv .maize { fill: var(--maize); }
+  .cv .shamba { fill: var(--shamba); }
+  .cv .dry { fill: var(--rule-strong); }
+  .cv .rain { fill: var(--rain-ink); }
+  .cv .ink { fill: var(--ink); }
+  .cv .bar { rx: var(--radius-m); }
+  .cv .hair { stroke: var(--rule); stroke-width: 1; }
+  .cv .txt { position: absolute; left: 48px; bottom: 40px; max-width: 440px; }
+  .cv h1 { margin: 0; font: 600 112px/0.95 var(--font-display); letter-spacing: -0.02em; color: var(--ink); }
+  .cv p { margin: 16px 0 0; font: 400 14px/20px var(--font-text); color: var(--ink-muted); }
+</style>
+<div class="cv">
+  <svg viewBox="0 0 480 300" aria-hidden="true">
+    <!--
+      blocks: maize, shamba, rule-strong, rain-ink, ink; widths 48/144/128/96/64 (space-12, 3x space-12, 4x space-8, 2x space-12, 2x space-8)
+      arrangement: a strip of unequal bars, bottom-aligned and bleeding off the bottom, heights following a year of Kenyan rain (Jan-Feb dry, masika, cool dry, vuli, December)
+      pattern: four hairline ledger rules in rule at a 64px pitch behind the bars; chosen because the system is a ruled counter book with borders, not shadows
+      scales: gap 0, pitch 2x space-8, bar tops radius-m, bars run 16px past the bottom edge so only the top corners show
+    -->
+    <line class="hair" x1="0" y1="60" x2="480" y2="60"/>
+    <line class="hair" x1="0" y1="124" x2="480" y2="124"/>
+    <line class="hair" x1="0" y1="188" x2="480" y2="188"/>
+    <line class="hair" x1="0" y1="252" x2="480" y2="252"/>
+    <rect class="maize bar" x="0" y="204" width="48" height="112"/>
+    <rect class="shamba bar" x="48" y="28" width="144" height="288"/>
+    <rect class="dry bar" x="192" y="172" width="128" height="144"/>
+    <rect class="rain bar" x="320" y="92" width="96" height="224"/>
+    <rect class="ink bar" x="416" y="156" width="64" height="160"/>
+  </svg>
+  <div class="txt">
+    <h1>Shamba Ledger</h1>
+    <p>The farm record book, legible in the noon sun.</p>
+  </div>
+</div>

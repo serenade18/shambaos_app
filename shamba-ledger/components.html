@@ -1,0 +1,184 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shamba Ledger components</title>
+<link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="components/bundle.css">
+<style>
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-text)}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 48px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.top button{font:700 14px var(--font-text);padding:10px 14px;border-radius:var(--radius-m);border:1.5px solid var(--rule-strong);background:var(--sheet);color:var(--ink);cursor:pointer}
+.g-card{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--radius-m);margin:0 0 24px;overflow:hidden}
+.g-card h2{font:600 19px/24px var(--font-display);margin:16px 16px 2px}
+.g-sub{margin:0 16px 4px;font-size:13px;color:var(--ink-muted)}
+.g-cover .g-stage{overflow-x:auto}
+</style></head><body><main>
+<div class="top"><span class="sl-eyebrow" style="font:700 12px/16px var(--font-text);letter-spacing:.08em">SHAMBA LEDGER · COMPONENTS</span>
+<button onclick="var r=document.documentElement;r.dataset.theme=(r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches))?'light':'dark'">Switch theme</button></div>
+<section class="g-card g-cover"><div class="g-stage">
+<style>
+  .cv { position: relative; width: 960px; height: 300px; background: var(--paper); overflow: hidden; }
+  .cv svg { position: absolute; left: 480px; top: 0; width: 480px; height: 300px; }
+  .cv .maize { fill: var(--maize); }
+  .cv .shamba { fill: var(--shamba); }
+  .cv .dry { fill: var(--rule-strong); }
+  .cv .rain { fill: var(--rain-ink); }
+  .cv .ink { fill: var(--ink); }
+  .cv .bar { rx: var(--radius-m); }
+  .cv .hair { stroke: var(--rule); stroke-width: 1; }
+  .cv .txt { position: absolute; left: 48px; bottom: 40px; max-width: 440px; }
+  .cv h1 { margin: 0; font: 600 112px/0.95 var(--font-display); letter-spacing: -0.02em; color: var(--ink); }
+  .cv p { margin: 16px 0 0; font: 400 14px/20px var(--font-text); color: var(--ink-muted); }
+</style>
+<div class="cv">
+  <svg viewBox="0 0 480 300" aria-hidden="true">
+    <!--
+      blocks: maize, shamba, rule-strong, rain-ink, ink; widths 48/144/128/96/64 (space-12, 3x space-12, 4x space-8, 2x space-12, 2x space-8)
+      arrangement: a strip of unequal bars, bottom-aligned and bleeding off the bottom, heights following a year of Kenyan rain (Jan-Feb dry, masika, cool dry, vuli, December)
+      pattern: four hairline ledger rules in rule at a 64px pitch behind the bars; chosen because the system is a ruled counter book with borders, not shadows
+      scales: gap 0, pitch 2x space-8, bar tops radius-m, bars run 16px past the bottom edge so only the top corners show
+    -->
+    <line class="hair" x1="0" y1="60" x2="480" y2="60"/>
+    <line class="hair" x1="0" y1="124" x2="480" y2="124"/>
+    <line class="hair" x1="0" y1="188" x2="480" y2="188"/>
+    <line class="hair" x1="0" y1="252" x2="480" y2="252"/>
+    <rect class="maize bar" x="0" y="204" width="48" height="112"/>
+    <rect class="shamba bar" x="48" y="28" width="144" height="288"/>
+    <rect class="dry bar" x="192" y="172" width="128" height="144"/>
+    <rect class="rain bar" x="320" y="92" width="96" height="224"/>
+    <rect class="ink bar" x="416" y="156" width="64" height="160"/>
+  </svg>
+  <div class="txt">
+    <h1>Shamba Ledger</h1>
+    <p>The farm record book, legible in the noon sun.</p>
+  </div>
+</div>
+</div></section><section class="g-card"><h2>KeyFigure</h2><p class="g-sub">Figures · The one number a screen is about</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<div style="display:flex;flex-direction:column;gap:16px;max-width:380px">
+  <div class="sl-figure sl-figure--band">
+    <span class="sl-eyebrow">PROFIT · LAST 30 DAYS</span>
+    <span class="sl-figure__value"><span class="sl-figure__cur">KSh</span>22,500</span>
+    <span class="sl-figure__delta"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg><span><strong>KSh 4,200 more</strong> than the 30 days before</span></span>
+  </div>
+  <div class="sl-figure">
+    <span class="sl-eyebrow">EGGS COLLECTED TODAY</span>
+    <span class="sl-figure__value">212<span class="sl-figure__unit">trays</span></span>
+    <span class="sl-figure__delta sl-figure__delta--down"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 9v8H9"/></svg><span><strong>8 trays fewer</strong> than yesterday</span></span>
+  </div>
+</div>
+</div>
+</div></section><section class="g-card"><h2>LedgerRow</h2><p class="g-sub">Figures · Rows in a ruled ledger, with a double-ruled total</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<div class="sl-ledger" style="max-width:420px">
+  <div class="sl-ledger__head"><h3 class="sl-ledger__title">Profit by enterprise</h3><span class="sl-eyebrow">OCT 2026</span></div>
+  <div class="sl-row"><div><div class="sl-row__title">Layers, batch 1</div><div class="sl-row__meta">Sales KSh 31,500 · Costs KSh 9,600</div></div><div class="sl-row__end"><span class="sl-row__fig">KSh 21,900</span></div></div>
+  <div class="sl-row"><div><div class="sl-row__title">Maize, short rains</div><div class="sl-row__meta">Planted 3 Oct · 2 acres</div></div><div class="sl-row__end"><span class="sl-row__fig sl-row__fig--loss">−KSh 3,400</span><span class="sl-tag sl-tag--danger"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>Loss so far</span></div></div>
+  <div class="sl-row"><div><div class="sl-row__title">Layers mash</div><div class="sl-row__meta">Feed store · <span class="sl-code">RJK4XY1234</span></div></div><div class="sl-row__end"><span class="sl-row__fig">3<span class="sl-row__unit">bags</span></span><span class="sl-tag sl-tag--warn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><path d="M12 17.5v.01"/></svg>Running low</span></div></div>
+  <div class="sl-row sl-row--total"><div><div class="sl-row__title">Whole farm</div></div><div class="sl-row__end"><span class="sl-row__fig">KSh 18,500</span></div></div>
+</div>
+</div>
+</div></section><section class="g-card"><h2>StatusTag</h2><p class="g-sub">Figures · A word, an icon and a tint</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+  <span class="sl-tag sl-tag--good"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Done</span>
+  <span class="sl-tag sl-tag--good"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Paid</span>
+  <span class="sl-tag sl-tag--warn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Not recorded</span>
+  <span class="sl-tag sl-tag--warn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4"/><path d="M12 17.5v.01"/></svg>Running low</span>
+  <span class="sl-tag sl-tag--danger"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>Below zero</span>
+  <span class="sl-tag sl-tag--danger"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Overdue 12 days</span>
+  <span class="sl-tag sl-tag--info"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15a4 4 0 1 1 1.2-7.8A5 5 0 0 1 17.6 9 3.5 3.5 0 0 1 17 16"/><path d="M9 18l-1 3M13 18l-1 3M17 18l-1 3"/></svg>34 mm Thu</span>
+  <span class="sl-tag sl-tag--neutral">On credit</span>
+</div>
+</div>
+</div></section><section class="g-card"><h2>AlertRow</h2><p class="g-sub">Signals · Something on the farm that needs the farmer</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<div class="sl-ledger" style="max-width:420px">
+  <div class="sl-ledger__head"><h3 class="sl-ledger__title">Needs you</h3><span class="sl-eyebrow">3 ALERTS</span></div>
+  <div class="sl-alert"><span class="sl-alert__icon sl-alert__icon--danger"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l4 4M19 5l-3 3M14 6l4 4-9 9H5v-4z"/><path d="M10 10l2 2M7 13l2 2"/></svg></span><div><p class="sl-alert__text">Newcastle vaccine due for Layers, batch 1 by Fri 23 Oct.</p><div class="sl-alert__foot"><span class="sl-tag sl-tag--danger"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Overdue 2 days</span><a class="sl-link" href="#">Record vaccination</a></div></div></div>
+  <div class="sl-alert"><span class="sl-alert__icon sl-alert__icon--info"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15a4 4 0 1 1 1.2-7.8A5 5 0 0 1 17.6 9 3.5 3.5 0 0 1 17 16"/><path d="M9 18l-1 3M13 18l-1 3M17 18l-1 3"/></svg></span><div><p class="sl-alert__text">Heavy rain expected Thursday, about 34 mm.</p><div class="sl-alert__foot"><span class="sl-tag sl-tag--info">Forecast</span><a class="sl-link" href="#">See forecast</a></div></div></div>
+  <div class="sl-alert"><span class="sl-alert__icon sl-alert__icon--warn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M15.6 9.6a5.5 5.5 0 1 1-6 6"/></svg></span><div><p class="sl-alert__text">Mama Njeri has owed you KSh 18,000 for 12 days.</p><div class="sl-alert__foot"><span class="sl-tag sl-tag--warn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>12 days</span><a class="sl-link" href="#">Send reminder</a></div></div></div>
+</div>
+</div>
+</div></section><section class="g-card"><h2>SeasonStrip</h2><p class="g-sub">Signals · The year by the rains, with today marked</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<div class="sl-season" style="max-width:420px">
+  <div class="sl-season__head">
+    <div><span class="sl-eyebrow">VULI · SHORT RAINS</span><p class="sl-season__name">Week 3 of 10</p></div>
+    <span class="sl-caption">Planting window open</span>
+  </div>
+  <div class="sl-season__track">
+    <div class="sl-season__months"><span class="sl-season__m"></span><span class="sl-season__m"></span><span class="sl-season__m sl-season__m--rain"></span><span class="sl-season__m sl-season__m--rain"></span><span class="sl-season__m sl-season__m--rain"></span><span class="sl-season__m"></span><span class="sl-season__m"></span><span class="sl-season__m"></span><span class="sl-season__m"></span><span class="sl-season__m sl-season__m--rain"></span><span class="sl-season__m sl-season__m--rain"></span><span class="sl-season__m sl-season__m--rain"></span></div>
+    <span class="sl-season__now" style="left:calc((100% + 3px) * 9.48 / 12)" aria-label="Today, 15 October"></span>
+  </div>
+  <div class="sl-season__letters"><span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span class="is-now">O</span><span>N</span><span>D</span></div>
+  <div class="sl-season__legend"><span class="sl-season__key"><span class="sl-season__swatch"></span>Masika, Mar–May</span><span class="sl-season__key"><span class="sl-season__swatch"></span>Vuli, Oct–Dec</span><span class="sl-season__key"><span class="sl-season__swatch sl-season__swatch--dry"></span>Dry</span></div>
+</div>
+</div>
+</div></section><section class="g-card"><h2>EnterpriseTile</h2><p class="g-sub">Farm · An animal group or crop, with its live figure</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:420px">
+  <a class="sl-ent" href="#"><span class="sl-ent__icon"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.6 0 6.5 5.6 6.5 10.2a6.5 6.5 0 0 1-13 0C5.5 8.6 8.4 3 12 3z"/></svg></span><span><span class="sl-ent__title">Layers, batch 1</span><span class="sl-ent__meta" style="display:block">300 birds · week 34</span></span><span class="sl-ent__end"><span class="sl-ent__fig">212</span><span class="sl-caption">trays today</span></span></a>
+  <a class="sl-ent" href="#"><span class="sl-ent__icon"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5s6 6.9 6 10.8a6 6 0 0 1-12 0c0-3.9 6-10.8 6-10.8z"/></svg></span><span><span class="sl-ent__title">Dairy cows</span><span class="sl-ent__meta" style="display:block">4 milking · 1 dry</span></span><span class="sl-ent__end"><span class="sl-ent__fig">38</span><span class="sl-caption">litres today</span></span></a>
+  <a class="sl-ent" href="#"><span class="sl-ent__icon"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c2.4 0 3.8 3.6 3.8 8s-1.4 7-3.8 7-3.8-2.6-3.8-7S9.6 3 12 3z"/><path d="M12 18v3M8.5 13.5C6 13.6 4.6 15 4 17.5M15.5 13.5c2.5.1 3.9 1.5 4.5 4"/></svg></span><span><span class="sl-ent__title">Maize, short rains</span><span class="sl-ent__meta" style="display:block">2 acres · planted 3 Oct</span></span><span class="sl-ent__end"><span class="sl-tag sl-tag--warn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Not recorded</span></span></a>
+</div>
+</div>
+</div></section><section class="g-card"><h2>TallyStepper</h2><p class="g-sub">Actions · Counting with a thumb, in farmer units</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<div class="sl-tally" style="max-width:380px">
+  <div class="sl-tally__label"><span class="sl-row__title">Eggs collected</span><span class="sl-caption">Layers, batch 1 · today</span></div>
+  <div class="sl-tally__row">
+    <button class="sl-tally__btn" aria-label="One tray fewer" data-step="-1"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    <div class="sl-tally__value" aria-live="polite"><span class="sl-tally__num" id="n">212</span><span class="sl-caption">trays</span></div>
+    <button class="sl-tally__btn sl-tally__btn--add" aria-label="One tray more" data-step="1"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+  <div class="sl-tally__packs">
+    <button class="sl-chip" data-step="10">+10 trays</button>
+    <button class="sl-chip" data-step="12">+1 crate</button>
+    <button class="sl-chip" aria-pressed="true">Trays</button>
+    <button class="sl-chip" aria-pressed="false">Eggs</button>
+  </div>
+</div>
+</div>
+<script>
+var n = 212, el = document.getElementById("n");
+document.querySelectorAll("[data-step]").forEach(function (b) {
+  b.addEventListener("click", function () { n = Math.max(0, n + Number(b.dataset.step)); el.textContent = n.toLocaleString("en-KE"); });
+});
+</script>
+</div></section><section class="g-card"><h2>Button</h2><p class="g-sub">Actions · Primary, secondary, quiet and danger</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<div style="display:flex;flex-direction:column;gap:12px;max-width:360px">
+  <button class="sl-btn sl-btn--primary sl-btn--lg sl-btn--block"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>Send code</button>
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    <button class="sl-btn sl-btn--secondary">Add customer</button>
+    <button class="sl-btn sl-btn--danger">Remove sale</button>
+    <button class="sl-btn sl-btn--primary" disabled>Save sale</button>
+  </div>
+  <div><button class="sl-btn sl-btn--quiet">See all records</button></div>
+</div>
+</div>
+</div></section><section class="g-card"><h2>PhoneField</h2><p class="g-sub">Inputs · The sign-in number, with +254 built in</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<div style="display:flex;flex-direction:column;gap:20px;max-width:380px">
+  <label class="sl-field">
+    <span class="sl-field__label">Your phone number</span>
+    <span class="sl-field__box"><span class="sl-field__prefix">KE +254</span><input class="sl-field__input" inputmode="tel" value="712 345 678" aria-describedby="h1"></span>
+    <span class="sl-field__hint" id="h1">We will send a 6-digit code by SMS.</span>
+  </label>
+  <label class="sl-field sl-field--error">
+    <span class="sl-field__label">Sign-in code</span>
+    <span class="sl-field__box"><input class="sl-field__input" inputmode="numeric" value="508 41" aria-describedby="h2"></span>
+    <span class="sl-field__hint" id="h2">That code is not correct. 3 tries left.</span>
+  </label>
+</div>
+</div>
+</div></section><section class="g-card"><h2>BottomNav</h2><p class="g-sub">Navigation · Four places, the current one marked in maize</p><div class="g-stage">
+<div class="sl" style="padding:16px;min-height:100%">
+<nav class="sl-nav" style="max-width:420px;border:1px solid var(--rule);border-radius:var(--radius-m)" aria-label="Main">
+  <a class="sl-nav__item" href="#" aria-current="page"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg>Home</a>
+  <a class="sl-nav__item" href="#"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18M12.5 8h3M12.5 12h3"/></svg>Records</a>
+  <a class="sl-nav__item" href="#"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M15.5 14.5h2"/></svg>Money</a>
+  <a class="sl-nav__item" href="#"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9.5L4 20z"/><path d="M8.5 10.5h7"/></svg>Tulip</a>
+</nav>
+</div>
+</div></section>
+</main></body></html>

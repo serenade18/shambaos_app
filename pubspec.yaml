@@ -101,6 +101,40 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
+  # Shamba Ledger type: Zilla Slab for figures and titles, Atkinson Hyperlegible
+  # Next for reading text, Atkinson Hyperlegible Mono for codes. Bundled so they
+  # work offline; licences in fonts/OFL-*.txt.
+  fonts:
+    - family: ZillaSlab
+      fonts:
+        - asset: fonts/ZillaSlab-Medium.ttf
+          weight: 500
+        - asset: fonts/ZillaSlab-SemiBold.ttf
+          weight: 600
+        - asset: fonts/ZillaSlab-Bold.ttf
+          weight: 700
+    - family: Atkinson
+      fonts:
+        - asset: fonts/AtkinsonHyperlegibleNext-Regular.ttf
+          weight: 400
+        - asset: fonts/AtkinsonHyperlegibleNext-Bold.ttf
+          weight: 700
+    - family: PhosphorRegular
+      fonts:
+        - asset: fonts/Phosphor-Regular.ttf
+    - family: PhosphorBold
+      fonts:
+        - asset: fonts/Phosphor-Bold.ttf
+    - family: PhosphorFill
+      fonts:
+        - asset: fonts/Phosphor-Fill.ttf
+    - family: AtkinsonMono
+      fonts:
+        - asset: fonts/AtkinsonHyperlegibleMono-Regular.ttf
+          weight: 400
+        - asset: fonts/AtkinsonHyperlegibleMono-Medium.ttf
+          weight: 500
+
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
   # "family" key with the font family name, and a "fonts" key with a

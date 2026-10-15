@@ -1,0 +1,109 @@
+/* Shamba Ledger — generated from tokens.json */
+:root, [data-theme="light"] {
+  --paper: #eef1ea;
+  --sheet: #fafbf7;
+  --sheet-sunk: #e4e9df;
+  --rule: #d3dacd;
+  --rule-strong: #7f8c7d;
+  --ink: #17211a;
+  --ink-muted: #4c574e;
+  --ink-faint: #637065;
+  --shamba: #355442;
+  --on-shamba: #ffffff;
+  --shamba-ink: #2f5b40;
+  --shamba-tint: #dce8dd;
+  --maize: #d99a1e;
+  --on-maize: #1f1606;
+  --maize-ink: #8a5a00;
+  --season-rain: #a9cbdd;
+  --good-ink: var(--shamba-ink);
+  --good-tint: var(--shamba-tint);
+  --warn-ink: #9a4a0b;
+  --warn-tint: #f6e3cf;
+  --danger-ink: #a3261b;
+  --danger-tint: #f7deda;
+  --rain-ink: #1f5f82;
+  --rain-tint: #dcebf2;
+  --focus: var(--rain-ink);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --tap-min: 48px;
+  --tap-primary: 56px;
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 20px;
+  --radius-pill: 999px;
+  --shadow-sheet: 0 -8px 24px rgba(23, 33, 26, 0.14);
+  --font-display: "Zilla Slab", "Roboto Slab", Georgia, serif;
+  --font-text: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, "Roboto Mono", monospace;
+  --type-figure-xl: 600 40px/44px var(--font-display); /* letter-spacing: -0.01em */
+  --type-figure-l: 600 28px/32px var(--font-display); /* letter-spacing: normal */
+  --type-figure-s: 600 17px/22px var(--font-display); /* letter-spacing: normal */
+  --type-title-l: 600 24px/30px var(--font-display); /* letter-spacing: normal */
+  --type-title-m: 600 19px/24px var(--font-display); /* letter-spacing: normal */
+  --type-body-l: 400 17px/26px var(--font-text); /* letter-spacing: normal */
+  --type-body: 400 15px/22px var(--font-text); /* letter-spacing: normal */
+  --type-label: 700 15px/20px var(--font-text); /* letter-spacing: normal */
+  --type-caption: 400 13px/18px var(--font-text); /* letter-spacing: normal */
+  --type-eyebrow: 700 12px/16px var(--font-text); /* letter-spacing: 0.08em */
+  --type-code: 500 19px/24px var(--font-mono); /* letter-spacing: 0.04em */
+  --type-code-s: 400 13px/18px var(--font-mono); /* letter-spacing: 0.02em */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101511;
+    --sheet: #182019;
+    --sheet-sunk: #222b23;
+    --rule: #2f3a31;
+    --rule-strong: #6b786c;
+    --ink: #e8ede5;
+    --ink-muted: #a3afa4;
+    --ink-faint: #879386;
+    --shamba: #8fc9a0;
+    --on-shamba: #0f1a12;
+    --shamba-ink: #9ed4ae;
+    --shamba-tint: #1f3427;
+    --maize: #e8b04a;
+    --on-maize: #1f1606;
+    --maize-ink: #f0c060;
+    --season-rain: #2d5670;
+    --warn-ink: #f2a66a;
+    --warn-tint: #3a2614;
+    --danger-ink: #ff8a7a;
+    --danger-tint: #3d1c18;
+    --rain-ink: #8cc4e3;
+    --rain-tint: #172a35;
+    --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.55);
+  }
+}
+[data-theme="dark"] {
+  --paper: #101511;
+  --sheet: #182019;
+  --sheet-sunk: #222b23;
+  --rule: #2f3a31;
+  --rule-strong: #6b786c;
+  --ink: #e8ede5;
+  --ink-muted: #a3afa4;
+  --ink-faint: #879386;
+  --shamba: #8fc9a0;
+  --on-shamba: #0f1a12;
+  --shamba-ink: #9ed4ae;
+  --shamba-tint: #1f3427;
+  --maize: #e8b04a;
+  --on-maize: #1f1606;
+  --maize-ink: #f0c060;
+  --season-rain: #2d5670;
+  --warn-ink: #f2a66a;
+  --warn-tint: #3a2614;
+  --danger-ink: #ff8a7a;
+  --danger-tint: #3d1c18;
+  --rain-ink: #8cc4e3;
+  --rain-tint: #172a35;
+  --shadow-sheet: 0 -8px 24px rgba(0, 0, 0, 0.55);
+}

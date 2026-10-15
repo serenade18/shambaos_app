@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import '../../widgets/phosphor_icons.dart';
 
 import '../../services/app_colors.dart';
+import '../../services/app_type.dart';
+import '../../widgets/ledger.dart';
 import 'dashboard_service.dart';
 
-/// The farm at a glance (GET /dashboard): profit by enterprise, money owed both
-/// ways, stock bought, alerts, today's records and stock levels.
+/// The farm at a glance (GET /dashboard): profit, money owed both ways, stock
+/// bought, alerts, today's records and stock levels, kept as ledgers.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -16,8 +19,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   static const _periods = {7: '7 days', 30: '30 days', 90: '90 days'};
-  static const _red = Color(0xFFE53935);
-  static const _amber = Color(0xFFF59E0B);
 
   int _days = 30;
   bool _loading = true;
@@ -41,16 +42,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
+    final c = context.appColors;
     SystemChrome.setSystemUIOverlayStyle(context.overlayStyle);
 
     return Scaffold(
-      backgroundColor: colors.scaffoldBackground,
+      backgroundColor: c.scaffoldBackground,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(colors),
-            Expanded(child: _buildBody(colors)),
+            _buildHeader(c),
+            Expanded(child: _buildBody(c)),
           ],
         ),
       ),
@@ -60,40 +61,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ══════════════════════════════════════════════════════════
   // HEADER
   // ══════════════════════════════════════════════════════════
-  Widget _buildHeader(AppColors colors) {
+  Widget _buildHeader(AppColors c) {
     final data = _result?.data;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-      color: colors.cardBackground,
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+      decoration: BoxDecoration(color: c.cardBackground, border: Border(bottom: BorderSide(color: c.divider))),
       child: Row(
         children: [
-          _circleButton(colors, Icons.arrow_back_ios_new, () => Navigator.pop(context)),
-          const SizedBox(width: 12),
+          IconButton(
+            tooltip: 'Back',
+            onPressed: () => Navigator.pop(context),
+            icon: Icon(PhosphorIconsRegular.arrowLeft, color: c.textPrimary),
+          ),
+          const SizedBox(width: 4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Dashboard',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: colors.textPrimary)),
-                if (data != null)
-                  Text(data.farmName, style: TextStyle(fontSize: 12.5, color: colors.textSecondary)),
+                Text('Dashboard', style: AppType.titleL.copyWith(color: c.textPrimary)),
+                if (data != null) Text(data.farmName, style: AppType.caption.copyWith(color: c.textSecondary)),
               ],
             ),
           ),
-          _circleButton(colors, Icons.refresh_rounded, _load),
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: _loading ? null : _load,
+            icon: Icon(PhosphorIconsRegular.arrowClockwise, color: c.textPrimary),
+          ),
         ],
-      ),
-    );
-  }
-
-  Widget _circleButton(AppColors colors, IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(color: colors.surfaceMuted, shape: BoxShape.circle),
-        child: Icon(icon, size: 18, color: colors.textPrimary),
       ),
     );
   }
@@ -101,72 +96,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ══════════════════════════════════════════════════════════
   // BODY
   // ══════════════════════════════════════════════════════════
-  Widget _buildBody(AppColors colors) {
+  Widget _buildBody(AppColors c) {
     if (_loading && _result == null) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.brand));
+      return Center(child: CircularProgressIndicator(color: c.shamba));
     }
     final result = _result!;
     if (result.noFarm) {
-      return _message(colors, Icons.agriculture_rounded, 'No farm yet',
+      return _message(c, PhosphorIconsRegular.barn, 'No farm yet',
           'Set up your farm to see its profit, alerts and stock here.');
     }
     if (result.data == null) {
-      return _message(colors, Icons.cloud_off_rounded, 'Could not load the dashboard',
+      return _message(c, PhosphorIconsRegular.cloudSlash, 'Could not load the dashboard',
           result.error ?? 'Check your connection and try again.', retry: true);
     }
 
     final d = result.data!;
     return RefreshIndicator(
       onRefresh: _load,
-      color: AppColors.brand,
-      backgroundColor: colors.cardBackground,
+      color: c.shamba,
+      backgroundColor: c.cardBackground,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 48),
         children: [
-          _buildPeriodPicker(colors, d),
-          const SizedBox(height: 12),
+          _buildPeriodPicker(c, d),
+          const SizedBox(height: 16),
           if (d.showsMoney) ...[
-            _buildProfitCard(colors, d),
-            const SizedBox(height: 12),
-            _buildMoneyTiles(colors, d),
-            const SizedBox(height: 12),
+            _buildProfit(d),
+            const SizedBox(height: 24),
+            _buildMoneyOwed(c, d),
+            const SizedBox(height: 24),
             if ((d.profit!['monthly'] as List?)?.isNotEmpty ?? false) ...[
-              _buildMonthly(colors, d),
-              const SizedBox(height: 12),
+              _buildMonthly(c, d),
+              const SizedBox(height: 24),
             ],
-            _buildEnterprises(colors, d),
-            const SizedBox(height: 12),
+            _buildEnterprises(d),
+            const SizedBox(height: 24),
           ] else ...[
-            _card(colors, child: Text('Money figures are only shown to members who can see the farm\'s money.',
-                style: TextStyle(fontSize: 13, color: colors.textSecondary))),
-            const SizedBox(height: 12),
+            const SlLedger(children: [
+              SlLedgerRow(
+                title: 'Money is hidden',
+                meta: "Only members who can see the farm's money see profit and debts.",
+              ),
+            ]),
+            const SizedBox(height: 24),
           ],
-          _buildAlerts(colors, d),
-          const SizedBox(height: 12),
-          _buildToday(colors, d),
-          const SizedBox(height: 12),
-          _buildStock(colors, d),
+          _buildAlerts(c, d),
+          const SizedBox(height: 24),
+          _buildToday(c, d),
+          const SizedBox(height: 24),
+          _buildStock(c, d),
         ],
       ),
     );
   }
 
-  Widget _message(AppColors colors, IconData icon, String title, String body, {bool retry = false}) {
+  Widget _message(AppColors c, IconData icon, String title, String body, {bool retry = false}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 52, color: colors.textHint),
+            Icon(icon, size: 48, color: c.textHint),
             const SizedBox(height: 12),
-            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+            Text(title, style: AppType.titleM.copyWith(color: c.textPrimary)),
             const SizedBox(height: 6),
-            Text(body, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: colors.textSecondary)),
+            Text(body, textAlign: TextAlign.center, style: AppType.body.copyWith(color: c.textSecondary)),
             if (retry) ...[
               const SizedBox(height: 16),
-              TextButton(onPressed: _load, child: const Text('Try again')),
+              OutlinedButton(onPressed: _load, child: const Text('Try again')),
             ],
           ],
         ),
@@ -175,7 +174,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ── Period ────────────────────────────────────────────────
-  Widget _buildPeriodPicker(AppColors colors, DashboardData d) {
+  Widget _buildPeriodPicker(AppColors c, DashboardData d) {
     final range = '${DateFormat('d MMM').format(d.from)} – ${DateFormat('d MMM yyyy').format(d.to)}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,14 +188,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ChoiceChip(
                 label: Text(e.value),
                 selected: _days == e.key,
-                showCheckmark: false,
-                selectedColor: colors.brandSoft,
-                backgroundColor: colors.cardBackground,
-                side: BorderSide(color: _days == e.key ? AppColors.brand : colors.border),
-                labelStyle: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: _days == e.key ? colors.brandText : colors.textSecondary,
+                side: BorderSide(color: _days == e.key ? c.brandText : c.border, width: 1.5),
+                labelStyle: AppType.caption.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: _days == e.key ? c.brandText : c.textPrimary,
                 ),
                 onSelected: (_) {
                   setState(() => _days = e.key);
@@ -204,127 +199,117 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 },
               ),
             if (_loading)
-              const SizedBox(
-                  width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brand)),
+              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: c.shamba)),
           ],
         ),
         const SizedBox(height: 6),
-        Text(range, style: TextStyle(fontSize: 11.5, color: colors.textHint)),
+        Text(range, style: AppType.caption.copyWith(color: c.textSecondary)),
       ],
     );
   }
 
   // ── Profit ────────────────────────────────────────────────
-  Widget _buildProfitCard(AppColors colors, DashboardData d) {
+  Widget _buildProfit(DashboardData d) {
     final p = d.profit!;
     final profit = num.tryParse('${p['profit']}') ?? 0;
     final previous = num.tryParse('${p['previous_profit']}') ?? 0;
     final change = profit - previous;
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF2D5A27), Color(0xFF109641)]),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Profit', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(DashboardService.money(profit, d.currency),
-              style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 4),
-          Text(
-            change == 0
-                ? 'Same as the previous $_days days'
-                : '${DashboardService.money(change, d.currency, signed: true)} vs the previous $_days days',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _profitStat('Revenue', DashboardService.money(p['revenue'], d.currency)),
-              const SizedBox(width: 12),
-              _profitStat('Costs', DashboardService.money(p['cost'], d.currency)),
-            ],
-          ),
-        ],
-      ),
+    return SlKeyFigure(
+      band: true,
+      label: 'PROFIT · LAST $_days DAYS',
+      currency: DashboardService.symbol(d.currency),
+      value: DashboardService.amount(profit),
+      deltaUp: change == 0 ? null : change > 0,
+      delta: change == 0
+          ? 'The same'
+          : '${DashboardService.money(change.abs(), d.currency)} ${change > 0 ? 'more' : 'less'}',
+      deltaRest: 'than the $_days days before',
     );
   }
 
-  Widget _profitStat(String label, String value) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
-            const SizedBox(height: 2),
-            Text(value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Customers owe, owed to suppliers, stock bought ───────────
-  Widget _buildMoneyTiles(AppColors colors, DashboardData d) {
+  // ── Money owed, both ways, and stock bought ───────────────
+  Widget _buildMoneyOwed(AppColors c, DashboardData d) {
     final r = d.receivables!;
     final pay = d.payables!;
     final s = d.stockBought!;
-    String oldest(dynamic days, dynamic who) =>
-        days == null ? 'Nothing outstanding' : 'Oldest: $who, $days days';
+    String plural(dynamic n, String word) => '$n $word${n == 1 ? '' : 's'}';
+    String? oldest(dynamic days, dynamic who) => days == null ? null : 'oldest $who, $days days';
+    final owedToSuppliers = (num.tryParse('${s['owed']}') ?? 0) > 0;
 
-    return Column(
+    return SlLedger(
+      title: 'Money owed',
+      trailing: const SlEyebrow('Today'),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _tile(colors, Icons.call_received_rounded, AppColors.brand, 'Customers owe you',
-                DashboardService.money(r['total'], d.currency),
-                '${r['customers']} customer${r['customers'] == 1 ? '' : 's'}\n${oldest(r['oldest_days'], r['oldest_customer'])}'),
-            const SizedBox(width: 12),
-            _tile(colors, Icons.call_made_rounded, _red, 'You owe suppliers',
-                DashboardService.money(pay['total'], d.currency),
-                '${pay['suppliers']} supplier${pay['suppliers'] == 1 ? '' : 's'}\n${oldest(pay['oldest_days'], pay['oldest_supplier'])}'),
-          ],
+        SlLedgerRow(
+          title: 'Customers owe you',
+          meta: [plural(r['customers'], 'customer'), oldest(r['oldest_days'], r['oldest_customer'])]
+              .whereType<String>()
+              .join(' · '),
+          figure: DashboardService.money(r['total'], d.currency),
         ),
-        const SizedBox(height: 12),
-        _card(
-          colors,
+        SlLedgerRow(
+          title: 'You owe suppliers',
+          meta: [plural(pay['suppliers'], 'supplier'), oldest(pay['oldest_days'], pay['oldest_supplier'])]
+              .whereType<String>()
+              .join(' · '),
+          figure: DashboardService.money(pay['total'], d.currency),
+        ),
+        SlLedgerRow(
+          title: 'Stock bought',
+          meta: '${plural(s['purchases'], 'purchase')} in the last $_days days · '
+              'paid ${DashboardService.money(s['paid'], d.currency)}',
+          figure: DashboardService.money(s['total'], d.currency),
+          status: owedToSuppliers
+              ? SlStatusTag('${DashboardService.money(s['owed'], d.currency)} owed', status: SlStatus.warn)
+              : const SlStatusTag('Paid', status: SlStatus.good),
+        ),
+      ],
+    );
+  }
+
+  // ── Profit by month ─────────────────────────────────────────
+  Widget _buildMonthly(AppColors c, DashboardData d) {
+    final months = (d.profit!['monthly'] as List).map((e) => Map<String, dynamic>.from(e)).toList();
+    final values = months.map((m) => num.tryParse('${m['profit']}') ?? 0).toList();
+    final peak = values.fold<num>(0, (a, v) => v.abs() > a ? v.abs() : a);
+
+    return SlLedger(
+      title: 'Profit by month',
+      trailing: SlEyebrow(DashboardService.symbol(d.currency)),
+      children: [
+        Container(
+          height: 150,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(border: Border(top: BorderSide(color: c.divider))),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _iconBadge(Icons.shopping_basket_rounded, const Color(0xFF1565C0)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Stock bought', style: TextStyle(fontSize: 12.5, color: colors.textSecondary)),
-                    Text(DashboardService.money(s['total'], d.currency),
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: colors.textPrimary)),
-                    Text('${s['purchases']} purchase${s['purchases'] == 1 ? '' : 's'} in this period',
-                        style: TextStyle(fontSize: 11.5, color: colors.textHint)),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
+              for (var i = 0; i < months.length; i++)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        _pill('Paid ${DashboardService.money(s['paid'], d.currency)}', colors.brandText),
-                        _pill('Owed ${DashboardService.money(s['owed'], d.currency)}', _red),
+                        Text(NumberFormat.compact().format(values[i]),
+                            style: AppType.caption.copyWith(
+                                fontSize: 11, color: values[i] < 0 ? c.dangerInk : c.textSecondary)),
+                        const SizedBox(height: 4),
+                        Container(
+                          height: peak == 0 ? 2 : 4 + 76 * values[i].abs() / peak,
+                          decoration: BoxDecoration(
+                            color: values[i] < 0 ? c.dangerInk : c.shamba,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(DateFormat('MMM').format(DateTime.parse('${months[i]['month']}-01')),
+                            style: AppType.caption.copyWith(fontSize: 11, color: c.textHint)),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -332,283 +317,144 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _tile(AppColors colors, IconData icon, Color accent, String label, String value, String note) {
-    return Expanded(
-      child: _card(
-        colors,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _iconBadge(icon, accent),
-            const SizedBox(height: 10),
-            Text(label, style: TextStyle(fontSize: 12.5, color: colors.textSecondary)),
-            const SizedBox(height: 2),
-            Text(value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: colors.textPrimary)),
-            const SizedBox(height: 4),
-            Text(note, style: TextStyle(fontSize: 11.5, color: colors.textHint, height: 1.35)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Profit by month ─────────────────────────────────────────
-  Widget _buildMonthly(AppColors colors, DashboardData d) {
-    final months = (d.profit!['monthly'] as List).map((e) => Map<String, dynamic>.from(e)).toList();
-    final values = months.map((m) => num.tryParse('${m['profit']}') ?? 0).toList();
-    final peak = values.fold<num>(0, (a, v) => v.abs() > a ? v.abs() : a);
-
-    return _section(
-      colors,
-      'Profit by month',
-      SizedBox(
-        height: 130,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            for (var i = 0; i < months.length; i++)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(NumberFormat.compact().format(values[i]),
-                          style: TextStyle(fontSize: 10.5, color: colors.textSecondary)),
-                      const SizedBox(height: 4),
-                      Container(
-                        height: peak == 0 ? 2 : 4 + 80 * values[i].abs() / peak,
-                        decoration: BoxDecoration(
-                          color: values[i] < 0 ? _red : AppColors.brand,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(DateFormat('MMM').format(DateTime.parse('${months[i]['month']}-01')),
-                          style: TextStyle(fontSize: 11, color: colors.textHint)),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ── Profit by enterprise ────────────────────────────────────
-  Widget _buildEnterprises(AppColors colors, DashboardData d) {
+  Widget _buildEnterprises(DashboardData d) {
     final rows = (d.profit!['enterprises'] as List? ?? []).map((e) => Map<String, dynamic>.from(e)).toList();
-    return _section(
-      colors,
-      'Profit by enterprise',
-      rows.isEmpty
-          ? _empty(colors, 'No enterprises yet.')
-          : Column(
-              children: [
-                for (final e in rows)
-                  _row(
-                    colors,
-                    title: e['name'] ?? '',
-                    subtitle: 'Revenue ${DashboardService.money(e['revenue'], d.currency)} · '
-                        'Costs ${DashboardService.money(e['cost'], d.currency)}',
-                    trailing: Text(
-                      DashboardService.money(e['profit'], d.currency),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: (num.tryParse('${e['profit']}') ?? 0) < 0 ? _red : colors.textPrimary,
-                      ),
-                    ),
-                    bold: e['enterprise_id'] == null, // the whole-farm total
-                  ),
-              ],
-            ),
+    // The whole-farm row is the sum, so it closes the ledger under a double rule.
+    final total = rows.where((e) => e['enterprise_id'] == null).toList();
+    final parts = rows.where((e) => e['enterprise_id'] != null).toList();
+    bool isLoss(Map e) => (num.tryParse('${e['profit']}') ?? 0) < 0;
+
+    return SlLedger(
+      title: 'Profit by enterprise',
+      trailing: SlEyebrow('Last $_days days'),
+      children: [
+        if (parts.isEmpty) const SlLedgerRow(title: 'No animals or crops yet'),
+        for (final e in parts)
+          SlLedgerRow(
+            title: e['name'] ?? '',
+            meta: 'Sales ${DashboardService.money(e['revenue'], d.currency)} · '
+                'Costs ${DashboardService.money(e['cost'], d.currency)}',
+            figure: DashboardService.money(e['profit'], d.currency),
+            loss: isLoss(e),
+            status: isLoss(e) ? const SlStatusTag('Loss so far', status: SlStatus.danger) : null,
+          ),
+        for (final e in total)
+          SlLedgerRow(
+            title: 'Whole farm',
+            figure: DashboardService.money(e['profit'], d.currency),
+            loss: isLoss(e),
+            total: true,
+          ),
+      ],
     );
   }
 
   // ── Alerts ──────────────────────────────────────────────────
-  Widget _buildAlerts(AppColors colors, DashboardData d) {
-    Color tone(Map<String, dynamic> a) => a['type'] == 'heavy_rain'
-        ? const Color(0xFF1565C0)
-        : a['severity'] == 'critical'
-            ? _red
-            : _amber;
-    IconData icon(String? type) => switch (type) {
-          'heavy_rain' => Icons.thunderstorm_rounded,
-          'vaccination_due' => Icons.vaccines_rounded,
-          'breeding_due' => Icons.favorite_rounded,
-          'crop_stress' => Icons.grass_rounded,
-          'low_stock' || 'negative_stock' => Icons.inventory_2_rounded,
-          'overdue_debt' => Icons.payments_rounded,
-          'mortality_spike' => Icons.monitor_heart_rounded,
-          _ => Icons.notifications_rounded,
-        };
+  Widget _buildAlerts(AppColors c, DashboardData d) {
+    (IconData, SlStatus, String?) look(Map<String, dynamic> a) {
+      final critical = a['severity'] == 'critical';
+      return switch (a['type']) {
+        'heavy_rain' => (PhosphorIconsRegular.cloudRain, SlStatus.info, 'See forecast'),
+        'vaccination_due' => (PhosphorIconsRegular.syringe, critical ? SlStatus.danger : SlStatus.warn, 'Record vaccination'),
+        'breeding_due' => (PhosphorIconsRegular.heart, critical ? SlStatus.danger : SlStatus.warn, null),
+        'crop_stress' => (PhosphorIconsRegular.plant, SlStatus.warn, 'See field'),
+        'low_stock' || 'negative_stock' => (PhosphorIconsRegular.package, critical ? SlStatus.danger : SlStatus.warn, null),
+        'overdue_debt' => (PhosphorIconsRegular.coins, SlStatus.warn, null),
+        _ => (PhosphorIconsRegular.bell, critical ? SlStatus.danger : SlStatus.warn, null),
+      };
+    }
 
-    return _section(
-      colors,
-      'Alerts${d.alerts.isEmpty ? '' : ' (${d.alerts.length})'}',
-      d.alerts.isEmpty
-          ? _empty(colors, 'No alerts. Everything looks fine.')
-          : Column(
-              children: [
-                for (final a in d.alerts)
-                  _row(
-                    colors,
-                    leading: _iconBadge(icon(a['type']), tone(a), size: 34),
-                    title: DashboardService.alertText(a, d.currency),
-                  ),
-              ],
-            ),
+    return SlLedger(
+      title: 'Needs you',
+      trailing: SlEyebrow(d.alerts.isEmpty ? 'All clear' : '${d.alerts.length} alerts'),
+      children: [
+        if (d.alerts.isEmpty)
+          const SlLedgerRow(
+              title: 'Nothing needs you today', meta: 'Alerts about weather, vaccinations and stock show here.'),
+        for (final a in d.alerts.take(5))
+          () {
+            final (icon, status, action) = look(a);
+            return SlAlertRow(
+              icon: icon,
+              status: status,
+              text: DashboardService.alertText(a, d.currency),
+              actionLabel: action,
+              onAction: action == null ? null : () {},
+            );
+          }(),
+      ],
     );
   }
 
   // ── Today's records ─────────────────────────────────────────
-  Widget _buildToday(AppColors colors, DashboardData d) {
-    return _section(
-      colors,
-      "Today's records",
-      d.today.isEmpty
-          ? _empty(colors, 'No active enterprises.')
-          : Column(
-              children: [
-                for (final e in d.today)
-                  _row(
-                    colors,
-                    title: e['name'] ?? '',
-                    subtitle: '${e['type']}'.replaceAll('_', ' '),
-                    trailing: _pill(
-                      e['recorded'] == true ? 'Done' : 'Not recorded',
-                      e['recorded'] == true ? colors.brandText : _amber,
-                    ),
-                  ),
-              ],
-            ),
+  Widget _buildToday(AppColors c, DashboardData d) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Text("Today's records", style: AppType.titleM.copyWith(color: c.textPrimary)),
+        ),
+        if (d.today.isEmpty) const SlLedger(children: [SlLedgerRow(title: 'No animals or crops yet')]),
+        for (final e in d.today) ...[
+          SlEnterpriseTile(
+            icon: SlEnterpriseTile.iconFor(e['type']),
+            title: e['name'] ?? '',
+            meta: '${e['type']}'.replaceAll('_', ' '),
+            status: e['recorded'] == true
+                ? const SlStatusTag('Done', status: SlStatus.good)
+                : const SlStatusTag('Not recorded', status: SlStatus.warn),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ],
     );
   }
 
   // ── Stock levels ────────────────────────────────────────────
-  Widget _buildStock(AppColors colors, DashboardData d) {
-    return _section(
-      colors,
-      'Stock levels',
-      d.stock.isEmpty
-          ? _empty(colors, 'No stock recorded yet.')
-          : Column(
-              children: [
-                for (final s in d.stock)
-                  _row(
-                    colors,
-                    title: DashboardService.name(s['item_name']),
-                    subtitle: [
-                      if (s['location'] != null && '${s['location']}'.isNotEmpty) '${s['location']}',
-                      if (s['value'] != null) DashboardService.money(s['value'], d.currency),
-                    ].join(' · '),
-                    trailing: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(_stockQty(s),
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: colors.textPrimary)),
-                        if (s['status'] != 'ok') ...[
-                          const SizedBox(height: 3),
-                          _pill(s['status'] == 'negative' ? 'Below zero' : 'Running low',
-                              s['status'] == 'negative' ? _red : _amber),
-                        ],
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+  Widget _buildStock(AppColors c, DashboardData d) {
+    return SlLedger(
+      title: 'Stock in the store',
+      trailing: SlEyebrow('${d.stock.length} items'),
+      children: [
+        if (d.stock.isEmpty) const SlLedgerRow(title: 'No stock recorded yet'),
+        for (final s in d.stock)
+          SlLedgerRow(
+            title: DashboardService.name(s['item_name']),
+            meta: [
+              if (s['location'] != null && '${s['location']}'.isNotEmpty) '${s['location']}',
+              if (s['value'] != null) DashboardService.money(s['value'], d.currency),
+            ].join(' · '),
+            figure: _stockQty(s),
+            unit: _stockUnit(s),
+            loss: s['status'] == 'negative',
+            status: switch (s['status']) {
+              'negative' => const SlStatusTag('Below zero', status: SlStatus.danger),
+              'low' => const SlStatusTag('Running low', status: SlStatus.warn, icon: PhosphorIconsBold.warning),
+              _ => null,
+            },
+          ),
+      ],
     );
+  }
+
+  num _stockAmount(Map<String, dynamic> s) {
+    final base = num.tryParse('${s['qty_base']}') ?? 0;
+    final factor = (s['display_factor'] as num?) ?? 1;
+    return base / (factor == 0 ? 1 : factor);
   }
 
   /// Stock is counted in base units; show it in the item's display unit (bags, trays).
   String _stockQty(Map<String, dynamic> s) {
-    final base = num.tryParse('${s['qty_base']}') ?? 0;
-    final factor = (s['display_factor'] as num?) ?? 1;
-    return '${DashboardService.qty(base / (factor == 0 ? 1 : factor))} ${s['display_unit'] ?? s['base_unit'] ?? ''}';
+    final q = _stockAmount(s);
+    return q < 0 ? '−${DashboardService.qty(q.abs())}' : DashboardService.qty(q);
   }
 
-  // ══════════════════════════════════════════════════════════
-  // BUILDING BLOCKS
-  // ══════════════════════════════════════════════════════════
-  Widget _card(AppColors colors, {required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
-      ),
-      child: child,
-    );
-  }
-
-  Widget _section(AppColors colors, String title, Widget child) {
-    return _card(
-      colors,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: colors.textPrimary)),
-          const SizedBox(height: 10),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _row(AppColors colors,
-      {Widget? leading, required String title, String? subtitle, Widget? trailing, bool bold = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(border: Border(top: BorderSide(color: colors.divider))),
-      child: Row(
-        children: [
-          if (leading != null) ...[leading, const SizedBox(width: 12)],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-                        color: colors.textPrimary)),
-                if (subtitle != null && subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(fontSize: 11.5, color: colors.textSecondary)),
-                ],
-              ],
-            ),
-          ),
-          if (trailing != null) ...[const SizedBox(width: 10), trailing],
-        ],
-      ),
-    );
-  }
-
-  Widget _empty(AppColors colors, String text) =>
-      Text(text, style: TextStyle(fontSize: 13, color: colors.textSecondary));
-
-  Widget _iconBadge(IconData icon, Color color, {double size = 38}) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(size / 3.2)),
-      child: Icon(icon, color: color, size: size * 0.52),
-    );
-  }
-
-  Widget _pill(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
-      child: Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
-    );
+  /// Farmers count in trays and bags: plural unless exactly one.
+  String _stockUnit(Map<String, dynamic> s) {
+    final unit = '${s['display_unit'] ?? s['base_unit'] ?? ''}';
+    final one = _stockAmount(s).abs() == 1;
+    return one || unit.endsWith('s') || unit.length <= 2 ? unit : '${unit}s';
   }
 }

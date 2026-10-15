@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import '../services/app_colors.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'phosphor_icons.dart';
 
+import '../services/app_colors.dart';
+import '../services/app_type.dart';
+
+/// The app's places, each a labelled line icon. The current one is marked
+/// with a maize bar on the top edge: maize means "you are here".
 class AppBottomNav extends StatefulWidget {
   final int currentIndex;
   final Function(int)? onTap;
@@ -15,6 +19,12 @@ class AppBottomNav extends StatefulWidget {
 class _AppBottomNavState extends State<AppBottomNav> {
   late int _currentIndex;
 
+  static const _items = [
+    (PhosphorIconsRegular.house, PhosphorIconsFill.house, 'Home'),
+    (PhosphorIconsRegular.chatCircleText, PhosphorIconsFill.chatCircleText, 'Tulip'),
+    (PhosphorIconsRegular.user, PhosphorIconsFill.user, 'Profile'),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -22,7 +32,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
   }
 
   void _handleTap(BuildContext context, int index) {
-  if (_currentIndex == index) return;
+    if (_currentIndex == index) return;
 
     setState(() => _currentIndex = index);
     widget.onTap?.call(index);
@@ -32,119 +42,71 @@ class _AppBottomNavState extends State<AppBottomNav> {
         Navigator.pushReplacementNamed(context, '/home'); // home replaces
         break;
       case 1:
-        Navigator.pushNamed(context, '/chat');            // push, can go back
+        Navigator.pushNamed(context, '/chat'); // push, can go back
         break;
       case 2:
-        Navigator.pushNamed(context, '/profile');         // push, can go back
+        Navigator.pushNamed(context, '/profile'); // push, can go back
         break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
       decoration: BoxDecoration(
-        color: context.appColors.cardBackground,
-        border: Border(
-          top: BorderSide(color: context.appColors.divider, width: 1),
-        ),
+        color: c.cardBackground,
+        border: Border(top: BorderSide(color: c.divider)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 72,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _navItem(Icons.home_rounded, 'Home', 0, context),
-
-                // ── Centre FAB (chat) ──────────────────────────
-                GestureDetector(
-                  onTap: () => _handleTap(context, 1),
-                  child: Container(
-                    height: 56,
-                    width: 56,
-                    decoration: BoxDecoration(
-                      color: _currentIndex == 1
-                          ? const Color(0xFF2E7D32)
-                          : const Color(0xFF4CAF50),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF4CAF50).withOpacity(0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(13.0),
-                      child: SvgPicture.asset(
-                        'images/assets/icons/comments.svg',
-                        colorFilter: const ColorFilter.mode(
-                            Colors.white, BlendMode.srcIn),
-                        fit: BoxFit.contain,
-                        placeholderBuilder: (context) => Image.asset(
-                          'images/assets/icons/live-chat.png',
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                _navItem(Icons.person, 'Profile', 2, context),
-              ],
-            ),
-          ),
-
-          SizedBox(height: bottomPadding > 0 ? bottomPadding * 0.4 : 8.0),
-        ],
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: SizedBox(
+        height: 64,
+        child: Row(
+          children: [
+            for (var i = 0; i < _items.length; i++) Expanded(child: _navItem(context, i)),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _navItem(
-      IconData icon, String label, int index, BuildContext context) {
+  Widget _navItem(BuildContext context, int index) {
+    final c = context.appColors;
     final selected = _currentIndex == index;
+    final (icon, selectedIcon, label) = _items[index];
+    final color = selected ? c.brandText : c.textHint;
 
-    return GestureDetector(
-      onTap: () => _handleTap(context, index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFF4CAF50).withOpacity(0.10)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => _handleTap(context, index),
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Icon(
-              icon,
-              color: selected
-                  ? context.appColors.brandText
-                  : context.appColors.textHint,
-              size: 26,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                color: selected
-                    ? context.appColors.brandText
-                    : context.appColors.textHint,
-                fontSize: 14,
-                fontWeight:
-                    selected ? FontWeight.w700 : FontWeight.w400,
+            if (selected)
+              Positioned(
+                top: 0,
+                child: Container(
+                  width: 36,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: c.maize,
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(3)),
+                  ),
+                ),
               ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(selected ? selectedIcon : icon, size: 24, color: color),
+                const SizedBox(height: 3),
+                Text(label, style: AppType.caption.copyWith(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+              ],
             ),
           ],
         ),

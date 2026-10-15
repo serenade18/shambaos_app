@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/app_colors.dart';
 import 'package:flutter/services.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -190,7 +191,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               width: 48,
               height: 48,
               decoration: const BoxDecoration(
-                color: Color(0xFF1B5E20), 
+                color: AppColors.brand, 
                 shape: BoxShape.circle,
               ),
               child: const Icon(

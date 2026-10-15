@@ -129,7 +129,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: msg.isUser
-                            ? const Color(0xFF4CAF50)
+                            ? AppColors.brand
                             : context.appColors.cardBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -197,7 +197,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
                           width: 46,
                           height: 46,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF4CAF50),
+                            color: AppColors.brand,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(

@@ -51,7 +51,7 @@ class WeatherWidgetState extends State<WeatherWidget> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Center(
           child: SizedBox(
@@ -59,7 +59,7 @@ class WeatherWidgetState extends State<WeatherWidget> {
             height: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Color(0xFF4CAF50),
+              color: context.appColors.brandText,
             ),
           ),
         ),
@@ -188,7 +188,7 @@ class WeatherWidgetState extends State<WeatherWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 15, color: const Color(0xFF4CAF50)),
+          Icon(icon, size: 15, color: context.appColors.brandText),
           const SizedBox(width: 5),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

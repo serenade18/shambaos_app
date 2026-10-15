@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../services/app_type.dart';
+import '../../services/app_theme.dart';
+import '../../services/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import 'verify_otp_screen.dart';
@@ -9,7 +12,7 @@ import '../home_screen.dart';
 // Brand tokens
 // ─────────────────────────────────────────────────────────────────────────────
 class _Brand {
-  static const Color brand         = Color(0xFF4CAF50);
+  static const Color brand         = AppColors.brand;
   static const Color brandLight    = Color(0xFFE8F5E9);
   static const Color brandBorder   = Color(0xFFD6ECD9);
   static const Color scaffold      = Colors.white;
@@ -285,8 +288,12 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  // The sign-in screens keep their light design in both themes.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      Theme(data: AppTheme.light(), child: Builder(builder: _buildScreen));
+
+  Widget _buildScreen(BuildContext context) {
     final focused = _phoneFocus.hasFocus;
     return Scaffold(
       backgroundColor: _Brand.scaffold,
@@ -513,7 +520,7 @@ class _LoginScreenState extends State<LoginScreen>
                     RichText(
                       textAlign: TextAlign.center,
                       text: const TextSpan(
-                        style: TextStyle(
+                        style: TextStyle(fontFamily: AppType.text,
                             color: _Brand.textHint, fontSize: 11, height: 1.5),
                         children: [
                           TextSpan(text: 'By continuing you agree to our '),
@@ -545,7 +552,7 @@ class _LoginScreenState extends State<LoginScreen>
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
-                          textStyle: const TextStyle(
+                          textStyle: const TextStyle(fontFamily: AppType.text,
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.3),
@@ -577,7 +584,7 @@ class _LoginScreenState extends State<LoginScreen>
                             side: const BorderSide(color: _Brand.brand, width: 1.2),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
-                            textStyle: const TextStyle(
+                            textStyle: const TextStyle(fontFamily: AppType.text,
                                 fontSize: 15, fontWeight: FontWeight.w700),
                           ),
                         ),

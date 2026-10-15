@@ -88,10 +88,20 @@ class DashboardService {
   // FORMATTING
   // ─────────────────────────────────────────────
 
+  /// How a currency is written on screen: Kenyan shillings as "KSh".
+  static String symbol(String currency) => currency == 'KES' ? 'KSh' : currency;
+
+  /// A whole amount without its currency: "22,500", or "−1,200" for a loss.
+  static String amount(dynamic value) {
+    final v = num.tryParse('${value ?? 0}') ?? 0;
+    final text = NumberFormat('#,##0').format(v.abs());
+    return v < 0 ? '\u2212$text' : text;
+  }
+
   static String money(dynamic amount, String currency, {bool signed = false}) {
     final value = num.tryParse('${amount ?? 0}') ?? 0;
-    final text = '$currency ${NumberFormat('#,##0').format(value.abs())}';
-    if (value < 0) return '-$text';
+    final text = '${symbol(currency)} ${NumberFormat('#,##0').format(value.abs())}';
+    if (value < 0) return '\u2212$text';
     return signed && value > 0 ? '+$text' : text;
   }
 

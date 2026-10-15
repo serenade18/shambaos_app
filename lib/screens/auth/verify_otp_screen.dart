@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../services/app_type.dart';
+import '../../services/app_theme.dart';
+import '../../services/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import '../home_screen.dart';
@@ -9,7 +12,7 @@ import 'package:sms_autofill/sms_autofill.dart';
 // Brand tokens (keep in sync with login_screen.dart)
 // ─────────────────────────────────────────────────────────────────────────────
 class _Brand {
-  static const Color brand         = Color(0xFF4CAF50);
+  static const Color brand         = AppColors.brand;
   static const Color brandLight    = Color(0xFFE8F5E9);
   static const Color brandBorder   = Color(0xFFD6ECD9);
   static const Color scaffold      = Colors.white;
@@ -201,8 +204,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
   }
 
   // ── Build ───────────────────────────────────────────────────────────────────
+  // The sign-in screens keep their light design in both themes.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      Theme(data: AppTheme.light(), child: Builder(builder: _buildScreen));
+
+  Widget _buildScreen(BuildContext context) {
     return Scaffold(
       backgroundColor: _Brand.scaffold,
       appBar: AppBar(
@@ -267,7 +274,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                       RichText(
                         textAlign: TextAlign.center,
                         text: TextSpan(
-                          style: const TextStyle(
+                          style: const TextStyle(fontFamily: AppType.text,
                               fontSize: 14,
                               color: _Brand.textSecondary,
                               height: 1.5),
@@ -437,7 +444,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12)),
-                                  textStyle: const TextStyle(
+                                  textStyle: const TextStyle(fontFamily: AppType.text,
                                       fontSize: 15, fontWeight: FontWeight.w700),
                                 ),
                                 child: _isVerifying

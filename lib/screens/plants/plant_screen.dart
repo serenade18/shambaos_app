@@ -259,9 +259,9 @@ class _PlantScreenState extends State<PlantScreen> {
                     item['image']!,
                     height: 28,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const Icon(
+                    errorBuilder: (_, __, ___) => Icon(
                       Icons.eco,
-                      color: Color(0xFF4CAF50),
+                      color: context.appColors.brandText,
                     ),
                   ),
                 ),
@@ -329,7 +329,7 @@ class _PlantScreenState extends State<PlantScreen> {
           TextSpan(
             text: text.substring(matchIndex, matchIndex + query.length),
             style: baseStyle.copyWith(
-              color: const Color(0xFF4CAF50),
+              color: context.appColors.brandText,
               backgroundColor: context.appColors.brandSoft,
             ),
           ),

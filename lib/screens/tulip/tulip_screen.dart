@@ -115,7 +115,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                         TextSpan(text: 'Welcome to '),
                         TextSpan(
                           text: 'Tulip AI',
-                          style: TextStyle(color: Color(0xFF4CAF50)),
+                          style: TextStyle(color: context.appColors.brandText),
                         ),
                       ],
                     ),
@@ -151,9 +151,9 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                         child: Image.asset(
                           'images/assets/icons/tulip.png',
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(
+                          errorBuilder: (_, __, ___) => Icon(
                             Icons.eco_rounded,
-                            color: Color(0xFF4CAF50),
+                            color: context.appColors.brandText,
                             size: 72,
                           ),
                         ),
@@ -168,19 +168,19 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                     children: [
                       _badge(
                         icon: Icons.circle,
-                        iconColor: const Color(0xFF4CAF50),
+                        iconColor: context.appColors.brandText,
                         label: 'Online now',
                       ),
                       const SizedBox(width: 10),
                       _badge(
                         icon: Icons.access_time_rounded,
-                        iconColor: const Color(0xFF4CAF50),
+                        iconColor: context.appColors.brandText,
                         label: '24 / 7',
                       ),
                       const SizedBox(width: 10),
                       _badge(
                         icon: Icons.bolt_rounded,
-                        iconColor: const Color(0xFF4CAF50),
+                        iconColor: context.appColors.brandText,
                         label: 'Instant',
                       ),
                     ],
@@ -260,7 +260,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50),
+                      backgroundColor: AppColors.brand,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -342,9 +342,9 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                 child: Image.asset(
                   'images/assets/icons/tulip.png',
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(
+                  errorBuilder: (_, __, ___) => Icon(
                     Icons.eco_rounded,
-                    color: Color(0xFF4CAF50),
+                    color: context.appColors.brandText,
                     size: 18,
                   ),
                 ),
@@ -366,7 +366,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                   'Online',
                   style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF4CAF50),
+                    color: context.appColors.brandText,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

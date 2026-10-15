@@ -1,0 +1,23 @@
+<!-- @dsCard group="Actions" height=236 subtitle="Counting with a thumb, in farmer units" -->
+<div class="sl" style="padding:16px;min-height:100%">
+<div class="sl-tally" style="max-width:380px">
+  <div class="sl-tally__label"><span class="sl-row__title">Eggs collected</span><span class="sl-caption">Layers, batch 1 · today</span></div>
+  <div class="sl-tally__row">
+    <button class="sl-tally__btn" aria-label="One tray fewer" data-step="-1"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+    <div class="sl-tally__value" aria-live="polite"><span class="sl-tally__num" id="n">212</span><span class="sl-caption">trays</span></div>
+    <button class="sl-tally__btn sl-tally__btn--add" aria-label="One tray more" data-step="1"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+  <div class="sl-tally__packs">
+    <button class="sl-chip" data-step="10">+10 trays</button>
+    <button class="sl-chip" data-step="12">+1 crate</button>
+    <button class="sl-chip" aria-pressed="true">Trays</button>
+    <button class="sl-chip" aria-pressed="false">Eggs</button>
+  </div>
+</div>
+</div>
+<script>
+var n = 212, el = document.getElementById("n");
+document.querySelectorAll("[data-step]").forEach(function (b) {
+  b.addEventListener("click", function () { n = Math.max(0, n + Number(b.dataset.step)); el.textContent = n.toLocaleString("en-KE"); });
+});
+</script>
