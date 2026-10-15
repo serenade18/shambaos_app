@@ -61,6 +61,7 @@ flutter:
     - images/appicons/
     - images/appicons/playstore.png
     - images/appicons/appstore.png
+    - images/auth/
     - images/auth/about-tech-farmer.jpg
     - images/auth/farm.png
     - images/auth/banana.png

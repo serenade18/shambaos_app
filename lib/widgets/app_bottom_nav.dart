@@ -4,49 +4,25 @@ import 'phosphor_icons.dart';
 import '../services/app_colors.dart';
 import '../services/app_type.dart';
 
-/// The app's places, each a labelled line icon. The current one is marked
-/// with a maize bar on the top edge: maize means "you are here".
-class AppBottomNav extends StatefulWidget {
-  final int currentIndex;
+/// Home, Fields, Tulip (the AI farm assistant, raised in the centre), Activity
+/// and Profile. The current place is marked with a maize bar on the top edge.
+class AppBottomNav extends StatelessWidget {
+  final int currentIndex; // 0 Home, 1 Fields, 2 Tulip, 3 Activity, 4 Profile
   final Function(int)? onTap;
 
   const AppBottomNav({super.key, this.currentIndex = 0, this.onTap});
 
-  @override
-  State<AppBottomNav> createState() => _AppBottomNavState();
-}
+  static const _routes = ['/home', '/fields', '/chat', '/activity', '/profile'];
 
-class _AppBottomNavState extends State<AppBottomNav> {
-  late int _currentIndex;
-
-  static const _items = [
-    (PhosphorIconsRegular.house, PhosphorIconsFill.house, 'Home'),
-    (PhosphorIconsRegular.chatCircleText, PhosphorIconsFill.chatCircleText, 'Tulip'),
-    (PhosphorIconsRegular.user, PhosphorIconsFill.user, 'Profile'),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _currentIndex = widget.currentIndex;
-  }
-
-  void _handleTap(BuildContext context, int index) {
-    if (_currentIndex == index) return;
-
-    setState(() => _currentIndex = index);
-    widget.onTap?.call(index);
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/home'); // home replaces
-        break;
-      case 1:
-        Navigator.pushNamed(context, '/chat'); // push, can go back
-        break;
-      case 2:
-        Navigator.pushNamed(context, '/profile'); // push, can go back
-        break;
+  void _go(BuildContext context, int index) {
+    if (index == currentIndex) return;
+    onTap?.call(index);
+    if (index == 0) {
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+    } else if (currentIndex == 0) {
+      Navigator.pushNamed(context, _routes[index]); // Home stays underneath
+    } else {
+      Navigator.pushReplacementNamed(context, _routes[index]);
     }
   }
 
@@ -62,21 +38,55 @@ class _AppBottomNavState extends State<AppBottomNav> {
       ),
       padding: EdgeInsets.only(bottom: bottomPadding),
       child: SizedBox(
-        height: 64,
+        height: 68,
         child: Row(
           children: [
-            for (var i = 0; i < _items.length; i++) Expanded(child: _navItem(context, i)),
+            Expanded(child: _item(context, 0, PhosphorIconsRegular.house, PhosphorIconsFill.house, 'Home')),
+            Expanded(child: _item(context, 1, PhosphorIconsRegular.mapTrifold, PhosphorIconsFill.mapTrifold, 'Fields')),
+            Expanded(child: _assistant(context)),
+            Expanded(child: _item(context, 3, PhosphorIconsRegular.chartLine, PhosphorIconsFill.chartLine, 'Activity')),
+            Expanded(child: _item(context, 4, PhosphorIconsRegular.user, PhosphorIconsFill.user, 'Profile')),
           ],
         ),
       ),
     );
   }
 
-  Widget _navItem(BuildContext context, int index) {
+  /// Tulip, the farm assistant: a raised dark button in the centre.
+  Widget _assistant(BuildContext context) {
     final c = context.appColors;
-    final selected = _currentIndex == index;
-    final (icon, selectedIcon, label) = _items[index];
-    final color = selected ? c.brandText : c.textHint;
+    return Semantics(
+      button: true,
+      selected: currentIndex == 2,
+      label: 'Tulip, farm assistant',
+      excludeSemantics: true,
+      child: Center(
+        child: Transform.translate(
+          offset: const Offset(0, -14),
+          child: Material(
+            color: c.textPrimary,
+            shape: const CircleBorder(),
+            elevation: 6,
+            shadowColor: Colors.black.withValues(alpha: 0.35),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => _go(context, 2),
+              child: SizedBox(
+                width: 60,
+                height: 60,
+                child: Icon(PhosphorIconsFill.sparkle, size: 26, color: c.scaffoldBackground),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _item(BuildContext context, int index, IconData icon, IconData selectedIcon, String label) {
+    final c = context.appColors;
+    final selected = currentIndex == index;
+    final color = selected ? c.textPrimary : c.textHint;
 
     return Semantics(
       selected: selected,
@@ -84,7 +94,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
       label: label,
       excludeSemantics: true,
       child: InkWell(
-        onTap: () => _handleTap(context, index),
+        onTap: () => _go(context, index),
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -92,7 +102,7 @@ class _AppBottomNavState extends State<AppBottomNav> {
               Positioned(
                 top: 0,
                 child: Container(
-                  width: 36,
+                  width: 32,
                   height: 3,
                   decoration: BoxDecoration(
                     color: c.maize,

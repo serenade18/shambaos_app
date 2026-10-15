@@ -3,7 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:shambaOS/screens/customers/customer_screen.dart';
 import '../services/api_service.dart';
 import '../widgets/app_bottom_nav.dart';
-import '../widgets/weather_widget.dart';
+import '../models/weather_model.dart';
+import 'fields/field_service.dart';
+import 'fields/field_widgets.dart';
+import 'fields/fields_screen.dart';
+import 'home/home_hero.dart';
+import 'profile/notification_screen.dart';
 import 'profile/profile_screen.dart';
 import 'profile/edit_profile_screen.dart';
 import '../services/app_colors.dart';
@@ -22,13 +27,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final GlobalKey<WeatherWidgetState> _weatherKey =
-      GlobalKey<WeatherWidgetState>();
-
   String _userName = '';
   String _userEmail = '';
   bool _isFarmSetup = false;
   bool _updatesExpanded = true;
+  Map<String, dynamic>? _farm;
+  List<Field>? _fields;
+  FieldCategory? _category;
+  WeatherModel? _today;
+  bool _weatherLoading = true;
 
   bool get _isProfileComplete =>
       _userName.isNotEmpty &&
@@ -138,22 +145,79 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// The main farm, its fields, and today's forecast for it.
   Future<void> _loadFarmStatus() async {
-    final response = await ApiService.get('/farms', requiresAuth: true);
-    if (!response.error && response.data is Map) {
-      final List farms = response.data['results'] ?? [];
-      setState(() {
-        _isFarmSetup = farms.isNotEmpty;
-      });
+    final (farm, fields) = await FieldService.load();
+    if (!mounted) return;
+    setState(() {
+      _farm = farm;
+      _fields = fields;
+      _isFarmSetup = farm != null;
+    });
+    if (farm == null) {
+      setState(() => _weatherLoading = false);
+      return;
     }
+    final days = await FieldService.forecast(farm['id']);
+    if (!mounted) return;
+    setState(() {
+      _today = days.isEmpty ? null : days.first;
+      _weatherLoading = false;
+    });
   }
 
   Future<void> _onRefresh() async {
-    await Future.wait([
-      _loadUser(),
-      _loadFarmStatus(),
-      _weatherKey.currentState?.refresh() ?? Future.value(),
-    ]);
+    await Future.wait([_loadUser(), _loadFarmStatus()]);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // MY FIELDS
+  // ══════════════════════════════════════════════════════════
+  Widget _buildMyFields(AppColors colors) {
+    final fields = _fields;
+    final shown = fields?.where((f) => _category == null || f.category == _category).take(3).toList();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('My fields', style: AppType.titleM.copyWith(color: colors.textPrimary))),
+              if (fields != null && fields.isNotEmpty)
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/fields'),
+                  child: const Text('See all'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (fields == null)
+            Container(height: 108, decoration: BoxDecoration(color: colors.surfaceMuted, borderRadius: BorderRadius.circular(16)))
+          else if (fields.isEmpty)
+            SlLedger(children: [
+              SlLedgerRow(
+                title: _farm == null ? 'Set up your farm' : 'No fields yet',
+                meta: _farm == null
+                    ? 'Add your farm to see your fields, weather and records here.'
+                    : 'Add the animals you keep and the crops you grow.',
+              ),
+            ])
+          else ...[
+            FieldCategories(
+              selected: _category,
+              present: fields.map((f) => f.category).toSet(),
+              onChanged: (cat) => setState(() => _category = cat),
+            ),
+            const SizedBox(height: 16),
+            for (final f in shown!) ...[
+              FieldCard(field: f, onTap: () => openField(context, f)),
+              const SizedBox(height: 12),
+            ],
+          ],
+        ],
+      ),
+    );
   }
 
   void _openProfile() {
@@ -200,59 +264,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   // 1. HEADER
   // ══════════════════════════════════════════════════════════
-  Widget _buildHeader(AppColors colors) {
-    return Container(
-      color: context.appColors.cardBackground,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 16,
-        right: 16,
-        bottom: 12,
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _openProfile,
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: colors.shamba,
-              ),
-              child: Center(
-                child: Text(
-                  _getInitials(_userName),
-                  style: AppType.label.copyWith(color: colors.onShamba),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Karibu', style: AppType.titleL.copyWith(color: colors.textPrimary)),
-              Text(_userName, style: AppType.caption.copyWith(color: colors.textSecondary)),
-            ],
-          ),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // 2. WEATHER STRIP
-  // ══════════════════════════════════════════════════════════
-  Widget _buildWeatherStrip() {
-    return Container(
-      color: context.appColors.cardBackground,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: WeatherWidget(key: _weatherKey),
-    );
-  }
-
   // ══════════════════════════════════════════════════════════
   // 3. IMPORTANT UPDATES (collapsible, hidden when all complete)
   // ══════════════════════════════════════════════════════════
@@ -885,12 +896,21 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(colors),
-              _divider(),
-              _buildWeatherStrip(),
-              _divider(),
+              HomeHero(
+                userName: _userName,
+                initials: _getInitials(_userName),
+                place: _farm == null ? null : ('${_farm!['county'] ?? ''}'.isNotEmpty ? '${_farm!['county']}' : _farm!['name']),
+                today: _today,
+                weatherLoading: _weatherLoading,
+                onAvatarTap: _openProfile,
+                onBellTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                ),
+              ),
+              _buildMyFields(colors),
               const Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: SlSeasonStrip(),
               ),
 

@@ -3,6 +3,8 @@ import 'screens/onboarding/splash_screen.dart';
 import 'screens/home_screen.dart'; // Import your home screen
 import 'screens/profile/profile_screen.dart'; // Import the profile screen
 import 'screens/tulip/tulip_screen.dart';
+import 'screens/fields/fields_screen.dart';
+import 'screens/dashboard/dashboard_screen.dart';
 import 'theme_notifier.dart';
 import './services/app_theme.dart';
 import './services/api_service.dart';
@@ -38,6 +40,8 @@ class MyApp extends StatelessWidget {
             '/home': (context) => const HomeScreen(),
             '/chat': (context) => const TulipAiScreen(),
             '/profile': (context) => const ProfileScreen(),
+            '/fields': (context) => const FieldsScreen(),
+            '/activity': (context) => const DashboardScreen(),
           },
         );
       },
