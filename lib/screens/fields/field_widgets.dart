@@ -115,11 +115,16 @@ class FieldCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(field.name,
-                        maxLines: 2,
+                        maxLines: compact ? 1 : 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppType.titleM.copyWith(color: c.textPrimary)),
                     const SizedBox(height: 8),
-                    Wrap(spacing: 6, runSpacing: 6, children: fieldChips(context, field)),
+                    // Compact cards keep one line of chips: the state and the size.
+                    compact
+                        ? Row(children: [
+                            for (final chip in fieldChips(context, field).take(2)) ...[chip, const SizedBox(width: 6)],
+                          ])
+                        : Wrap(spacing: 6, runSpacing: 6, children: fieldChips(context, field)),
                     if (!compact) ...[
                       const SizedBox(height: 8),
                       Text(field.startedLine, style: AppType.caption.copyWith(color: c.textSecondary)),

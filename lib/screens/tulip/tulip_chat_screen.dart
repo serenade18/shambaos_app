@@ -1,9 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import '../../services/app_colors.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/chat_message_model.dart';
+import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../models/chat_message_model.dart';
+import '../../services/api_service.dart';
+import '../../services/app_colors.dart';
+import '../../services/app_type.dart';
+import '../../widgets/phosphor_icons.dart';
+
+/// Chat with Tulip, the farm assistant. Replies stream in from POST /assistant/chat
+/// while they are written; Tulip knows the farm from its records. The conversation
+/// is kept on the phone.
 class TulipChatScreen extends StatefulWidget {
   const TulipChatScreen({super.key});
 
@@ -12,249 +22,418 @@ class TulipChatScreen extends StatefulWidget {
 }
 
 class _TulipChatScreenState extends State<TulipChatScreen> {
-  final TextEditingController _controller = TextEditingController();
+  static const _storageKey = 'tulip_ai_chat_history';
+  static const _sendLast = 20; // messages Tulip reads, most recent first
 
+  static const _suggestions = [
+    'Why are my hens laying fewer eggs?',
+    'When should I top-dress my maize?',
+    'What should I do before the rains?',
+    'Mifugo yangu ina kupe. Nifanye nini?',
+  ];
+
+  final _input = TextEditingController();
+  final _scroll = ScrollController();
   List<ChatMessage> _messages = [];
+  String? _streaming; // Tulip's reply as it arrives; null when not replying
+  String? _failed; // why the last reply failed
+  StreamSubscription<String>? _sub;
 
-  static const _storageKey = "tulip_ai_chat_history";
+  bool get _busy => _streaming != null;
 
   @override
   void initState() {
     super.initState();
-    _loadMessages();
+    _load();
   }
 
-  Future<void> _loadMessages() async {
+  @override
+  void dispose() {
+    _sub?.cancel();
+    _input.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_storageKey);
-
-    if (raw != null) {
-      final decoded = jsonDecode(raw) as List;
-      setState(() {
-        _messages = decoded
-            .map((e) => ChatMessage.fromJson(e))
-            .toList()
-            .cast<ChatMessage>();
-      });
+    if (raw == null || !mounted) return;
+    try {
+      final list = (jsonDecode(raw) as List).map((e) => ChatMessage.fromJson(Map<String, dynamic>.from(e))).toList();
+      setState(() => _messages = list);
+      _toBottom(jump: true);
+    } catch (_) {
+      await prefs.remove(_storageKey); // an unreadable history starts fresh
     }
   }
 
-  Future<void> _saveMessages() async {
+  Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
-    final encoded = jsonEncode(
-      _messages.map((e) => e.toJson()).toList(),
-    );
-    await prefs.setString(_storageKey, encoded);
+    await prefs.setString(_storageKey, jsonEncode(_messages.map((m) => m.toJson()).toList()));
   }
 
-  Future<void> _addMessage(ChatMessage msg) async {
-    setState(() => _messages.add(msg));
-    await _saveMessages();
+  void _toBottom({bool jump = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scroll.hasClients) return;
+      final end = _scroll.position.maxScrollExtent;
+      jump ? _scroll.jumpTo(end) : _scroll.animateTo(end, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+    });
   }
 
-  Future<void> _sendMessage() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _send([String? preset]) async {
+    final text = (preset ?? _input.text).trim();
+    if (text.isEmpty || _busy) return;
+    _input.clear();
+    setState(() {
+      _failed = null;
+      _messages.add(ChatMessage(text: text, isUser: true, timestamp: DateTime.now()));
+    });
+    await _save();
+    await _ask();
+  }
 
-    _controller.clear();
+  /// Sends the conversation and streams Tulip's reply into the list.
+  Future<void> _ask() async {
+    setState(() {
+      _streaming = '';
+      _failed = null;
+    });
+    _toBottom();
 
-    await _addMessage(
-      ChatMessage(
-        text: text,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ),
+    final recent = _messages.length > _sendLast ? _messages.sublist(_messages.length - _sendLast) : _messages;
+    final (stream, error) = await ApiService.postStream('/assistant/chat', {
+      'messages': [
+        for (final m in recent) {'role': m.isUser ? 'user' : 'assistant', 'content': m.text},
+      ],
+    });
+    if (!mounted) return;
+    if (stream == null) {
+      setState(() {
+        _streaming = null;
+        _failed = error?.message ?? 'Tulip could not answer. Try again.';
+      });
+      return;
+    }
+
+    _sub = stream.listen(
+      (chunk) {
+        setState(() => _streaming = (_streaming ?? '') + chunk);
+        _toBottom();
+      },
+      onDone: () async {
+        final reply = (_streaming ?? '').trim();
+        setState(() {
+          _streaming = null;
+          if (reply.isEmpty) {
+            _failed = 'Tulip could not answer. Try again.';
+          } else {
+            _messages.add(ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()));
+          }
+        });
+        await _save();
+        _toBottom();
+      },
+      onError: (_) {
+        if (!mounted) return;
+        setState(() {
+          _streaming = null;
+          _failed = 'The connection dropped. Try again.';
+        });
+      },
+      cancelOnError: true,
     );
+  }
 
-    // Simulated AI response (replace later with backend/API)
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    await _addMessage(
-      ChatMessage(
-        text: "I received: $text",
-        isUser: false,
-        timestamp: DateTime.now(),
-      ),
-    );
+  Future<void> _newChat() async {
+    await _sub?.cancel();
+    setState(() {
+      _messages = [];
+      _streaming = null;
+      _failed = null;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_storageKey);
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
+    final empty = _messages.isEmpty && !_busy;
+
     return Scaffold(
-      backgroundColor: context.appColors.scaffoldBackground,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
+      backgroundColor: c.scaffoldBackground,
+      appBar: AppBar(
+        titleSpacing: 0,
+        title: Row(
           children: [
-            // ═════════ HEADER ═════════
-            Container(
-              color: context.appColors.cardBackground,
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-              child: Row(
-                children: [
-                  _circleButton(
-                    Icons.arrow_back_ios_new_rounded,
-                    () => Navigator.pop(context),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Tulip AI',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  _circleButton(Icons.history_rounded, () {}),
-                ],
-              ),
+            _avatar(c, 36),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Tulip', style: AppType.titleM.copyWith(color: c.textPrimary)),
+                Text(_busy ? 'Writing…' : 'Your farm assistant',
+                    style: AppType.caption.copyWith(color: _busy ? c.brandText : c.textSecondary)),
+              ],
             ),
-
-            // ═════════ CHAT LIST ═════════
-            Expanded(
-              child: ListView.builder(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  final msg = _messages[index];
-
-                  return Align(
-                    alignment: msg.isUser
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: msg.isUser
-                            ? AppColors.brand
-                            : context.appColors.cardBackground,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        msg.text,
-                        style: TextStyle(
-                          color: msg.isUser
-                              ? Colors.white
-                              : context.appColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+          ],
+        ),
+        actions: [
+          if (_messages.isNotEmpty)
+            IconButton(
+              tooltip: 'New chat',
+              onPressed: _busy ? null : _newChat,
+              icon: Icon(PhosphorIconsRegular.notePencil, color: c.textPrimary),
             ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(child: empty ? _welcome(c) : _conversation(c)),
+          _composer(c),
+        ],
+      ),
+    );
+  }
 
-            // ═════════ INPUT BAR ═════════
-            SafeArea(
-              top: false,
-              child: Container(
-                color: context.appColors.cardBackground,
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.appColors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
+  // ── Empty chat: what Tulip can help with ─────────────────
+  Widget _welcome(AppColors c) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
+      children: [
+        Center(child: _avatar(c, 64)),
+        const SizedBox(height: 16),
+        Text('Karibu! I\'m Tulip.', textAlign: TextAlign.center, style: AppType.titleL.copyWith(color: c.textPrimary)),
+        const SizedBox(height: 6),
+        Text(
+          'Ask me about your crops, animals, weather or the market. I know your farm from your records. Write in Swahili or English.',
+          textAlign: TextAlign.center,
+          style: AppType.body.copyWith(color: c.textSecondary),
+        ),
+        const SizedBox(height: 24),
+        for (final s in _suggestions)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: c.cardBackground,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: c.divider)),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => _send(s),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                   child: Row(
                     children: [
-                      _inputButton(Icons.add_rounded, () {
-                        debugPrint("Attach file");
-                      }),
-                      const SizedBox(width: 10),
-
-                      Expanded(
-                        child: TextField(
-                          controller: _controller,
-                          decoration: const InputDecoration(
-                            hintText: 'Ask Tulip AI...',
-                            border: InputBorder.none,
-                          ),
-                          onSubmitted: (_) => _sendMessage(),
-                        ),
-                      ),
-
-                      _inputButton(Icons.image_outlined, () {
-                        debugPrint("Open gallery/camera");
-                      }),
-                      const SizedBox(width: 8),
-
-                      _inputButton(Icons.mic_none_rounded, () {
-                        debugPrint("Voice input");
-                      }),
-
-                      const SizedBox(width: 8),
-
-                      GestureDetector(
-                        onTap: _sendMessage,
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: const BoxDecoration(
-                            color: AppColors.brand,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.arrow_upward_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                      Icon(PhosphorIconsRegular.chatCircleText, size: 20, color: c.brandText),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(s, style: AppType.label.copyWith(color: c.textPrimary))),
+                      Icon(PhosphorIconsRegular.arrowUpRight, size: 18, color: c.textHint),
                     ],
                   ),
                 ),
               ),
             ),
+          ),
+      ],
+    );
+  }
+
+  // ── The conversation ──────────────────────────────────────
+  Widget _conversation(AppColors c) {
+    final items = <Widget>[
+      for (final m in _messages) _bubble(c, m.text, m.isUser),
+      if (_streaming != null) _streaming!.isEmpty ? _typing(c) : _bubble(c, _streaming!, false, live: true),
+      if (_failed != null) _failure(c),
+    ];
+    return ListView(
+      controller: _scroll,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      children: items,
+    );
+  }
+
+  Widget _bubble(AppColors c, String text, bool mine, {bool live = false}) {
+    final maxW = MediaQuery.sizeOf(context).width * 0.8;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        mainAxisAlignment: mine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!mine) ...[_avatar(c, 28), const SizedBox(width: 8)],
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(maxWidth: maxW),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: mine ? c.shamba : c.cardBackground,
+                border: mine ? null : Border.all(color: c.divider),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16),
+                  bottomLeft: Radius.circular(mine ? 16 : 4),
+                  bottomRight: Radius.circular(mine ? 4 : 16),
+                ),
+              ),
+              child: SelectableText(
+                live ? '$text ▍' : text,
+                style: AppType.bodyL.copyWith(fontSize: 16, height: 1.45, color: mine ? c.onShamba : c.textPrimary),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _typing(AppColors c) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          _avatar(c, 28),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: c.cardBackground,
+              border: Border.all(color: c.divider),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Semantics(label: 'Tulip is writing', child: _Dots(color: c.textHint)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _failure(AppColors c) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10, left: 36),
+      padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
+      decoration: BoxDecoration(color: c.dangerTint, borderRadius: BorderRadius.circular(10)),
+      child: Row(
+        children: [
+          Icon(PhosphorIconsRegular.warningCircle, size: 20, color: c.dangerInk),
+          const SizedBox(width: 10),
+          Expanded(child: Text(_failed!, style: AppType.body.copyWith(color: c.dangerInk))),
+          TextButton(onPressed: _ask, child: const Text('Try again')),
+        ],
+      ),
+    );
+  }
+
+  // ── Writing a message ─────────────────────────────────────
+  Widget _composer(AppColors c) {
+    return Container(
+      decoration: BoxDecoration(color: c.cardBackground, border: Border(top: BorderSide(color: c.divider))),
+      padding: EdgeInsets.fromLTRB(12, 10, 12, 10 + MediaQuery.paddingOf(context).bottom),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _input,
+              minLines: 1,
+              maxLines: 5,
+              maxLength: 4000,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.newline,
+              style: AppType.bodyL.copyWith(fontSize: 16, color: c.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Ask Tulip about your farm…',
+                counterText: '',
+                filled: true,
+                fillColor: c.surfaceMuted,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: c.focus, width: 2)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ListenableBuilder(
+            listenable: _input,
+            builder: (_, _) {
+              final ready = _input.text.trim().isNotEmpty && !_busy;
+              return Semantics(
+                button: true,
+                label: 'Send',
+                excludeSemantics: true,
+                child: Material(
+                  color: ready ? c.shamba : c.surfaceMuted,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: ready ? () => _send() : null,
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Icon(PhosphorIconsFill.paperPlaneRight, size: 20, color: ready ? c.onShamba : c.textHint),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _avatar(AppColors c, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: c.brandSoft, shape: BoxShape.circle),
+      padding: EdgeInsets.all(size * 0.18),
+      child: Image.asset(
+        'images/assets/icons/tulip.png',
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => Icon(PhosphorIconsFill.sparkle, size: size * 0.5, color: c.brandText),
+      ),
+    );
+  }
+}
+
+/// Three dots that rise in turn while Tulip starts writing.
+class _Dots extends StatefulWidget {
+  final Color color;
+  const _Dots({required this.color});
+
+  @override
+  State<_Dots> createState() => _DotsState();
+}
+
+class _DotsState extends State<_Dots> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final still = MediaQuery.of(context).disableAnimations;
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (_, _) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < 3; i++) ...[
+            Transform.translate(
+              // Each dot rises for the first half of its own third of the cycle.
+              offset: Offset(0, still ? 0 : -4 * math.max(0.0, math.sin(2 * math.pi * ((_c.value - i / 3) % 1)))),
+              child: Container(width: 7, height: 7, decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle)),
+            ),
+            if (i < 2) const SizedBox(width: 5),
           ],
-        ),
-      ),
-    );
-  }
-
-  // ═════════ HELPERS ═════════
-
-  Widget _circleButton(
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: context.appColors.surfaceMuted,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 18),
-      ),
-    );
-  }
-
-  Widget _inputButton(
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: context.appColors.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: context.appColors.textSecondary,
-        ),
+        ],
       ),
     );
   }

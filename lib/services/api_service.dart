@@ -290,6 +290,58 @@ class ApiService {
     );
   }
 
+  /// Uploads a file as multipart form data (photos for the AI check). The request
+  /// is rebuilt on retry, since a multipart body can only be sent once.
+  static Future<ApiResponse> postFile(
+    String endpoint, {
+    required String field,
+    required List<int> bytes,
+    required String filename,
+    Map<String, String> fields = const {},
+    Duration timeout = const Duration(seconds: 120),
+  }) {
+    return _request(() async {
+      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'))
+        ..headers.addAll(_headers()..remove('Content-Type'))
+        ..fields.addAll(fields)
+        ..files.add(http.MultipartFile.fromBytes(field, bytes, filename: filename));
+      final streamed = await request.send().timeout(timeout);
+      return http.Response.fromStream(streamed);
+    });
+  }
+
+  /// Posts JSON and returns the reply as a stream of text, as the server writes it
+  /// (Tulip's answers). An expired session is refreshed once before the stream
+  /// starts. Errors come back as an [ApiResponse] with no stream.
+  static Future<(Stream<String>?, ApiResponse?)> postStream(String endpoint, Map<String, dynamic> body) async {
+    Future<http.StreamedResponse> send() {
+      final request = http.Request('POST', Uri.parse('$baseUrl$endpoint'))
+        ..headers.addAll(_headers())
+        ..body = jsonEncode(body);
+      return http.Client().send(request);
+    }
+
+    try {
+      var response = await send().timeout(const Duration(seconds: 60));
+      if (response.statusCode == 401 && await _refreshAccessToken()) {
+        response = await send().timeout(const Duration(seconds: 60));
+      }
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return (response.stream.transform(utf8.decoder), null);
+      }
+      final text = await response.stream.bytesToString();
+      dynamic data;
+      try {
+        data = jsonDecode(text);
+      } catch (_) {
+        data = text;
+      }
+      return (null, ApiResponse(error: true, data: data, message: _errorMessage(data), statusCode: response.statusCode));
+    } catch (e) {
+      return (null, ApiResponse(error: true, message: 'No connection. Check your internet and try again.', statusCode: 0));
+    }
+  }
+
   static Future<ApiResponse> delete(
     String endpoint, {
     bool requiresAuth = true,

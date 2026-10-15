@@ -25,6 +25,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
   List<FieldMetric>? _metrics;
   List<FieldTask>? _tasks;
   String? _saving; // the task being recorded
+  String? _error; // why the analysis or plan could not load
 
   Field get f => widget.field;
 
@@ -37,12 +38,17 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
   }
 
   Future<void> _load() async {
-    final results = await Future.wait([FieldService.analyse(f), FieldService.tasks(f)]);
-    if (!mounted) return;
-    setState(() {
-      _metrics = results[0] as List<FieldMetric>;
-      _tasks = results[1] as List<FieldTask>;
-    });
+    setState(() => _error = null);
+    try {
+      final results = await Future.wait([FieldService.analyse(f), FieldService.tasks(f)]);
+      if (!mounted) return;
+      setState(() {
+        _metrics = results[0] as List<FieldMetric>;
+        _tasks = results[1] as List<FieldTask>;
+      });
+    } on FieldLoadError catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    }
   }
 
   Future<void> _record(FieldTask t) async {
@@ -220,12 +226,26 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
 
   List<Widget> _buildTasks(AppColors c) {
     final tasks = _tasks;
+    if (_error != null && tasks == null) {
+      return [
+        SlLedger(children: [
+          SlLedgerRow(title: 'Could not load this field', meta: _error),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton(onPressed: _load, child: const Text('Try again')),
+            ),
+          ),
+        ]),
+      ];
+    }
     if (tasks == null) {
       return [for (var i = 0; i < 3; i++) _taskSkeleton(c)];
     }
     if (tasks.isEmpty) {
       return [
-        const SlLedger(children: [SlLedgerRow(title: 'Nothing planned', meta: 'There are no vaccinations due in the next 60 days.')]),
+        const SlLedger(children: [SlLedgerRow(title: 'Nothing planned', meta: 'No vaccinations are due for this group.')]),
       ];
     }
     return [for (final t in tasks) _taskCard(c, t)];

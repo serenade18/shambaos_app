@@ -5,7 +5,7 @@ import '../../services/app_type.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/ledger.dart';
 import '../../widgets/phosphor_icons.dart';
-import 'field_scan_screen.dart';
+import 'field_detail_screen.dart';
 import 'field_service.dart';
 import 'field_widgets.dart';
 
@@ -73,9 +73,9 @@ class FieldCategories extends StatelessWidget {
   }
 }
 
-/// Opens a field: the scan screen first, as on the home screen.
+/// Opens a field's page.
 void openField(BuildContext context, Field f) =>
-    Navigator.push(context, MaterialPageRoute(builder: (_) => FieldScanScreen(field: f)));
+    Navigator.push(context, MaterialPageRoute(builder: (_) => FieldDetailScreen(field: f)));
 
 /// Every field, herd and flock on the farm.
 class FieldsScreen extends StatefulWidget {

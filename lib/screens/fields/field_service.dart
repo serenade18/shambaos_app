@@ -78,7 +78,18 @@ class FieldMetric {
   const FieldMetric(this.label, this.value, {this.note});
 }
 
+/// A field's data could not be loaded (offline, signed out, server error).
+class FieldLoadError implements Exception {
+  final String message;
+  const FieldLoadError(this.message);
+}
+
 class FieldService {
+  static ApiResponse _ok(ApiResponse r) {
+    if (r.error) throw FieldLoadError(r.message ?? 'Could not load this field. Check your connection.');
+    return r;
+  }
+
   static List<Map<String, dynamic>> _rows(dynamic data) =>
       data is Map && data['results'] is List
           ? (data['results'] as List).map((e) => Map<String, dynamic>.from(e)).toList()
@@ -106,7 +117,7 @@ class FieldService {
 
   static Future<List<FieldTask>> tasks(Field f) async {
     if (f.isCrop) {
-      final res = await ApiService.get('/seasons/${f.id}/activities');
+      final res = _ok(await ApiService.get('/seasons/${f.id}/activities'));
       final done = <String, DateTime>{};
       for (final a in _rows(res.data)) {
         final date = DateTime.tryParse('${a['date']}');
@@ -118,7 +129,7 @@ class FieldService {
       ];
     }
     final path = f.module == 'batches' ? '/batches/${f.id}/vaccinations' : '/herds/${f.id}/vaccinations';
-    final res = await ApiService.get(path);
+    final res = _ok(await ApiService.get(path));
     final steps = res.data is Map && res.data['steps'] is List ? res.data['steps'] as List : const [];
     return [
       for (final s in steps)
@@ -158,7 +169,7 @@ class FieldService {
         FieldMetric('Rain today', days.isEmpty ? '—' : '${days.first.rainProbability}%', note: 'Chance'),
       ];
     }
-    final res = await ApiService.get('/enterprises/${f.id}');
+    final res = _ok(await ApiService.get('/enterprises/${f.id}'));
     final kpis = res.data is Map && res.data['kpis'] is List ? res.data['kpis'] as List : const [];
     return [
       for (final k in kpis.take(3))

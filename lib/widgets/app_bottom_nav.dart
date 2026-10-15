@@ -4,15 +4,15 @@ import 'phosphor_icons.dart';
 import '../services/app_colors.dart';
 import '../services/app_type.dart';
 
-/// Home, Fields, Tulip (the AI farm assistant, raised in the centre), Activity
+/// Home, Fields, AI (field analysis, raised in the centre), Activity
 /// and Profile. The current place is marked with a maize bar on the top edge.
 class AppBottomNav extends StatelessWidget {
-  final int currentIndex; // 0 Home, 1 Fields, 2 Tulip, 3 Activity, 4 Profile
+  final int currentIndex; // 0 Home, 1 Fields, 2 AI, 3 Activity, 4 Profile
   final Function(int)? onTap;
 
   const AppBottomNav({super.key, this.currentIndex = 0, this.onTap});
 
-  static const _routes = ['/home', '/fields', '/chat', '/activity', '/profile'];
+  static const _routes = ['/home', '/fields', '/ai', '/activity', '/profile'];
 
   void _go(BuildContext context, int index) {
     if (index == currentIndex) return;
@@ -52,13 +52,13 @@ class AppBottomNav extends StatelessWidget {
     );
   }
 
-  /// Tulip, the farm assistant: a raised dark button in the centre.
+  /// The AI screen: a raised dark button in the centre.
   Widget _assistant(BuildContext context) {
     final c = context.appColors;
     return Semantics(
       button: true,
       selected: currentIndex == 2,
-      label: 'Tulip, farm assistant',
+      label: 'Analyse a field with AI',
       excludeSemantics: true,
       child: Center(
         child: Transform.translate(

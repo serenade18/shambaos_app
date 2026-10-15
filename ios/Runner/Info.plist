@@ -66,6 +66,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo of your crop or animals so it can be checked for problems.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a photo of your crop or animals to check it for problems.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>We use Face ID to authenticate you quickly</string>
 </dict>

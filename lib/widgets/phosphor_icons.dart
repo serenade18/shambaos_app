@@ -14,7 +14,10 @@ class PhosphorIconsRegular {
   static const barn = IconData(0xec72, fontFamily: _family);
   static const bell = IconData(0xe0ce, fontFamily: _family);
   static const bird = IconData(0xe72c, fontFamily: _family);
+  static const camera = IconData(0xe10e, fontFamily: _family);
+  static const cameraSlash = IconData(0xe110, fontFamily: _family);
   static const chartLine = IconData(0xe154, fontFamily: _family);
+  static const chatCircleText = IconData(0xe16e, fontFamily: _family);
   static const cloud = IconData(0xe1aa, fontFamily: _family);
   static const cloudRain = IconData(0xe1b4, fontFamily: _family);
   static const cloudSlash = IconData(0xe1b6, fontFamily: _family);
@@ -27,8 +30,11 @@ class PhosphorIconsRegular {
   static const heart = IconData(0xe2a8, fontFamily: _family);
   static const heartbeat = IconData(0xe2ac, fontFamily: _family);
   static const house = IconData(0xe2c2, fontFamily: _family);
+  static const image = IconData(0xe2ca, fontFamily: _family);
+  static const info = IconData(0xe2ce, fontFamily: _family);
   static const mapPin = IconData(0xe316, fontFamily: _family);
   static const mapTrifold = IconData(0xe31a, fontFamily: _family);
+  static const notePencil = IconData(0xe34c, fontFamily: _family);
   static const package = IconData(0xe390, fontFamily: _family);
   static const plant = IconData(0xebae, fontFamily: _family);
   static const scissors = IconData(0xeae0, fontFamily: _family);
@@ -40,6 +46,7 @@ class PhosphorIconsRegular {
   static const thermometer = IconData(0xe5c6, fontFamily: _family);
   static const tree = IconData(0xe6da, fontFamily: _family);
   static const user = IconData(0xe4c2, fontFamily: _family);
+  static const warningCircle = IconData(0xe4e2, fontFamily: _family);
 }
 
 class PhosphorIconsBold {
@@ -56,13 +63,18 @@ class PhosphorIconsFill {
   PhosphorIconsFill._();
   static const _family = 'PhosphorFill';
   static const chartLine = IconData(0xe154, fontFamily: _family);
+  static const checkCircle = IconData(0xe184, fontFamily: _family);
   static const checkSquare = IconData(0xe186, fontFamily: _family);
   static const cloudLightning = IconData(0xe1b2, fontFamily: _family);
   static const cloudRain = IconData(0xe1b4, fontFamily: _family);
   static const cloudSun = IconData(0xe540, fontFamily: _family);
+  static const eye = IconData(0xe220, fontFamily: _family);
   static const house = IconData(0xe2c2, fontFamily: _family);
   static const mapTrifold = IconData(0xe31a, fontFamily: _family);
+  static const paperPlaneRight = IconData(0xe396, fontFamily: _family);
+  static const question = IconData(0xe3e8, fontFamily: _family);
   static const sparkle = IconData(0xe6a2, fontFamily: _family);
   static const sun = IconData(0xe472, fontFamily: _family);
   static const user = IconData(0xe4c2, fontFamily: _family);
+  static const warning = IconData(0xe4e0, fontFamily: _family);
 }

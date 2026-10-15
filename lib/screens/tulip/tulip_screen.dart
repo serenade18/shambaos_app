@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../services/app_colors.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/chat_message_model.dart';
+import 'tulip_chat_screen.dart';
 
 class TulipAiScreen extends StatefulWidget {
   const TulipAiScreen({super.key});
@@ -13,7 +11,6 @@ class TulipAiScreen extends StatefulWidget {
 
 class _TulipAiScreenState extends State<TulipAiScreen>
     with SingleTickerProviderStateMixin {
-  bool _chatStarted = false;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -40,9 +37,6 @@ class _TulipAiScreenState extends State<TulipAiScreen>
   // ══════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
-    if (_chatStarted) {
-      return _buildChatScreen();
-    }
     return _buildWelcomeScreen();
   }
 
@@ -244,7 +238,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton.icon(
-                    onPressed: () => setState(() => _chatStarted = true),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TulipChatScreen())),
                     icon: const Icon(
                       Icons.chat_bubble_rounded,
                       size: 20,
@@ -309,81 +303,6 @@ class _TulipAiScreenState extends State<TulipAiScreen>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // CHAT SCREEN (placeholder — wire up your chat logic here)
-  // ══════════════════════════════════════════════════════════
-  Widget _buildChatScreen() {
-    return Scaffold(
-      backgroundColor: context.appColors.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: context.appColors.scaffoldBackground,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: context.appColors.textPrimary),
-          onPressed: () => setState(() => _chatStarted = false),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: context.appColors.brandSoft,
-                border: Border.all(color: const Color(0xFFA5D6A7)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(5),
-                child: Image.asset(
-                  'images/assets/icons/tulip.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Icon(
-                    Icons.eco_rounded,
-                    color: context.appColors.brandText,
-                    size: 18,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Tulip AI',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: context.appColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  'Online',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: context.appColors.brandText,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: context.appColors.divider),
-        ),
-      ),
-      body: Center(
-        child: Text(
-          'Chat UI goes here',
-          style: TextStyle(color: context.appColors.textSecondary),
-        ),
       ),
     );
   }
