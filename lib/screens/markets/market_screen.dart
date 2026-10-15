@@ -159,10 +159,10 @@ class _MarketScreenState extends State<MarketScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    SystemChrome.setSystemUIOverlayStyle(context.overlayStyle);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: context.appColors.scaffoldBackground,
       body: Column(
         children: [
           SafeArea(
@@ -201,7 +201,7 @@ class _MarketScreenState extends State<MarketScreen> {
   Widget _buildHeader(AppColors colors) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       child: Row(
         children: [
           _circleButton(
@@ -254,11 +254,11 @@ class _MarketScreenState extends State<MarketScreen> {
       child: Container(
         width: 42,
         height: 42,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF5F6FA),
+        decoration: BoxDecoration(
+          color: context.appColors.surfaceMuted,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: Colors.black87),
+        child: Icon(icon, size: 18, color: context.appColors.textPrimary),
       ),
     );
   }
@@ -268,7 +268,7 @@ class _MarketScreenState extends State<MarketScreen> {
   // ══════════════════════════════════════════════════════════
   Widget _buildFilterBar() {
     return Container(
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -286,7 +286,7 @@ class _MarketScreenState extends State<MarketScreen> {
                     color: isActive ? const Color(0xFF2D7A3A) : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isActive ? const Color(0xFF2D7A3A) : Colors.black12,
+                      color: isActive ? const Color(0xFF2D7A3A) : context.appColors.border,
                       width: 0.5,
                     ),
                   ),
@@ -295,7 +295,7 @@ class _MarketScreenState extends State<MarketScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: isActive ? Colors.white : Colors.black54,
+                      color: isActive ? Colors.white : context.appColors.textSecondary,
                     ),
                   ),
                 ),
@@ -318,13 +318,13 @@ class _MarketScreenState extends State<MarketScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off_rounded, size: 52, color: Color(0xFFCCCCCC)),
+            Icon(Icons.search_off_rounded, size: 52, color: context.appColors.textHint),
             const SizedBox(height: 12),
             Text(
               _searchQuery.isNotEmpty
                   ? 'No markets found for "$_searchQuery"'
                   : 'No markets in this category',
-              style: const TextStyle(fontSize: 14, color: Color(0xFFAAAAAA)),
+              style: TextStyle(fontSize: 14, color: context.appColors.textHint),
               textAlign: TextAlign.center,
             ),
           ],
@@ -346,10 +346,10 @@ class _MarketScreenState extends State<MarketScreen> {
             padding: const EdgeInsets.only(bottom: 10, top: 4),
             child: Text(
               '${items.length} market${items.length == 1 ? '' : 's'} available',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFFAAAAAA),
+                color: context.appColors.textHint,
                 letterSpacing: 0.5,
               ),
             ),
@@ -400,14 +400,14 @@ class _MarketScreenState extends State<MarketScreen> {
                 Container(
                   width: 52,
                   height: 52,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE8F5E9),
+                  decoration: BoxDecoration(
+                    color: context.appColors.brandSoft,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     market['icon'] as IconData,
                     size: 26,
-                    color: const Color(0xFF2D7A3A),
+                    color: context.appColors.brandText,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -428,8 +428,8 @@ class _MarketScreenState extends State<MarketScreen> {
                       const SizedBox(height: 3),
                       Row(
                         children: [
-                          const Icon(Icons.location_on_rounded,
-                              size: 13, color: Color(0xFFAAAAAA)),
+                          Icon(Icons.location_on_rounded,
+                              size: 13, color: context.appColors.textHint),
                           const SizedBox(width: 2),
                           Text(
                             '${market['location']}  ·  ${market['distance']}',
@@ -458,9 +458,9 @@ class _MarketScreenState extends State<MarketScreen> {
                         const SizedBox(width: 2),
                         Text(
                           market['rating'].toString(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFFAAAAAA),
+                            color: context.appColors.textHint,
                           ),
                         ),
                       ],
@@ -470,9 +470,9 @@ class _MarketScreenState extends State<MarketScreen> {
               ],
             ),
 
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Divider(height: 1, color: Color(0xFFF0F0F0)),
+              child: Divider(height: 1, color: context.appColors.divider),
             ),
 
             // ── Meta row ─────────────────────────────────────
@@ -499,14 +499,14 @@ class _MarketScreenState extends State<MarketScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 9, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F6FA),
+                        color: context.appColors.surfaceMuted,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFE0E0E0), width: 0.5),
+                        border: Border.all(color: context.appColors.border, width: 0.5),
                       ),
                       child: Text(
                         p,
-                        style: const TextStyle(
-                            fontSize: 11.5, color: Color(0xFF777777)),
+                        style: TextStyle(
+                            fontSize: 11.5, color: context.appColors.textSecondary),
                       ),
                     ),
                   )
@@ -524,7 +524,7 @@ class _MarketScreenState extends State<MarketScreen> {
                 ),
                 style: TextButton.styleFrom(
                   backgroundColor: isSelected
-                      ? const Color(0xFFE8F5E9)
+                      ? context.appColors.brandSoft
                       : const Color(0xFF2D7A3A),
                   padding: const EdgeInsets.symmetric(vertical: 11),
                   shape: RoundedRectangleBorder(
@@ -540,7 +540,7 @@ class _MarketScreenState extends State<MarketScreen> {
                           : Icons.add_circle_outline_rounded,
                       size: 16,
                       color: isSelected
-                          ? const Color(0xFF2D7A3A)
+                          ? context.appColors.brandText
                           : Colors.white,
                     ),
                     const SizedBox(width: 6),
@@ -550,7 +550,7 @@ class _MarketScreenState extends State<MarketScreen> {
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                         color: isSelected
-                            ? const Color(0xFF2D7A3A)
+                            ? context.appColors.brandText
                             : Colors.white,
                       ),
                     ),
@@ -570,8 +570,8 @@ class _MarketScreenState extends State<MarketScreen> {
 
     switch (status) {
       case 'open':
-        bg = const Color(0xFFE8F5E9);
-        fg = const Color(0xFF1B5E20);
+        bg = context.appColors.brandSoft;
+        fg = context.appColors.brandText;
         label = 'Open';
         break;
       case 'busy':
@@ -606,11 +606,11 @@ class _MarketScreenState extends State<MarketScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: const Color(0xFFAAAAAA)),
+        Icon(icon, size: 14, color: context.appColors.textHint),
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFFAAAAAA)),
+          style: TextStyle(fontSize: 12, color: context.appColors.textHint),
         ),
       ],
     );
@@ -631,7 +631,7 @@ class _MarketScreenState extends State<MarketScreen> {
           : Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.appColors.cardBackground,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.07),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../services/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/chat_message_model.dart';
 
@@ -47,27 +48,27 @@ class _TulipAiScreenState extends State<TulipAiScreen>
 
   Widget _buildWelcomeScreen() {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: context.appColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.appColors.scaffoldBackground,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1A1A1A)),
+          icon: Icon(Icons.arrow_back_rounded, color: context.appColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Chat with Tulip',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A1A),
+            color: context.appColors.textPrimary,
           ),
         ),
         centerTitle: true,
-        bottom: const PreferredSize(
+        bottom: PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
+          child: Divider(height: 1, thickness: 1, color: context.appColors.divider),
         ),
       ),
       body: Column(
@@ -84,15 +85,15 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
+                      color: context.appColors.brandSoft,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
+                    child: Text(
                       'YOUR FARM ASSISTANT',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF2E7D32),
+                        color: context.appColors.brandText,
                         letterSpacing: 1.5,
                       ),
                     ),
@@ -102,11 +103,11 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                   // ── Title ──
                   RichText(
                     textAlign: TextAlign.center,
-                    text: const TextSpan(
+                    text: TextSpan(
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1A1A1A),
+                        color: context.appColors.textPrimary,
                         height: 1.25,
                         letterSpacing: -0.5,
                       ),
@@ -120,12 +121,12 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Your intelligent farming companion,\nalways ready to help',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF888888),
+                      color: context.appColors.textSecondary,
                       height: 1.5,
                     ),
                   ),
@@ -139,7 +140,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                       height: 170,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFFE8F5E9),
+                        color: context.appColors.brandSoft,
                         border: Border.all(
                           color: const Color(0xFFA5D6A7),
                           width: 2,
@@ -191,19 +192,19 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.appColors.cardBackground,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFFE8E8E8),
+                        color: context.appColors.divider,
                         width: 1,
                       ),
                     ),
                     child: RichText(
                       textAlign: TextAlign.center,
-                      text: const TextSpan(
+                      text: TextSpan(
                         style: TextStyle(
                           fontSize: 13.5,
-                          color: Color(0xFF555555),
+                          color: context.appColors.textSecondary,
                           height: 1.65,
                         ),
                         children: [
@@ -211,7 +212,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                             text: 'Tulip AI ',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A1A),
+                              color: context.appColors.textPrimary,
                             ),
                           ),
                           TextSpan(
@@ -229,14 +230,14 @@ class _TulipAiScreenState extends State<TulipAiScreen>
 
           // ── Footer CTA ──
           Container(
-            color: Colors.white,
+            color: context.appColors.cardBackground,
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
             child: Column(
               children: [
-                const Divider(
+                Divider(
                   height: 1,
                   thickness: 1,
-                  color: Color(0xFFF0F0F0),
+                  color: context.appColors.divider,
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -269,10 +270,10 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   'Powered by ShambaOS · Available in Swahili & English',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11, color: Color(0xFFBDBDBD)),
+                  style: TextStyle(fontSize: 11, color: context.appColors.textHint),
                 ),
               ],
             ),
@@ -290,9 +291,9 @@ class _TulipAiScreenState extends State<TulipAiScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F6FA),
+        color: context.appColors.surfaceMuted,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE8E8E8)),
+        border: Border.all(color: context.appColors.divider),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -301,10 +302,10 @@ class _TulipAiScreenState extends State<TulipAiScreen>
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF444444),
+              color: context.appColors.textPrimary,
             ),
           ),
         ],
@@ -317,13 +318,13 @@ class _TulipAiScreenState extends State<TulipAiScreen>
   // ══════════════════════════════════════════════════════════
   Widget _buildChatScreen() {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: context.appColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.appColors.scaffoldBackground,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1A1A1A)),
+          icon: Icon(Icons.arrow_back_rounded, color: context.appColors.textPrimary),
           onPressed: () => setState(() => _chatStarted = false),
         ),
         title: Row(
@@ -333,7 +334,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
               height: 32,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFE8F5E9),
+                color: context.appColors.brandSoft,
                 border: Border.all(color: const Color(0xFFA5D6A7)),
               ),
               child: Padding(
@@ -350,7 +351,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
               ),
             ),
             const SizedBox(width: 10),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -358,7 +359,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
+                    color: context.appColors.textPrimary,
                   ),
                 ),
                 Text(
@@ -373,15 +374,15 @@ class _TulipAiScreenState extends State<TulipAiScreen>
             ),
           ],
         ),
-        bottom: const PreferredSize(
+        bottom: PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
+          child: Divider(height: 1, thickness: 1, color: context.appColors.divider),
         ),
       ),
-      body: const Center(
+      body: Center(
         child: Text(
           'Chat UI goes here',
-          style: TextStyle(color: Color(0xFF888888)),
+          style: TextStyle(color: context.appColors.textSecondary),
         ),
       ),
     );

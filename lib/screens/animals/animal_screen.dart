@@ -82,10 +82,10 @@ class _AnimalScreenState extends State<AnimalScreen> {
   Widget build(BuildContext context) {
     final colors = context.appColors;
 
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    SystemChrome.setSystemUIOverlayStyle(context.overlayStyle);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: context.appColors.scaffoldBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -103,7 +103,7 @@ class _AnimalScreenState extends State<AnimalScreen> {
   Widget _buildHeader(AppColors colors) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       child: Row(
         children: [
           _circleButton(Icons.arrow_back_ios_new, () {
@@ -166,11 +166,11 @@ class _AnimalScreenState extends State<AnimalScreen> {
       child: Container(
         width: 42,
         height: 42,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF5F6FA),
+        decoration: BoxDecoration(
+          color: context.appColors.surfaceMuted,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: Colors.black87),
+        child: Icon(icon, size: 18, color: context.appColors.textPrimary),
       ),
     );
   }
@@ -186,17 +186,17 @@ class _AnimalScreenState extends State<AnimalScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.search_off_rounded,
               size: 52,
-              color: Color(0xFFCCCCCC),
+              color: context.appColors.textHint,
             ),
             const SizedBox(height: 12),
             Text(
               'No animals found for "$_searchQuery"',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFFAAAAAA),
+                color: context.appColors.textHint,
               ),
             ),
           ],
@@ -230,8 +230,8 @@ class _AnimalScreenState extends State<AnimalScreen> {
               Container(
                 width: 56,
                 height: 56,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE8F5E9),
+                decoration: BoxDecoration(
+                  color: context.appColors.brandSoft,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -276,10 +276,10 @@ class _AnimalScreenState extends State<AnimalScreen> {
               ),
 
               // Arrow
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 14,
-                color: Color(0xFFBBBBBB),
+                color: context.appColors.textHint,
               ),
             ],
           ),
@@ -310,7 +310,7 @@ class _AnimalScreenState extends State<AnimalScreen> {
             text: text.substring(matchIndex, matchIndex + query.length),
             style: baseStyle.copyWith(
               color: const Color(0xFF4CAF50),
-              backgroundColor: const Color(0xFFE8F5E9),
+              backgroundColor: context.appColors.brandSoft,
             ),
           ),
           if (matchIndex + query.length < text.length)

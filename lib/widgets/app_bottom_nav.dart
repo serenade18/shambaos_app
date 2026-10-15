@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class AppBottomNav extends StatefulWidget {
@@ -44,10 +45,10 @@ class _AppBottomNavState extends State<AppBottomNav> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: context.appColors.cardBackground,
         border: Border(
-          top: BorderSide(color: Color(0xFFEEEEEE), width: 1),
+          top: BorderSide(color: context.appColors.divider, width: 1),
         ),
       ),
       child: Column(
@@ -129,8 +130,8 @@ class _AppBottomNavState extends State<AppBottomNav> {
             Icon(
               icon,
               color: selected
-                  ? const Color(0xFF2E7D32)
-                  : const Color(0xFFAAAAAA),
+                  ? context.appColors.brandText
+                  : context.appColors.textHint,
               size: 26,
             ),
             const SizedBox(height: 3),
@@ -138,8 +139,8 @@ class _AppBottomNavState extends State<AppBottomNav> {
               label,
               style: TextStyle(
                 color: selected
-                    ? const Color(0xFF2E7D32)
-                    : const Color(0xFFAAAAAA),
+                    ? context.appColors.brandText
+                    : context.appColors.textHint,
                 fontSize: 14,
                 fontWeight:
                     selected ? FontWeight.w700 : FontWeight.w400,

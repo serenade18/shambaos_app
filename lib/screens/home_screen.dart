@@ -203,14 +203,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // HELPERS
   // ══════════════════════════════════════════════════════════
   Widget _divider() =>
-      const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0));
+      Divider(height: 1, thickness: 1, color: context.appColors.divider);
 
   // ══════════════════════════════════════════════════════════
   // 1. HEADER
   // ══════════════════════════════════════════════════════════
   Widget _buildHeader(AppColors colors) {
     return Container(
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
         left: 16,
@@ -255,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Text(
                 _userName,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF777777)),
+                style: TextStyle(fontSize: 13, color: context.appColors.textSecondary),
               ),
             ],
           ),
@@ -270,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   Widget _buildWeatherStrip() {
     return Container(
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: WeatherWidget(key: _weatherKey),
     );
@@ -291,22 +291,22 @@ class _HomeScreenState extends State<HomeScreen> {
         width: 46,
         height: 46,
         decoration: BoxDecoration(
-          color: const Color(0xFFE8F5E9),
+          color: context.appColors.brandSoft,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: const Color(0xFF4CAF50), size: 24),
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 14,
-          color: Color(0xFF1A1A1A),
+          color: context.appColors.textPrimary,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(fontSize: 12, color: Color(0xFF888888)),
+        style: TextStyle(fontSize: 12, color: context.appColors.textSecondary),
       ),
       trailing: Container(
         width: 36,
@@ -346,12 +346,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!_isFarmSetup) {
       if (pendingItems.isNotEmpty) {
         pendingItems.add(
-          const Divider(
+          Divider(
             height: 1,
             thickness: 1,
             indent: 14,
             endIndent: 14,
-            color: Color(0xFFE0EDE2),
+            color: context.appColors.brandSoft,
           ),
         );
       }
@@ -368,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Container(
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -405,9 +405,9 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF4FAF5),
+                  color: context.appColors.brandSoft,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFD6ECD9), width: 1),
+                  border: Border.all(color: context.appColors.brandSoft, width: 1),
                 ),
                 // Uses dynamic pendingItems — only shows what's incomplete
                 child: Column(children: pendingItems),
@@ -444,7 +444,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       height: containerHeight,
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,7 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: iconBoxHeight,
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F6FA),
+                            color: context.appColors.surfaceMuted,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Center(
@@ -503,7 +503,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontSize: fontSize,
                             fontWeight: FontWeight.w500,
                             height: 1.3,
-                            color: const Color(0xFF444444),
+                            color: context.appColors.textPrimary,
                           ),
                         ),
                       ],
@@ -523,7 +523,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   Widget _buildQuickMenuGrid(AppColors colors) {
     return Container(
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -715,9 +715,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 6),
                 Text(
                   poster['subtitle'],
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF555555),
+                    color: context.appColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -785,7 +785,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   Widget _buildInviteFriends(AppColors colors) {
     return Container(
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -803,11 +803,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Help your farmer friends by inviting\nthem to the app',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF888888),
+                    color: context.appColors.textSecondary,
                     height: 1.4,
                   ),
                 ),
@@ -822,11 +822,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: TextField(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Enter phone number',
                       hintStyle: TextStyle(
                         fontSize: 13,
-                        color: Color(0xFFAAAAAA),
+                        color: context.appColors.textHint,
                       ),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
@@ -852,7 +852,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 88,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFFE8F5E9),
+              color: context.appColors.brandSoft,
               border: Border.all(
                 color: const Color(0xFF4CAF50).withOpacity(0.3),
                 width: 1.5,
@@ -881,10 +881,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    SystemChrome.setSystemUIOverlayStyle(context.overlayStyle);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: context.appColors.scaffoldBackground,
       bottomNavigationBar: const AppBottomNav(),
       body: RefreshIndicator(
         onRefresh: _onRefresh,

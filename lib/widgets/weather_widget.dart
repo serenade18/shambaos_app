@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/app_colors.dart';
 import '../models/weather_model.dart';
 import '../screens/home_service.dart';
 
@@ -69,12 +70,12 @@ class WeatherWidgetState extends State<WeatherWidget> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
-          children: const [
-            Icon(Icons.cloud_off_outlined, color: Color(0xFFAAAAAA), size: 18),
+          children: [
+            Icon(Icons.cloud_off_outlined, color: context.appColors.textHint, size: 18),
             SizedBox(width: 8),
             Text(
               'Weather unavailable',
-              style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 13),
+              style: TextStyle(color: context.appColors.textHint, fontSize: 13),
             ),
           ],
         ),
@@ -103,8 +104,8 @@ class WeatherWidgetState extends State<WeatherWidget> {
                     _buildLocationLabel(w),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF1A1A1A),
+                    style: TextStyle(
+                      color: context.appColors.textPrimary,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
@@ -113,8 +114,8 @@ class WeatherWidgetState extends State<WeatherWidget> {
                   // "Cloudy, No Rain"
                   Text(
                     _capitalise(w.description),
-                    style: const TextStyle(
-                      color: Color(0xFF888888),
+                    style: TextStyle(
+                      color: context.appColors.textSecondary,
                       fontSize: 13,
                     ),
                   ),
@@ -129,8 +130,8 @@ class WeatherWidgetState extends State<WeatherWidget> {
               children: [
                 Text(
                   '${w.temp.round()}°',
-                  style: const TextStyle(
-                    color: Color(0xFF1A1A1A),
+                  style: TextStyle(
+                    color: context.appColors.textPrimary,
                     fontSize: 36,
                     fontWeight: FontWeight.w700,
                     height: 1,
@@ -141,9 +142,9 @@ class WeatherWidgetState extends State<WeatherWidget> {
                   'https://openweathermap.org/img/wn/${w.icon}@2x.png',
                   width: 46,
                   height: 46,
-                  errorBuilder: (_, __, ___) => const Icon(
+                  errorBuilder: (_, __, ___) => Icon(
                     Icons.cloud_outlined,
-                    color: Color(0xFFAAAAAA),
+                    color: context.appColors.textHint,
                     size: 36,
                   ),
                 ),
@@ -153,7 +154,7 @@ class WeatherWidgetState extends State<WeatherWidget> {
         ),
 
         const SizedBox(height: 14),
-        const Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
+        Divider(height: 1, thickness: 1, color: context.appColors.divider),
         const SizedBox(height: 12),
 
         // ── Row 2: Rain chance · Rain · Low stats ───────
@@ -194,15 +195,15 @@ class WeatherWidgetState extends State<WeatherWidget> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: Color(0xFFAAAAAA),
+                style: TextStyle(
+                  color: context.appColors.textHint,
                   fontSize: 11,
                 ),
               ),
               Text(
                 value,
-                style: const TextStyle(
-                  color: Color(0xFF1A1A1A),
+                style: TextStyle(
+                  color: context.appColors.textPrimary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -218,7 +219,7 @@ class WeatherWidgetState extends State<WeatherWidget> {
     return Container(
       width: 1,
       height: 28,
-      color: const Color(0xFFEEEEEE),
+      color: context.appColors.divider,
     );
   }
 }

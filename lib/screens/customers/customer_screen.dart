@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/app_colors.dart';
 import 'customer_service.dart';
 
 class CustomersScreen extends StatefulWidget {
@@ -30,15 +31,15 @@ class _CustomersScreenState extends State<CustomersScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: context.appColors.scaffoldBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.appColors.scaffoldBackground,
         elevation: 0,
-        leading: const BackButton(color: Colors.black),
-        title: const Text(
+        leading: BackButton(color: context.appColors.textPrimary),
+        title: Text(
           'Customers',
           style: TextStyle(
-            color: Color(0xFF1A1A1A),
+            color: context.appColors.textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -58,10 +59,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
                 // ❌ ERROR / EMPTY
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       'No customers found',
-                      style: TextStyle(color: Color(0xFF777777)),
+                      style: TextStyle(color: context.appColors.textSecondary),
                     ),
                   );
                 }
@@ -88,12 +89,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
   // 🔍 SEARCH UI (hook later to API filtering)
   Widget _buildSearch() {
     return Container(
-      color: Colors.white,
+      color: context.appColors.cardBackground,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       child: Container(
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F6FA),
+          color: context.appColors.surfaceMuted,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const TextField(
@@ -117,7 +118,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColors.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -139,43 +140,43 @@ class _CustomersScreenState extends State<CustomersScreen> {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Color(0xFF1A1A1A),
+                    color: context.appColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   phone,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF777777),
+                    color: context.appColors.textSecondary,
                   ),
                 ),
                 if (email.isNotEmpty)
                   Text(
                     email,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFFAAAAAA),
+                      color: context.appColors.textHint,
                     ),
                   ),
                 if (town.isNotEmpty)
                   Text(
                     town,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFFAAAAAA),
+                      color: context.appColors.textHint,
                     ),
                   ),
               ],
             ),
           ),
 
-          const Icon(
+          Icon(
             Icons.chevron_right_rounded,
-            color: Color(0xFFCCCCCC),
+            color: context.appColors.textHint,
           ),
         ],
       ),

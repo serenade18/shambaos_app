@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Custom color tokens for Shamba OS.
 /// Access anywhere via: context.appColors.cardBackground
@@ -9,6 +10,8 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color cardBackground;
   final Color chipBackground;
   final Color chipSelected;
+  final Color surfaceMuted;        // input fills, icon buttons, inset panels
+  final Color brandSoft;           // pale green tint behind brand icons and chips
 
   // ── Text ────────────────────────────────────────────────
   final Color textPrimary;
@@ -23,6 +26,7 @@ class AppColors extends ThemeExtension<AppColors> {
   // ── Dividers & Borders ──────────────────────────────────
   final Color divider;
   final Color border;
+  final Color brandText;           // green text and icons, readable on the background
 
   // ── Brand ───────────────────────────────────────────────
   static const Color brand = Color(0xFF109641);
@@ -33,6 +37,8 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.cardBackground,
     required this.chipBackground,
     required this.chipSelected,
+    required this.surfaceMuted,
+    required this.brandSoft,
     required this.textPrimary,
     required this.textSecondary,
     required this.textHint,
@@ -41,6 +47,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.iconOverlay,
     required this.divider,
     required this.border,
+    required this.brandText,
   });
 
   // ── Light ────────────────────────────────────────────────
@@ -49,6 +56,8 @@ class AppColors extends ThemeExtension<AppColors> {
     cardBackground: Colors.white,
     chipBackground: Colors.white,
     chipSelected: Color(0xFF3D7A35),
+    surfaceMuted: Color(0xFFF5F6FA),
+    brandSoft: Color(0xFFE8F5E9),
     textPrimary: Color(0xFF1A1A1A),
     textSecondary: Color(0xFF555555),
     textHint: Color(0xFF999999),
@@ -57,6 +66,7 @@ class AppColors extends ThemeExtension<AppColors> {
     iconOverlay: Color(0x1FFFFFFF),    // white 12%
     divider: Color(0xFFEEEEEE),
     border: Color(0xFFE0E0E0),
+    brandText: Color(0xFF2E7D32),
   );
 
   // ── Dark ─────────────────────────────────────────────────
@@ -65,6 +75,8 @@ class AppColors extends ThemeExtension<AppColors> {
     cardBackground: Color(0xFF1E1E1E),
     chipBackground: Color(0xFF2A2A2A),
     chipSelected: Color(0xFF109641),
+    surfaceMuted: Color(0xFF2A2A2A),
+    brandSoft: Color(0xFF1E3324),
     textPrimary: Color(0xFFF1F1F1),
     textSecondary: Color(0xFFAAAAAA),
     textHint: Color(0xFF666666),
@@ -73,6 +85,7 @@ class AppColors extends ThemeExtension<AppColors> {
     iconOverlay: Color(0x1FFFFFFF),
     divider: Color(0xFF2C2C2C),
     border: Color(0xFF3A3A3A),
+    brandText: Color(0xFF81C784),
   );
 
   @override
@@ -81,6 +94,8 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? cardBackground,
     Color? chipBackground,
     Color? chipSelected,
+    Color? surfaceMuted,
+    Color? brandSoft,
     Color? textPrimary,
     Color? textSecondary,
     Color? textHint,
@@ -89,12 +104,15 @@ class AppColors extends ThemeExtension<AppColors> {
     Color? iconOverlay,
     Color? divider,
     Color? border,
+    Color? brandText,
   }) {
     return AppColors(
       scaffoldBackground: scaffoldBackground ?? this.scaffoldBackground,
       cardBackground: cardBackground ?? this.cardBackground,
       chipBackground: chipBackground ?? this.chipBackground,
       chipSelected: chipSelected ?? this.chipSelected,
+      surfaceMuted: surfaceMuted ?? this.surfaceMuted,
+      brandSoft: brandSoft ?? this.brandSoft,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textHint: textHint ?? this.textHint,
@@ -103,6 +121,7 @@ class AppColors extends ThemeExtension<AppColors> {
       iconOverlay: iconOverlay ?? this.iconOverlay,
       divider: divider ?? this.divider,
       border: border ?? this.border,
+      brandText: brandText ?? this.brandText,
     );
   }
 
@@ -114,6 +133,8 @@ class AppColors extends ThemeExtension<AppColors> {
       cardBackground: Color.lerp(cardBackground, other.cardBackground, t)!,
       chipBackground: Color.lerp(chipBackground, other.chipBackground, t)!,
       chipSelected: Color.lerp(chipSelected, other.chipSelected, t)!,
+      surfaceMuted: Color.lerp(surfaceMuted, other.surfaceMuted, t)!,
+      brandSoft: Color.lerp(brandSoft, other.brandSoft, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
       textHint: Color.lerp(textHint, other.textHint, t)!,
@@ -122,6 +143,7 @@ class AppColors extends ThemeExtension<AppColors> {
       iconOverlay: Color.lerp(iconOverlay, other.iconOverlay, t)!,
       divider: Color.lerp(divider, other.divider, t)!,
       border: Color.lerp(border, other.border, t)!,
+      brandText: Color.lerp(brandText, other.brandText, t)!,
     );
   }
 }
@@ -130,4 +152,10 @@ class AppColors extends ThemeExtension<AppColors> {
 extension AppColorsX on BuildContext {
   AppColors get appColors =>
       Theme.of(this).extension<AppColors>() ?? AppColors.light;
+
+  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
+
+  /// Status bar icons that stay visible on the current theme's light or dark surfaces.
+  SystemUiOverlayStyle get overlayStyle =>
+      isDarkMode ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
 }

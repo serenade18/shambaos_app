@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/app_colors.dart';
 import 'package:flutter/services.dart';
 import '../auth/auth_service.dart';
 import '../onboarding/welcome_screens.dart';
@@ -95,30 +96,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    SystemChrome.setSystemUIOverlayStyle(context.overlayStyle);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: context.appColors.scaffoldBackground,
 
       // ── White AppBar — matches MenuScreen exactly ──────
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.appColors.cardBackground,
         elevation: 0,
         scrolledUnderElevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        systemOverlayStyle: context.overlayStyle,
         centerTitle: false,
-        title: const Text(
+        title: Text(
           'Profile',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A1A),
+            color: context.appColors.textPrimary,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Color(0xFF2E7D32),
+            color: context.appColors.brandText,
             size: 20,
           ),
           onPressed: () => Navigator.pop(context),
@@ -126,9 +127,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           // Notification icon on top right
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.notifications_outlined,
-              color: Color(0xFF1A1A1A),
+              color: context.appColors.textPrimary,
               size: 22,
             ),
             onPressed: () {
@@ -140,9 +141,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
         ],
-        bottom: const PreferredSize(
+        bottom: PreferredSize(
           preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
+          child: Divider(height: 1, thickness: 1, color: context.appColors.divider),
         ),
       ),
 
@@ -268,9 +269,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColors.cardBackground,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
+        border: Border.all(color: context.appColors.divider, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -313,27 +314,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   _userName.isEmpty ? 'User' : _userName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A1A),
+                    color: context.appColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   _userEmail.isEmpty ? 'Farm Administrator' : _userEmail,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF888888),
+                    color: context.appColors.textSecondary,
                   ),
                 ),
                 if (_userPhone.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
                     _userPhone,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFFAAAAAA),
+                      color: context.appColors.textHint,
                     ),
                   ),
                 ],
@@ -405,14 +406,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
       child: Row(
         children: [
-          Icon(icon, size: 13, color: const Color(0xFFAAAAAA)),
+          Icon(icon, size: 13, color: context.appColors.textHint),
           const SizedBox(width: 5),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Color(0xFFAAAAAA),
+              color: context.appColors.textHint,
               letterSpacing: 1.1,
             ),
           ),
@@ -438,9 +439,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.appColors.cardBackground,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFEEEEEE), width: 1),
+        border: Border.all(color: context.appColors.divider, width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -457,11 +458,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildMenuTile(item),
               if (!isLast)
-                const Divider(
+                Divider(
                   height: 1,
                   indent: 66,
                   endIndent: 16,
-                  color: Color(0xFFF0F0F0),
+                  color: context.appColors.divider,
                 ),
             ],
           );
@@ -494,10 +495,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: Text(
                 item.label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF1A1A1A),
+                  color: context.appColors.textPrimary,
                 ),
               ),
             ),
@@ -508,13 +509,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 activeColor: Colors.white,
                 activeTrackColor: const Color(0xFF4CAF50),
                 inactiveThumbColor: Colors.white,
-                inactiveTrackColor: const Color(0xFFDDDDDD),
+                inactiveTrackColor: context.appColors.border,
               )
             else
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 13,
-                color: Color(0xFFCCCCCC),
+                color: context.appColors.textHint,
               ),
           ],
         ),
@@ -533,7 +534,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.appColors.cardBackground,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: const Color(0xFFFFEBEB), width: 1),
           boxShadow: [
@@ -590,16 +591,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'Log Out',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
         ),
-        content: const Text(
+        content: Text(
           'Are you sure you want to log out?',
-          style: TextStyle(color: Color(0xFF666666), fontSize: 14),
+          style: TextStyle(color: context.appColors.textSecondary, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: Color(0xFF888888)),
+              style: TextStyle(color: context.appColors.textSecondary),
             ),
           ),
           ElevatedButton(

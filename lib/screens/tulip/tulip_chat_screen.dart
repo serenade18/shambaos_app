@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../services/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/chat_message_model.dart';
 
@@ -80,14 +81,14 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: context.appColors.scaffoldBackground,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             // ═════════ HEADER ═════════
             Container(
-              color: Colors.white,
+              color: context.appColors.cardBackground,
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
               child: Row(
                 children: [
@@ -129,7 +130,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
                       decoration: BoxDecoration(
                         color: msg.isUser
                             ? const Color(0xFF4CAF50)
-                            : Colors.white,
+                            : context.appColors.cardBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -137,7 +138,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
                         style: TextStyle(
                           color: msg.isUser
                               ? Colors.white
-                              : Colors.black87,
+                              : context.appColors.textPrimary,
                         ),
                       ),
                     ),
@@ -150,7 +151,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
             SafeArea(
               top: false,
               child: Container(
-                color: Colors.white,
+                color: context.appColors.cardBackground,
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -158,7 +159,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F6FA),
+                    color: context.appColors.surfaceMuted,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
@@ -218,25 +219,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
 
   // ═════════ HELPERS ═════════
 
-  static Widget _circleButton(
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF5F6FA),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 18),
-      ),
-    );
-  }
-
-  static Widget _inputButton(
+  Widget _circleButton(
     IconData icon,
     VoidCallback onTap,
   ) {
@@ -246,13 +229,31 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.appColors.surfaceMuted,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 18),
+      ),
+    );
+  }
+
+  Widget _inputButton(
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: context.appColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           icon,
           size: 20,
-          color: const Color(0xFF666666),
+          color: context.appColors.textSecondary,
         ),
       ),
     );

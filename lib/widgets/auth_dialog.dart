@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../services/app_colors.dart';
 
 // ════════════════════════════════════════════════════════════════
 //  auth_dialog.dart  —  Reusable success/error dialog
@@ -127,7 +128,7 @@ class _AuthDialogContentState extends State<_AuthDialogContent>
       child: ScaleTransition(
         scale: _scaleAnim,
         child: Dialog(
-          backgroundColor: Colors.white,
+          backgroundColor: context.appColors.cardBackground,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(28),
           ),

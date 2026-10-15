@@ -99,7 +99,7 @@ final List<NotificationItem> notificationItems = [
     subtitle: 'Pending payments, due invoices, and financial actions.',
     icon: Icons.credit_card_rounded,
     iconColor: AppColors.brand,
-    iconBackground: Color(0xFFE8F7EE),
+    iconBackground: Color(0xFFE8F5E9),
   ),
 ];
 
@@ -435,7 +435,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFE8F7EE),
+                              color: context.appColors.brandSoft,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
