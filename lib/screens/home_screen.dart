@@ -10,6 +10,7 @@ import '../services/app_colors.dart';
 import 'animals/animal_screen.dart';
 import 'plants/plant_screen.dart';
 import 'markets/market_screen.dart';
+import 'dashboard/dashboard_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -38,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Map<String, dynamic>> _quickMenuItems = [
     {
       'title': 'Dashboard',
-      'route': null,
+      'route': const DashboardScreen(),
       'icon': 'images/assets/icons/dashboard.png',
     },
     {

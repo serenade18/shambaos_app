@@ -47,6 +47,8 @@ class AuthService {
     final memberships = data['memberships'];
     if (memberships is List && memberships.isNotEmpty) {
       await ApiService.setOrgId(memberships.first['organisation_id'].toString());
+      final currency = memberships.first['currency'];
+      if (currency != null) await ApiService.setOrgCurrency(currency.toString());
     }
   }
 

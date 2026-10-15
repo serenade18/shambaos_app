@@ -61,6 +61,17 @@ class ApiService {
     await prefs.setString('org_id', orgId);
   }
 
+  // The organisation's currency (from its membership), for showing money.
+  static Future<void> setOrgCurrency(String currency) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('org_currency', currency);
+  }
+
+  static Future<String> getOrgCurrency() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('org_currency') ?? 'KES';
+  }
+
   static Future<void> setUser(Map<String, dynamic> user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user', jsonEncode(user));
@@ -95,6 +106,7 @@ class ApiService {
     await prefs.remove('access_token');
     await prefs.remove('refresh_token');
     await prefs.remove('org_id');
+    await prefs.remove('org_currency');
     await prefs.remove('user');
   }
 
