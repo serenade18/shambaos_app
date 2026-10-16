@@ -4,7 +4,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'screens/onboarding/splash_screen.dart';
 import 'screens/home_screen.dart'; // Import your home screen
 import 'screens/profile/profile_screen.dart'; // Import the profile screen
-import 'screens/tulip/tulip_screen.dart';
+import 'screens/tulip/tulip_chat_screen.dart';
 import 'screens/fields/fields_screen.dart';
 import 'screens/fields/field_scan_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
             routes: {
               '/': (context) => const SplashScreen(),
               '/home': (context) => const HomeScreen(),
-              '/chat': (context) => const TulipAiScreen(),
+              '/chat': (context) => const TulipChatScreen(), // straight into the chat, as the design
               '/profile': (context) => const ProfileScreen(),
               '/fields': (context) => const FieldsScreen(),
               '/ai': (context) => const FieldScanScreen(),

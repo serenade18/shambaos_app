@@ -9,14 +9,16 @@ import '../../models/chat_message_model.dart';
 import '../../services/api_service.dart';
 import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
-import '../../widgets/phosphor_icons.dart';
+import '../../widgets/ledger_parts.dart';
+import '../auth/auth_ui.dart';
 import '../../l10n/tr.dart';
 
 /// Chat with Tulip, the farm assistant. Replies stream in from POST /assistant/chat
 /// while they are written; Tulip knows the farm from its records. The conversation
 /// is kept on the phone.
 class TulipChatScreen extends StatefulWidget {
-  const TulipChatScreen({super.key});
+  final String? draft; // a question to start from, e.g. about a scanned photo
+  const TulipChatScreen({super.key, this.draft});
 
   @override
   State<TulipChatScreen> createState() => _TulipChatScreenState();
@@ -45,6 +47,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.draft != null) _input.text = widget.draft!;
     _load();
   }
 
@@ -157,168 +160,163 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
     await prefs.remove(_storageKey);
   }
 
+  static const _sparkle = '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>';
+  static const _sendIcon = '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>';
+  static const _info = '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>';
+
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    final empty = _messages.isEmpty && !_busy;
-
     return Scaffold(
       backgroundColor: c.scaffoldBackground,
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            _avatar(c, 36),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Tulip'.tr, style: AppType.titleM.copyWith(color: c.textPrimary)),
-                Text(_busy ? 'Writing…'.tr : 'Your farm assistant'.tr,
-                    style: AppType.caption.copyWith(color: _busy ? c.brandText : c.textSecondary)),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          if (_messages.isNotEmpty)
-            IconButton(
-              tooltip: 'New chat'.tr,
-              onPressed: _busy ? null : _newChat,
-              icon: Icon(PhosphorIconsRegular.notePencil, color: c.textPrimary),
-            ),
-          const SizedBox(width: 4),
-        ],
-      ),
       body: Column(
         children: [
-          Expanded(child: empty ? _welcome(c) : _conversation(c)),
+          _header(c),
+          Expanded(child: _conversation(c)),
           _composer(c),
         ],
       ),
     );
   }
 
-  // ── Empty chat: what Tulip can help with ─────────────────
-  Widget _welcome(AppColors c) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
-      children: [
-        Center(child: _avatar(c, 64)),
-        const SizedBox(height: 16),
-        Text('Karibu! I\'m Tulip.'.tr, textAlign: TextAlign.center, style: AppType.titleL.copyWith(color: c.textPrimary)),
-        const SizedBox(height: 6),
-        Text(
-          'Ask me about your crops, animals, weather or the market. I know your farm from your records. Write in Swahili or English.'.tr,
-          textAlign: TextAlign.center,
-          style: AppType.body.copyWith(color: c.textSecondary),
-        ),
-        const SizedBox(height: 24),
-        for (final s in _suggestions)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Material(
-              color: c.cardBackground,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: c.divider)),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(10),
-                onTap: () => _send(s),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  child: Row(
-                    children: [
-                      Icon(PhosphorIconsRegular.chatCircleText, size: 20, color: c.brandText),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(s, style: AppType.label.copyWith(color: c.textPrimary))),
-                      Icon(PhosphorIconsRegular.arrowUpRight, size: 18, color: c.textHint),
-                    ],
-                  ),
-                ),
+  // ── The bar: back, Tulip, New chat ───────────────────────
+  Widget _header(AppColors c) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, MediaQuery.paddingOf(context).top + 20, 8, 12),
+      decoration: BoxDecoration(
+        color: c.cardBackground,
+        boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
+      ),
+      child: Row(children: [
+        Semantics(
+          button: true,
+          label: 'Back'.tr,
+          excludeSemantics: true,
+          child: Material(
+            color: c.surfaceMuted,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => Navigator.maybePop(context),
+              child: SizedBox(
+                width: 44,
+                height: 44,
+                child: Center(child: LineIcon('<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>', size: 22, color: c.textPrimary)),
               ),
             ),
           ),
-      ],
+        ),
+        const SizedBox(width: 12),
+        _avatar(c, 40),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Tulip'.tr,
+                style: TextStyle(fontFamily: AppType.text, fontSize: 17, height: 22 / 17, fontWeight: FontWeight.w700, color: c.textPrimary)),
+            Text(_busy ? 'Writing…'.tr : 'Your farm assistant · knows your records'.tr,
+                maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.caption.copyWith(color: _busy ? c.brandText : c.textSecondary)),
+          ]),
+        ),
+        if (_messages.isNotEmpty)
+          TextButton(
+            onPressed: _busy ? null : _newChat,
+            style: TextButton.styleFrom(minimumSize: const Size(0, 44), foregroundColor: c.brandText),
+            child: Text('New chat'.tr, style: const TextStyle(fontFamily: AppType.text, fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
+      ]),
     );
   }
 
-  // ── The conversation ──────────────────────────────────────
+  // ── The conversation, opening with Tulip's greeting ──────
   Widget _conversation(AppColors c) {
+    final replied = _messages.any((m) => !m.isUser);
     final items = <Widget>[
+      _bubble(c, 'Ask me about your crops, animals, weather or the market. I know your farm from your records. Write in Swahili or English.'.tr, false),
       for (final m in _messages) _bubble(c, m.text, m.isUser),
       if (_streaming != null) _streaming!.isEmpty ? _typing(c) : _bubble(c, _streaming!, false, live: true),
       if (_failed != null) _failure(c),
+      if (replied && !_busy) _warning(c),
     ];
     return ListView(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
       children: items,
     );
   }
 
+  /// A speech bubble: Tulip's white on the left, the farmer's green on the right.
   Widget _bubble(AppColors c, String text, bool mine, {bool live = false}) {
-    final maxW = MediaQuery.sizeOf(context).width * 0.8;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        mainAxisAlignment: mine ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!mine) ...[_avatar(c, 28), const SizedBox(width: 8)],
-          Flexible(
-            child: Container(
-              constraints: BoxConstraints(maxWidth: maxW),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: mine ? c.shamba : c.cardBackground,
-                border: mine ? null : Border.all(color: c.divider),
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(mine ? 16 : 4),
-                  bottomRight: Radius.circular(mine ? 4 : 16),
-                ),
-              ),
-              child: SelectableText(
-                live ? '$text ▍' : text,
-                style: AppType.bodyL.copyWith(fontSize: 16, height: 1.45, color: mine ? c.onShamba : c.textPrimary),
-              ),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Align(
+        alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.78),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: mine ? c.shamba : c.cardBackground,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(20),
+              topRight: const Radius.circular(20),
+              bottomLeft: Radius.circular(mine ? 20 : 6),
+              bottomRight: Radius.circular(mine ? 6 : 20),
             ),
+            boxShadow: mine ? null : const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
           ),
-        ],
+          child: SelectableText(
+            live ? '$text ▍' : text,
+            style: AppType.body.copyWith(color: mine ? c.onShamba : c.textPrimary),
+          ),
+        ),
       ),
     );
   }
 
   Widget _typing(AppColors c) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          _avatar(c, 28),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: c.cardBackground,
-              border: Border.all(color: c.divider),
-              borderRadius: BorderRadius.circular(16),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: c.cardBackground,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(6),
+              bottomRight: Radius.circular(20),
             ),
-            child: Semantics(label: 'Tulip is writing'.tr, child: _Dots(color: c.textHint)),
+            boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
           ),
-        ],
+          child: Semantics(label: 'Tulip is writing'.tr, child: _Dots(color: c.textHint)),
+        ),
       ),
     );
   }
 
+  /// The reminder under Tulip's answers.
+  Widget _warning(AppColors c) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        decoration: BoxDecoration(color: c.rainTint, borderRadius: BorderRadius.circular(24)),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          LineIcon(_info, size: 20, color: c.rainInk),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text('AI can be wrong. For a sick animal, or anything spreading fast, call your vet or the county agriculture office.'.tr,
+                style: AppType.caption.copyWith(color: c.textPrimary)),
+          ),
+        ]),
+      );
+
   Widget _failure(AppColors c) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10, left: 36),
-      padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
-      decoration: BoxDecoration(color: c.dangerTint, borderRadius: BorderRadius.circular(10)),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
+      decoration: BoxDecoration(color: c.dangerTint, borderRadius: BorderRadius.circular(24)),
       child: Row(
         children: [
-          Icon(PhosphorIconsRegular.warningCircle, size: 20, color: c.dangerInk),
-          const SizedBox(width: 10),
           Expanded(child: Text(_failed!, style: AppType.body.copyWith(color: c.dangerInk))),
           TextButton(onPressed: _ask, child: Text('Try again'.tr)),
         ],
@@ -326,76 +324,88 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
     );
   }
 
-  // ── Writing a message ─────────────────────────────────────
+  // ── Writing a message: suggestions, the box, Send ────────
   Widget _composer(AppColors c) {
     return Container(
-      decoration: BoxDecoration(color: c.cardBackground, border: Border(top: BorderSide(color: c.divider))),
-      padding: EdgeInsets.fromLTRB(12, 10, 12, 10 + MediaQuery.paddingOf(context).bottom),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _input,
-              minLines: 1,
-              maxLines: 5,
-              maxLength: 4000,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.newline,
-              style: AppType.bodyL.copyWith(fontSize: 16, color: c.textPrimary),
-              decoration: InputDecoration(
-                hintText: 'Ask Tulip about your farm…'.tr,
-                counterText: '',
-                filled: true,
-                fillColor: c.surfaceMuted,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide.none),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22), borderSide: BorderSide(color: c.focus, width: 2)),
+      decoration: BoxDecoration(
+        color: c.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, -6))],
+      ),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 16 + MediaQuery.paddingOf(context).bottom),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (!_busy)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [
+              for (final s in _suggestions) ...[SlChip(s, onTap: () => _send(s)), const SizedBox(width: 8)],
+            ]),
+          ),
+        if (!_busy) const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _input,
+                minLines: 1,
+                maxLines: 5,
+                maxLength: 4000,
+                textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.newline,
+                style: AppType.bodyL.copyWith(fontSize: 16, color: c.textPrimary),
+                decoration: InputDecoration(
+                  hintText: 'Ask Tulip about your farm…'.tr,
+                  hintStyle: AppType.body.copyWith(color: c.textSecondary),
+                  counterText: '',
+                  filled: true,
+                  fillColor: c.surfaceMuted,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(26), borderSide: BorderSide.none),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(26), borderSide: BorderSide.none),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(26), borderSide: BorderSide(color: c.focus, width: 2)),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          ListenableBuilder(
-            listenable: _input,
-            builder: (_, _) {
-              final ready = _input.text.trim().isNotEmpty && !_busy;
-              return Semantics(
-                button: true,
-                label: 'Send'.tr,
-                excludeSemantics: true,
-                child: Material(
-                  color: ready ? c.shamba : c.surfaceMuted,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: ready ? () => _send() : null,
-                    child: SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: Icon(PhosphorIconsFill.paperPlaneRight, size: 20, color: ready ? c.onShamba : c.textHint),
+            const SizedBox(width: 8),
+            ListenableBuilder(
+              listenable: _input,
+              builder: (_, _) {
+                final ready = _input.text.trim().isNotEmpty && !_busy;
+                return Semantics(
+                  button: true,
+                  label: 'Send'.tr,
+                  excludeSemantics: true,
+                  child: Material(
+                    color: ready ? c.shamba : c.surfaceMuted,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: ready ? () => _send() : null,
+                      child: SizedBox(
+                        width: 52,
+                        height: 52,
+                        child: Center(child: LineIcon(_sendIcon, size: 22, color: ready ? c.onShamba : c.textHint)),
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+                );
+              },
+            ),
+          ],
+        ),
+      ]),
     );
   }
 
+  /// Tulip: a sparkle on shamba green.
   Widget _avatar(AppColors c, double size) {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: c.brandSoft, shape: BoxShape.circle),
-      padding: EdgeInsets.all(size * 0.18),
-      child: Image.asset(
-        'images/assets/icons/tulip.png',
-        fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => Icon(PhosphorIconsFill.sparkle, size: size * 0.5, color: c.brandText),
-      ),
+      decoration: BoxDecoration(color: c.shamba, shape: BoxShape.circle),
+      alignment: Alignment.center,
+      child: LineIcon(_sparkle, size: size * 0.5, color: c.onShamba),
     );
   }
 }

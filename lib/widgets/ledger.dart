@@ -149,10 +149,11 @@ class SlLedger extends StatelessWidget {
     final c = context.appColors;
     return Container(
       width: double.infinity,
+      // The design's ledger sheet: white, 24 radius, a soft shadow, no border.
       decoration: BoxDecoration(
         color: c.cardBackground,
-        border: Border.all(color: c.divider),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -160,11 +161,14 @@ class SlLedger extends StatelessWidget {
         children: [
           if (title != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(child: Text(title!, style: AppType.titleM.copyWith(color: c.textPrimary))),
+                  Expanded(
+                    child: Text(title!,
+                        style: TextStyle(fontFamily: AppType.text, fontSize: 19, height: 24 / 19, fontWeight: FontWeight.w500, color: c.textPrimary)),
+                  ),
                   if (trailing != null) trailing!,
                 ],
               ),
@@ -215,7 +219,7 @@ class SlLedgerRow extends StatelessWidget {
     final c = context.appColors;
     final row = Container(
       constraints: const BoxConstraints(minHeight: 56),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
           if (leading != null) ...[leading!, const SizedBox(width: 12)],
