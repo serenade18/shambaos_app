@@ -774,4 +774,10 @@ const fr = <String, String>{
   'hectares': 'hectares',
   'metres walked': 'mètres parcourus',
   '{n} corners': '{n} coins',
+  // Home and Fields (Shamba Ledger redesign).
+  'All {n}': 'Tous {n}',
+  'Next 7 days': '7 prochains jours',
+  'planted {date}': 'planté le {date}',
+  'started {date}': 'commencé le {date}',
+  '{rainProbability}% chance of rain': '{rainProbability} % de risque de pluie',
 };

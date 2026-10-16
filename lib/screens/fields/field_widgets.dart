@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
 import '../../widgets/phosphor_icons.dart';
+import '../../widgets/ledger_parts.dart';
 import 'field_service.dart';
 import '../../l10n/tr.dart';
 
@@ -94,48 +95,44 @@ class FieldCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    return Material(
-      color: c.cardBackground,
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              FieldPhoto(
-                type: field.type,
-                width: compact ? 96 : 128,
-                height: compact ? 64 : 84,
-                radius: BorderRadius.circular(10),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(field.name,
-                        maxLines: compact ? 1 : 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppType.titleM.copyWith(color: c.textPrimary)),
-                    const SizedBox(height: 8),
-                    // Compact cards keep one line of chips: the state and the size.
-                    compact
-                        ? Row(children: [
-                            for (final chip in fieldChips(context, field).take(2)) ...[chip, const SizedBox(width: 6)],
-                          ])
-                        : Wrap(spacing: 6, runSpacing: 6, children: fieldChips(context, field)),
-                    if (!compact) ...[
-                      const SizedBox(height: 8),
-                      Text(field.startedLine, style: AppType.caption.copyWith(color: c.textSecondary)),
-                    ],
-                  ],
-                ),
-              ),
-            ],
+    // The design's photo card (sl-ent--photo): photo left, the name, its
+    // state and size as tags, and when it started.
+    return SlCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FieldPhoto(
+            type: field.type,
+            width: compact ? 88 : 104,
+            height: compact ? 64 : 88,
+            radius: BorderRadius.circular(16),
           ),
-        ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(field.name,
+                    maxLines: compact ? 1 : 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontFamily: AppType.text, fontSize: 19, height: 24 / 19, fontWeight: FontWeight.w500, color: c.textPrimary)),
+                const SizedBox(height: 8),
+                Wrap(spacing: 6, runSpacing: 6, children: [
+                  field.isActive
+                      ? SlTag('Active'.tr, tone: SlTone.good, icon: SlTag.check)
+                      : SlTag('Closed'.tr),
+                  if (field.size.isNotEmpty) SlTag(field.size),
+                ]),
+                if (!compact) ...[
+                  const SizedBox(height: 6),
+                  Text(field.startedLine, style: AppType.caption.copyWith(color: c.textSecondary)),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

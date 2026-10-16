@@ -37,8 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _updatesExpanded = true;
   Map<String, dynamic>? _farm;
   List<Field>? _fields;
-  FieldCategory? _category;
   WeatherModel? _today;
+  double? _weekRain; // mm forecast over the next 7 days
   bool _weatherLoading = true;
 
   bool get _isProfileComplete =>
@@ -168,6 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     setState(() {
       _today = days.isEmpty ? null : days.first;
+      _weekRain = days.isEmpty ? null : days.take(7).fold<double>(0, (sum, d) => sum + d.precipitation);
       _weatherLoading = false;
     });
   }
@@ -181,25 +182,31 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   Widget _buildMyFields(AppColors colors) {
     final fields = _fields;
-    final shown = fields?.where((f) => _category == null || f.category == _category).take(3).toList();
+    final shown = fields?.take(3).toList();
+    final link = TextStyle(fontFamily: AppType.text, fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w700, color: colors.brandText);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(child: Text('My fields'.tr, style: AppType.titleM.copyWith(color: colors.textPrimary))),
+              Expanded(
+                child: Text('My fields'.tr,
+                    style: TextStyle(fontFamily: AppType.text, fontSize: 19, height: 24 / 19, fontWeight: FontWeight.w500, color: colors.textPrimary)),
+              ),
               if (_farm != null)
-                TextButton.icon(
+                TextButton(
                   onPressed: () => openFarmRecordMenu(context, fields ?? const []),
-                  icon: Icon(PhosphorIconsBold.plus, size: 16, color: colors.brandText),
-                  label: Text('Record'.tr),
+                  style: TextButton.styleFrom(minimumSize: const Size(0, 32), padding: const EdgeInsets.symmetric(horizontal: 8)),
+                  child: Text('Record'.tr, style: link),
                 ),
               if (fields != null && fields.isNotEmpty)
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/fields'),
-                  child: Text('See all'.tr),
+                  style: TextButton.styleFrom(minimumSize: const Size(0, 32), padding: const EdgeInsets.only(left: 8)),
+                  child: Text('See all'.tr, style: link),
                 ),
             ],
           ),
@@ -229,15 +236,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ])
           else ...[
-            FieldCategories(
-              selected: _category,
-              present: fields.map((f) => f.category).toSet(),
-              onChanged: (cat) => setState(() => _category = cat),
-            ),
-            const SizedBox(height: 16),
             for (final f in shown!) ...[
               FieldCard(field: f, onTap: () => openField(context, f)),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
             ],
           ],
         ],
@@ -719,8 +720,11 @@ class _HomeScreenState extends State<HomeScreen> {
               HomeHero(
                 userName: _userName,
                 initials: _getInitials(_userName),
-                place: _farm == null ? null : ('${_farm!['county'] ?? ''}'.isNotEmpty ? '${_farm!['county']}' : _farm!['name']),
+                place: _farm == null
+                    ? null
+                    : ['${_farm!['name'] ?? ''}', '${_farm!['county'] ?? ''}'].where((p) => p.isNotEmpty).join(', '),
                 today: _today,
+                weekRain: _weekRain,
                 weatherLoading: _weatherLoading,
                 onAvatarTap: _openProfile,
                 onPlaceTap: _farm == null ? null : _openFarmMap,
@@ -730,10 +734,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               _buildMyFields(colors),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: SlSeasonStrip(),
-              ),
 
               // Hidden only when BOTH profile is complete AND farm is set up
               if (!_allUpdatesComplete) ...[
