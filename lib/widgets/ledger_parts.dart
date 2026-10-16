@@ -107,13 +107,15 @@ class SlCard extends StatelessWidget {
 /// One field, herd or flock as a row (sl-ent): an icon in a green well, the
 /// name and a line under it, and something on the right.
 class SlEntRow extends StatelessWidget {
-  final String icon; // a LineIcon path
+  final String? icon; // a LineIcon path
+  final Widget? leading; // in place of the line icon, e.g. an illustrated icon
   final String title;
   final String? meta;
   final Widget? end;
   final VoidCallback? onTap;
 
-  const SlEntRow({super.key, required this.icon, required this.title, this.meta, this.end, this.onTap});
+  const SlEntRow({super.key, this.icon, this.leading, required this.title, this.meta, this.end, this.onTap})
+      : assert(icon != null || leading != null);
 
   @override
   Widget build(BuildContext context) {
@@ -128,7 +130,7 @@ class SlEntRow extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(color: c.brandSoft, shape: BoxShape.circle),
-            child: Center(child: LineIcon(icon, size: 26, color: c.brandText)),
+            child: Center(child: leading ?? LineIcon(icon!, size: 26, color: c.brandText)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -148,24 +150,4 @@ class SlEntRow extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Line icons for kinds of field (Lucide, ISC licence).
-class FieldIcons {
-  FieldIcons._();
-  static const egg = '<path d="M12 2C8 2 4 8 4 14a8 8 0 0 0 16 0c0-6-4-12-8-12"/>';
-  static const paw = '<circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/>';
-  static const fish = '<path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z"/><path d="M18 12v.5"/><path d="M16 17.93a9.77 9.77 0 0 1 0-11.86"/><path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33"/>';
-  static const wheat = '<path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>';
-  static const sprout = '<path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/>';
-  static const tree = '<path d="M8 19a4 4 0 0 1-2.24-7.32A3.5 3.5 0 0 1 9 6.03V6a3 3 0 1 1 6 0v.04a3.5 3.5 0 0 1 3.24 5.65A4 4 0 0 1 16 19Z"/><path d="M12 19v3"/>';
-
-  /// The icon for what a field keeps or grows.
-  static String of(String type, {required bool crop}) => switch (type) {
-        'layers' || 'broilers' => egg,
-        'fish' => fish,
-        'bananas' || 'avocados' => tree,
-        'maize' || 'wheat' || 'rice' || 'beans' => wheat,
-        _ => crop ? sprout : paw,
-      };
 }

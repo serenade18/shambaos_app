@@ -19,6 +19,55 @@ String fieldPhoto(String type) => switch (type) {
       _ => 'images/auth/plain.jpg',
     };
 
+/// The illustrated icon for what a field keeps or grows (images/assets/icons).
+String fieldIcon(String type, {bool crop = false}) => 'images/assets/icons/${switch (type) {
+      'layers' || 'broilers' => 'chicken',
+      'fish' => 'fish',
+      'dairy_cattle' || 'beef_cattle' => 'cow',
+      'dairy_goats' || 'sheep' => 'goat',
+      'pigs' => 'pig',
+      'rabbits' => 'rabbit',
+      'maize' => 'corn',
+      'beans' => 'beans',
+      'rice' => 'rice',
+      'wheat' => 'wheat',
+      'tomatoes' => 'tomato',
+      'kales' => 'kale',
+      'spinach' => 'spinach',
+      'bananas' => 'banana',
+      'avocados' => 'avocado',
+      _ => crop ? 'leaf' : 'livestock',
+    }}.png';
+
+/// A field's icon on a soft green tile.
+class FieldIconTile extends StatelessWidget {
+  final Field field;
+  final double width;
+  final double height;
+  final double radius;
+  final double iconSize;
+
+  const FieldIconTile({super.key, required this.field, required this.width, required this.height, this.radius = 16, required this.iconSize});
+
+  @override
+  Widget build(BuildContext context) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(color: context.appColors.brandSoft, borderRadius: BorderRadius.circular(radius)),
+      alignment: Alignment.center,
+      child: Image.asset(
+        fieldIcon(field.type, crop: field.isCrop),
+        width: iconSize,
+        height: iconSize,
+        cacheWidth: (iconSize * dpr).round(),
+        excludeFromSemantics: true,
+      ),
+    );
+  }
+}
+
 /// A field photo decoded at the size it is shown (some sources are 7000px tall).
 class FieldPhoto extends StatelessWidget {
   final String type;
@@ -95,7 +144,8 @@ class FieldCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    // The design's photo card (sl-ent--photo): photo left, the name, its
+    // The design's photo card (sl-ent--photo), with the field's icon for the
+    // photo: the icon left, the name, its
     // state and size as tags, and when it started.
     return SlCard(
       onTap: onTap,
@@ -103,12 +153,7 @@ class FieldCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FieldPhoto(
-            type: field.type,
-            width: compact ? 88 : 104,
-            height: compact ? 64 : 88,
-            radius: BorderRadius.circular(16),
-          ),
+          FieldIconTile(field: field, width: compact ? 88 : 104, height: compact ? 64 : 88, iconSize: compact ? 44 : 60),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
