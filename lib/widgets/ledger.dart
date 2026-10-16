@@ -57,6 +57,7 @@ class SlKeyFigure extends StatelessWidget {
   final String? delta; // "KSh 4,200 more"
   final String? deltaRest; // "than the 30 days before"
   final bool? deltaUp; // true: more, false: less, null: no arrow
+  final String? caption; // a quiet line under the figure: "From 3 of 5 customers"
   final bool band; // on a shamba fill
 
   const SlKeyFigure({
@@ -68,6 +69,7 @@ class SlKeyFigure extends StatelessWidget {
     this.delta,
     this.deltaRest,
     this.deltaUp,
+    this.caption,
     this.band = false,
   });
 
@@ -121,14 +123,18 @@ class SlKeyFigure extends StatelessWidget {
             ],
           ),
         ],
+        if (caption != null) ...[
+          const SizedBox(height: 4),
+          Text(caption!, style: AppType.caption.copyWith(color: muted)),
+        ],
       ],
     );
 
     if (!band) return content;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: c.shamba, borderRadius: BorderRadius.circular(10)),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: c.shamba, borderRadius: BorderRadius.circular(24)),
       child: content,
     );
   }

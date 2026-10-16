@@ -41,6 +41,11 @@ class AppBottomNav extends StatelessWidget {
   static const barHeight = 72.0;
   static const _rise = 28.0;
 
+  /// Space to leave under a scroll view that runs beneath the bar, so its last
+  /// item can scroll clear of the bar and the raised scan button. Read from a
+  /// context outside the Scaffold, where the padding is the phone's own.
+  static double scrollPadding(BuildContext context) => barHeight + _rise + MediaQuery.paddingOf(context).bottom + 16;
+
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;

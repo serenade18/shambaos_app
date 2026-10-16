@@ -78,7 +78,7 @@ class _FieldsScreenState extends State<FieldsScreen> {
           color: c.shamba,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + MediaQuery.paddingOf(context).bottom),
+            padding: EdgeInsets.fromLTRB(16, 24, 16, AppBottomNav.scrollPadding(context)),
             children: [
               Text('My fields'.tr,
                   style: TextStyle(fontFamily: AppType.text, fontSize: 24, height: 30 / 24, fontWeight: FontWeight.w500, color: c.textPrimary)),

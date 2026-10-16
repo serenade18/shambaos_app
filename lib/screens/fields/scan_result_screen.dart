@@ -98,7 +98,7 @@ class ScanResultScreen extends StatelessWidget {
                 ]),
               ),
               SliverPadding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 104 + bottom),
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 124 + bottom),
                 sliver: SliverList.list(children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
