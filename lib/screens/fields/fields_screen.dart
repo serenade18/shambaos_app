@@ -118,7 +118,7 @@ class _FieldsScreenState extends State<FieldsScreen> {
               else
                 for (final f in shown!) ...[
                   SlEntRow(
-                    icon: FieldIcons.of(f.type, crop: f.isCrop),
+                    leading: Image.asset(fieldIcon(f.type, crop: f.isCrop), width: 30, height: 30, excludeFromSemantics: true),
                     title: f.name,
                     meta: _meta(f),
                     end: SlTag(fieldKind(f.type)),
