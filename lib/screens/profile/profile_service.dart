@@ -33,20 +33,4 @@ class ProfileService {
       'new_password': newPassword,
     });
   }
-
-  // The API has no notification preferences yet; these calls fail with 404.
-  static Future<ApiResponse> setNotification() async {
-    return ApiService.get('/notification-prefs/', requiresAuth: true);
-  }
-
-  /// Sends only the single changed key as a PATCH.
-  /// e.g. patchNotification('leave_requests', true)
-  /// Payload → { "leave_requests": true }
-  static Future<ApiResponse> patchNotification(String key, bool value) async {
-    return ApiService.patch(
-      '/notification-prefs/update/',
-      {key: value},
-      requiresAuth: true,
-    );
-  }
 }

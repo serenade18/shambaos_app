@@ -64,6 +64,7 @@ class ApiService {
   }
 
   static String? get refreshToken => _refreshToken;
+  static String? get orgId => _orgId;
 
   // ================= TOKEN STORAGE =================
   static Future<void> setToken(String token) async {

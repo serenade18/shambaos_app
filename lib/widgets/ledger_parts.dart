@@ -151,3 +151,118 @@ class SlEntRow extends StatelessWidget {
     );
   }
 }
+
+/// An on/off switch as the design draws it: a 48×28 pill, green when on.
+class SlSwitch extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final String label; // read out by screen readers
+
+  const SlSwitch({super.key, required this.value, required this.onChanged, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    return Semantics(
+      toggled: value,
+      label: label,
+      enabled: onChanged != null,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onChanged == null ? null : () => onChanged!(!value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          width: 48,
+          height: 28,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: onChanged == null ? c.border.withValues(alpha: 0.5) : (value ? c.shamba : c.border),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: AnimatedAlign(
+            duration: const Duration(milliseconds: 160),
+            alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: c.cardBackground,
+                shape: BoxShape.circle,
+                boxShadow: const [BoxShadow(color: Color(0x4017211A), blurRadius: 3, offset: Offset(0, 1))],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A ledger row with an icon in a round well (the design's row-ico): settings
+/// and menu rows. A chevron shows when it opens something and has no [end].
+class SlIconRow extends StatelessWidget {
+  final String icon; // a LineIcon path
+  final SlTone tone; // the well's colour; neutral is the green well
+  final String title;
+  final String? meta;
+  final Widget? end;
+  final VoidCallback? onTap;
+
+  const SlIconRow({super.key, required this.icon, this.tone = SlTone.neutral, required this.title, this.meta, this.end, this.onTap});
+
+  static const _chevron = '<path d="m9 18 6-6-6-6"/>';
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    final (bg, fg) = switch (tone) {
+      SlTone.warn => (c.warnTint, c.warnInk),
+      SlTone.danger => (c.dangerTint, c.dangerInk),
+      SlTone.info => (c.rainTint, c.rainInk),
+      SlTone.good || SlTone.neutral => (c.brandSoft, c.brandText),
+    };
+    final trailing = end ?? (onTap != null ? LineIcon(_chevron, size: 20, color: c.textSecondary) : null);
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 64),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+              child: Center(child: LineIcon(icon, size: 20, color: fg)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Text(title,
+                    style: TextStyle(fontFamily: AppType.text, fontSize: 15, height: 20 / 15, fontWeight: FontWeight.w700, color: c.textPrimary)),
+                if (meta != null) ...[
+                  const SizedBox(height: 2),
+                  Text(meta!, style: AppType.caption.copyWith(color: c.textSecondary)),
+                ],
+              ]),
+            ),
+            if (trailing != null) ...[const SizedBox(width: 12), trailing],
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// A small capitals label over a group of ledger rows (the design's ledger-label).
+class SlGroupLabel extends StatelessWidget {
+  final String text;
+  const SlGroupLabel(this.text, {super.key});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 24, 4, 8),
+        child: Text(text.toUpperCase(), style: AppType.eyebrow.copyWith(color: context.appColors.textSecondary)),
+      );
+}
