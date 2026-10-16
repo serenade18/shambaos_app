@@ -21,6 +21,7 @@ import 'plants/plant_screen.dart';
 import 'markets/market_screen.dart';
 import 'dashboard/dashboard_screen.dart';
 import '../l10n/tr.dart';
+import 'farm/farm_map_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -126,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUser();
     _loadFarmStatus();
+    FarmMapScreen.boundarySaved.addListener(_loadFarmStatus);
     _posterPageController = PageController(
       initialPage: _posterItems.length * 100,
       viewportFraction: 1.0,
@@ -134,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    FarmMapScreen.boundarySaved.removeListener(_loadFarmStatus);
     _posterPageController.dispose();
     super.dispose();
   }
@@ -201,6 +204,19 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: 8),
+          // A farm with no boundary yet: weather is for its county until it's mapped.
+          if (_farm != null && _farm!['boundary'] == null) ...[
+            SlLedger(children: [
+              SlLedgerRow(
+                title: 'Map your farm'.tr,
+                meta: 'Draw or walk its boundary for weather and crop checks on your exact land.'.tr,
+                leading: Icon(PhosphorIconsRegular.mapPin, color: colors.brandText),
+                status: Icon(PhosphorIconsRegular.caretRight, size: 18, color: colors.textSecondary),
+                onTap: _openFarmMap,
+              ),
+            ]),
+            const SizedBox(height: 12),
+          ],
           if (fields == null)
             Container(height: 108, decoration: BoxDecoration(color: colors.surfaceMuted, borderRadius: BorderRadius.circular(16)))
           else if (fields.isEmpty)
@@ -227,6 +243,13 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  /// The farm map.
+  Future<void> _openFarmMap() async {
+    final farm = _farm;
+    if (farm == null) return;
+    await FarmMapScreen.open(context, farm); // Home reloads through FarmMapScreen.boundarySaved
   }
 
   void _openProfile() {
@@ -699,6 +722,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 today: _today,
                 weatherLoading: _weatherLoading,
                 onAvatarTap: _openProfile,
+                onPlaceTap: _farm == null ? null : _openFarmMap,
                 onBellTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const NotificationScreen()),

@@ -6,7 +6,7 @@ import 'auth_ui.dart';
 import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import 'verify_otp_screen.dart';
-import '../home_screen.dart';
+import 'after_sign_in.dart';
 import '../../l10n/tr.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -98,17 +98,7 @@ class _LoginScreenState extends State<LoginScreen>
     _checkGoogle();
   }
 
-  void _goHome() {
-    Navigator.of(context).pushAndRemoveUntil(
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const HomeScreen(),
-        transitionsBuilder: (_, anim, __, child) =>
-            FadeTransition(opacity: anim, child: child),
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-      (_) => false,
-    );
-  }
+  void _goHome() => goHomeAfterSignIn(context);
 
   // ── Google sign-in ─────────────────────────────────────────────────────────
   Future<void> _checkGoogle() async {

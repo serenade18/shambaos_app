@@ -66,6 +66,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Shamba OS uses your location to show where you are on the farm map and to mark your farm's corners as you walk round it.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a photo of your crop or animals so it can be checked for problems.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
