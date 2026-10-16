@@ -780,4 +780,9 @@ const fr = <String, String>{
   'planted {date}': 'planté le {date}',
   'started {date}': 'commencé le {date}',
   '{rainProbability}% chance of rain': '{rainProbability} % de risque de pluie',
+  // Field page and record menu (Shamba Ledger redesign).
+  'FOR A FIELD': 'POUR UN CHAMP',
+  'Record today': 'Enregistrer aujourd\'hui',
+  'What do you want to record?': 'Que voulez-vous enregistrer ?',
+  'Overdue since {date}': 'En retard depuis le {date}',
 };
