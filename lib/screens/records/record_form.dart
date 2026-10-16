@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
 import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
+import '../../widgets/ledger_parts.dart';
 import '../../widgets/phosphor_icons.dart';
+import '../auth/auth_ui.dart';
 import '../fields/field_service.dart';
 import 'record_service.dart';
 import '../../l10n/tr.dart';
@@ -75,10 +77,13 @@ Future<bool> openRecord(BuildContext context, Widget form) async {
   return true;
 }
 
-/// A page that records one thing: what it is for, its fields, and Save.
+/// A page that records one thing, as the design's record pages: a round back
+/// button, what it is (an eyebrow) over what it is for (the title), its fields,
+/// and Save as a pill fixed at the bottom.
 class RecordPage extends StatelessWidget {
-  final String title;
+  final String title; // what is being recorded: "Daily record"
   final String? subtitle; // the field or farm it is for
+  final String? eyebrow; // in place of the title in capitals: "DAILY RECORD · FRI 16 OCT"
   final List<Widget> children;
   final bool saving;
   final String? error;
@@ -89,6 +94,7 @@ class RecordPage extends StatelessWidget {
     super.key,
     required this.title,
     this.subtitle,
+    this.eyebrow,
     required this.children,
     required this.saving,
     this.error,
@@ -99,39 +105,60 @@ class RecordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    final bottom = MediaQuery.paddingOf(context).bottom;
     return Scaffold(
       backgroundColor: c.scaffoldBackground,
-      appBar: AppBar(
-        backgroundColor: c.cardBackground,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          tooltip: 'Back'.tr,
-          onPressed: () => Navigator.pop(context),
-          icon: Icon(PhosphorIconsRegular.arrowLeft, color: c.textPrimary),
-        ),
-        titleSpacing: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: AppType.titleM.copyWith(color: c.textPrimary)),
-            if (subtitle != null) Text(subtitle!, style: AppType.caption.copyWith(color: c.textSecondary)),
-          ],
-        ),
-      ),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              child: Row(children: [
+                Semantics(
+                  button: true,
+                  label: 'Back'.tr,
+                  excludeSemantics: true,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: c.cardBackground,
+                      shape: BoxShape.circle,
+                      boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
+                    ),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () => Navigator.pop(context),
+                        child: SizedBox(width: 44, height: 44, child: Icon(PhosphorIconsRegular.arrowLeft, size: 22, color: c.textPrimary)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    if (subtitle != null)
+                      Text(eyebrow ?? title.toUpperCase(),
+                          maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.eyebrow.copyWith(color: c.textSecondary)),
+                    Text(subtitle ?? title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontFamily: AppType.text, fontSize: 24, height: 30 / 24, fontWeight: FontWeight.w500, color: c.textPrimary)),
+                  ]),
+                ),
+              ]),
+            ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
-                  for (final w in children) ...[w, const SizedBox(height: 16)],
+                  for (final w in children) ...[w, const SizedBox(height: 12)],
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              decoration: BoxDecoration(color: c.cardBackground, border: Border(top: BorderSide(color: c.divider))),
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 16 + bottom),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -139,17 +166,27 @@ class RecordPage extends StatelessWidget {
                   if (error != null) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: c.dangerTint, borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(color: c.dangerTint, borderRadius: BorderRadius.circular(16)),
                       child: Text(error!, style: AppType.body.copyWith(color: c.dangerInk)),
                     ),
                     const SizedBox(height: 12),
                   ],
+                  // The design's primary pill.
                   SizedBox(
                     height: 56,
                     child: ElevatedButton(
                       onPressed: saving ? null : onSave,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: c.shamba,
+                        foregroundColor: c.onShamba,
+                        disabledBackgroundColor: c.shamba.withValues(alpha: 0.45),
+                        disabledForegroundColor: c.onShamba,
+                        elevation: 0,
+                        shape: const StadiumBorder(),
+                        textStyle: const TextStyle(fontFamily: AppType.text, fontSize: 17, fontWeight: FontWeight.w700),
+                      ),
                       child: saving
-                          ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: c.shamba))
+                          ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: c.onShamba))
                           : Text(saveLabel ?? 'Save'.tr),
                     ),
                   ),
@@ -159,6 +196,158 @@ class RecordPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A number counted with big − and + buttons (the design's tally): eggs, deaths.
+/// The figure can also be typed. [packs] add a set amount: ("+10 trays", 10).
+class RecordTally extends StatelessWidget {
+  final String label;
+  final String? note; // on the right of the label: "Yesterday 220 trays"
+  final TextEditingController controller;
+  final String unit;
+  final num step;
+  final bool whole;
+  final List<(String, num)> packs;
+  final String? errorText;
+  final VoidCallback? onChanged;
+
+  const RecordTally({
+    super.key,
+    required this.label,
+    this.note,
+    required this.controller,
+    required this.unit,
+    this.step = 1,
+    this.whole = true,
+    this.packs = const [],
+    this.errorText,
+    this.onChanged,
+  });
+
+  num get _value => num.tryParse(controller.text.replaceAll(',', '').trim()) ?? 0;
+
+  void _set(num v) {
+    final n = v < 0 ? 0 : v;
+    controller.text = whole || n == n.roundToDouble() ? '${n.round()}' : n.toStringAsFixed(1);
+    onChanged?.call();
+  }
+
+  Widget _button(AppColors c, {required bool add, required String label}) => Semantics(
+        button: true,
+        label: label,
+        excludeSemantics: true,
+        child: Material(
+          color: add ? c.shamba : c.surfaceMuted,
+          shape: CircleBorder(side: BorderSide(color: add ? c.shamba : c.border, width: 1.5)),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () => _set(_value + (add ? step : -step)),
+            child: SizedBox(
+              width: 56,
+              height: 56,
+              child: Center(
+                child: LineIcon(add ? '<path d="M5 12h14"/><path d="M12 5v14"/>' : '<path d="M5 12h14"/>',
+                    size: 22, strokeWidth: 2.4, color: add ? c.onShamba : c.textPrimary),
+              ),
+            ),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: c.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+          Expanded(child: Text(label, style: AppType.label.copyWith(color: c.textPrimary))),
+          if (note != null) Text(note!, style: AppType.caption.copyWith(color: c.textSecondary)),
+        ]),
+        const SizedBox(height: 12),
+        Row(children: [
+          _button(c, add: false, label: 'Less'.tr),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(children: [
+              TextField(
+                controller: controller,
+                onChanged: (_) => onChanged?.call(),
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.numberWithOptions(decimal: !whole),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(whole ? r'[0-9]' : r'[0-9.,]'))],
+                style: TextStyle(
+                    fontFamily: AppType.text,
+                    fontSize: 28,
+                    height: 32 / 28,
+                    fontWeight: FontWeight.w500,
+                    color: c.textPrimary,
+                    fontFeatures: const [FontFeature.tabularFigures()]),
+                decoration: InputDecoration(
+                  hintText: '0',
+                  isCollapsed: true,
+                  filled: false,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  semanticCounterText: label,
+                ),
+              ),
+              Text(unit, style: AppType.caption.copyWith(color: c.textSecondary)),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          _button(c, add: true, label: 'More'.tr),
+        ]),
+        if (packs.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final (text, amount) in packs) SlChip(text, onTap: () => _set(_value + amount)),
+          ]),
+        ],
+        if (errorText != null) ...[
+          const SizedBox(height: 8),
+          Text(errorText!, style: AppType.caption.copyWith(color: c.dangerInk)),
+        ],
+      ]),
+    );
+  }
+}
+
+/// A white card holding a few fields, as the design groups them.
+class RecordCard extends StatelessWidget {
+  final String? label;
+  final String? note;
+  final List<Widget> children;
+  const RecordCard({super.key, this.label, this.note, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: c.cardBackground,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        if (label != null) ...[
+          Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+            Expanded(child: Text(label!, style: AppType.label.copyWith(color: c.textPrimary))),
+            if (note != null) Text(note!, style: AppType.caption.copyWith(color: c.textSecondary)),
+          ]),
+          const SizedBox(height: 12),
+        ],
+        for (var i = 0; i < children.length; i++) ...[if (i > 0) const SizedBox(height: 12), children[i]],
+      ]),
     );
   }
 }

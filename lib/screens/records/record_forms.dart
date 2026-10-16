@@ -286,33 +286,47 @@ class _BatchDayFormState extends State<BatchDayForm> with RecordForm {
 
   @override
   Widget build(BuildContext context) {
+    final day = DateFormat('EEE d MMM', Localizations.localeOf(context).toString()).format(_date).toUpperCase();
     return RecordPage(
       title: 'Daily record'.tr,
+      eyebrow: '{title} · {day}'.trArgs({'title': 'Daily record'.tr.toUpperCase(), 'day': day}),
       subtitle: widget.field.name,
       saving: saving,
       error: banner({'date', 'feed_item_id', 'feed_qty', 'feed_unit', 'deaths', 'eggs_trays', 'note'}),
       onSave: _save,
+      saveLabel: "Save today's record".tr,
       children: [
         RecordDateField(value: _date, errorText: err('date'), onChanged: (d) => setState(() => _date = d)),
         if (_layers)
-          RecordNumberField(controller: _eggs, label: 'Eggs collected'.tr, suffix: 'trays', errorText: err('eggs_trays')),
-        RecordSection('Feed given'.tr),
-        ItemLineFields(
-          line: _feed,
-          where: (i) => _input(i, const {'feed'}),
-          suggest: const {'feed'},
-          itemLabel: 'Feed'.tr,
-          errors: _lineErrors(this, 'feed_item_id', 'feed_qty', 'feed_unit'),
+          RecordTally(
+            label: 'Eggs collected'.tr,
+            controller: _eggs,
+            unit: 'trays'.tr,
+            packs: [('+10 trays'.tr, 10)],
+            errorText: err('eggs_trays'),
+            onChanged: () => setState(() {}),
+          ),
+        RecordCard(label: 'Feed given'.tr, children: [
+          ItemLineFields(
+            line: _feed,
+            where: (i) => _input(i, const {'feed'}),
+            suggest: const {'feed'},
+            itemLabel: 'Feed'.tr,
+            errors: _lineErrors(this, 'feed_item_id', 'feed_qty', 'feed_unit'),
+            onChanged: () => setState(() {}),
+          ),
+        ]),
+        RecordTally(
+          label: 'Birds that died'.tr,
+          note: 'Leave at 0 if none'.tr,
+          controller: _deaths,
+          unit: 'birds'.tr,
+          errorText: err('deaths'),
           onChanged: () => setState(() {}),
         ),
-        RecordNumberField(
-          controller: _deaths,
-          label: 'Deaths'.tr,
-          whole: true,
-          hint: '0',
-          errorText: err('deaths'),
-        ),
-        RecordTextField(controller: _note, label: 'Note (optional)'.tr, maxLines: 3, maxLength: 500, errorText: err('note')),
+        RecordCard(children: [
+          RecordTextField(controller: _note, label: 'Note (optional)'.tr, maxLines: 3, maxLength: 500, errorText: err('note')),
+        ]),
       ],
     );
   }

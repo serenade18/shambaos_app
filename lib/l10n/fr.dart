@@ -785,4 +785,15 @@ const fr = <String, String>{
   'Record today': 'Enregistrer aujourd\'hui',
   'What do you want to record?': 'Que voulez-vous enregistrer ?',
   'Overdue since {date}': 'En retard depuis le {date}',
+  // Daily record and Scan with AI (Shamba Ledger redesign).
+  '+10 trays': '+10 plateaux',
+  'Birds that died': 'Oiseaux morts',
+  'Leave at 0 if none': 'Laissez 0 s\'il n\'y en a pas',
+  'Less': 'Moins',
+  'More': 'Plus',
+  'Save today\'s record': 'Enregistrer la journée',
+  'Take the photo': 'Prendre la photo',
+  'birds': 'oiseaux',
+  'trays': 'plateaux',
+  '{title} · {day}': '{title} · {day}',
 };
