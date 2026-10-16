@@ -1,112 +1,57 @@
 import 'package:flutter/material.dart';
-import 'profile_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../services/app_colors.dart';
+import '../../services/app_type.dart';
+import '../../widgets/ledger.dart';
+import '../../widgets/ledger_parts.dart';
+import '../../widgets/phosphor_icons.dart';
 import '../../l10n/tr.dart';
 
-// ===============================
-// MODEL
-// ===============================
+/// Which of the farm's alerts this phone shows. The API has no notification
+/// settings: alerts come from GET /alerts, and these choices are kept on the
+/// phone, as the design says ("on this phone").
 class NotificationPrefs {
-  final int id;
-  bool lowStockAlerts;
-  bool leaveRequests;
-  bool paymentReminders;
-  bool healthReminders;
-  bool systemUpdates;
+  static const _mute = 'notify_mute_all';
+  static String _key(String group) => 'notify_$group';
 
-  NotificationPrefs({
-    required this.id,
-    required this.lowStockAlerts,
-    required this.leaveRequests,
-    required this.paymentReminders,
-    required this.healthReminders,
-    required this.systemUpdates,
-  });
+  /// The alert groups a farmer can turn off, and the alert types in each.
+  static const groups = <String, List<String>>{
+    'low_stock': ['low_stock', 'negative_stock'],
+    'health': ['vaccination_due', 'breeding_due', 'mortality_spike'],
+    'payments': ['overdue_debt'],
+    'weather': ['heavy_rain'],
+    'crops': ['crop_stress'],
+  };
 
-  factory NotificationPrefs.fromJson(Map<String, dynamic> json) {
+  final bool muteAll;
+  final Map<String, bool> on;
+
+  const NotificationPrefs({required this.muteAll, required this.on});
+
+  static Future<NotificationPrefs> load() async {
+    final p = await SharedPreferences.getInstance();
     return NotificationPrefs(
-      id: json['id'] ?? 0,
-      lowStockAlerts: json['low_stock_alerts'] ?? false,
-      leaveRequests: json['leave_requests'] ?? false,
-      paymentReminders: json['payment_reminders'] ?? false,
-      healthReminders: json['health_reminders'] ?? false,
-      systemUpdates: json['system_updates'] ?? false,
+      muteAll: p.getBool(_mute) ?? false,
+      on: {for (final g in groups.keys) g: p.getBool(_key(g)) ?? true},
     );
+  }
+
+  static Future<void> setMuteAll(bool value) async => (await SharedPreferences.getInstance()).setBool(_mute, value);
+  static Future<void> setGroup(String group, bool value) async => (await SharedPreferences.getInstance()).setBool(_key(group), value);
+
+  /// Whether an alert of [type] is shown. Types in no group (records to
+  /// review, for instance) are always shown unless everything is muted.
+  bool allows(String? type) {
+    if (muteAll) return false;
+    for (final e in groups.entries) {
+      if (e.value.contains(type)) return on[e.key] ?? true;
+    }
+    return true;
   }
 }
 
-// ===============================
-// CONFIG (UI mapping layer)
-// Note: icon colors & backgrounds are vibrant brand colors —
-// they stay fixed across themes intentionally.
-// ===============================
-class NotificationItem {
-  final String key;
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color iconColor;
-  final Color iconBackground;
-  final String? badge;
-
-  NotificationItem({
-    required this.key,
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.iconColor,
-    required this.iconBackground,
-    this.badge,
-  });
-}
-
-List<NotificationItem> get notificationItems => [
-  NotificationItem(
-    key: 'low_stock_alerts',
-    title: 'Low Stock Alerts'.tr,
-    subtitle: 'Get notified when inventory drops below the configured threshold.'.tr,
-    icon: Icons.inventory_2_rounded,
-    iconColor: Color(0xFFB45309),
-    iconBackground: Color(0xFFFFF4E0),
-    badge: 'STOCK',
-  ),
-  NotificationItem(
-    key: 'leave_requests',
-    title: 'Leave Requests'.tr,
-    subtitle: 'Alerts when staff submit leave requests requiring approval.'.tr,
-    icon: Icons.badge_rounded,
-    iconColor: Color(0xFF1A56DB),
-    iconBackground: Color(0xFFE8F0FE),
-  ),
-  NotificationItem(
-    key: 'health_reminders',
-    title: 'Health & Vaccination'.tr,
-    subtitle: 'Scheduled health checks, vaccinations, and compliance reminders.'.tr,
-    icon: Icons.favorite_rounded,
-    iconColor: Color(0xFFDC2626),
-    iconBackground: Color(0xFFFDEAEA),
-  ),
-  NotificationItem(
-    key: 'system_updates',
-    title: 'System Updates'.tr,
-    subtitle: 'Platform updates, new features, and maintenance announcements.'.tr,
-    icon: Icons.notifications_rounded,
-    iconColor: Color(0xFF7C3AED),
-    iconBackground: Color(0xFFF0EEFF),
-  ),
-  NotificationItem(
-    key: 'payment_reminders',
-    title: 'Payment Reminders'.tr,
-    subtitle: 'Pending payments, due invoices, and financial actions.'.tr,
-    icon: Icons.credit_card_rounded,
-    iconColor: AppColors.brand,
-    iconBackground: Color(0xFFE8F5E9),
-  ),
-];
-
-// ===============================
-// SCREEN
-// ===============================
+/// The design's Notifications: mute everything, or choose the kinds of alert.
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
@@ -116,373 +61,117 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   NotificationPrefs? _prefs;
-  bool _isLoading = true;
-  String? _savingKey;
+
+  static const _bellOff = '<path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>';
+  static const _box = '<path d="M16 16h6"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><path d="M3.29 7 12 12l8.71-5"/><path d="M12 22V12"/>';
+  static const _syringe = '<path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/>';
+  static const _wallet = '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>';
+  static const _rain = '<path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/>';
+  static const _sprout = '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>';
 
   @override
   void initState() {
     super.initState();
-    _loadPreferences();
-  }
-
-  // ===============================
-  // LOAD
-  // ===============================
-  Future<void> _loadPreferences() async {
-    setState(() => _isLoading = true);
-    try {
-      final response = await ProfileService.setNotification();
-      if (response.error && response.data != null) {
-        setState(() {
-          _prefs = NotificationPrefs.fromJson(response.data['data']);
-          _isLoading = false;
-        });
-      } else {
-        _handleError('Failed to load notifications'.tr);
-      }
-    } catch (_) {
-      _handleError('Connection error'.tr);
-    }
-  }
-
-  // ===============================
-  // PATCH — sends only the changed key
-  // ===============================
-  Future<void> _updatePref(String key, bool value) async {
-    if (_prefs == null || _savingKey != null) return;
-
-    _applyLocal(key, value);
-    setState(() => _savingKey = key);
-
-    try {
-      final response = await ProfileService.patchNotification(key, value);
-      if (response.error && response.data != null) {
-        setState(() {
-          _prefs = NotificationPrefs.fromJson(response.data['data']);
-        });
-      } else {
-        _applyLocal(key, !value);
-        _handleError('Failed to save. Please try again.'.tr);
-      }
-    } catch (_) {
-      _applyLocal(key, !value);
-      _handleError('Connection error'.tr);
-    } finally {
-      if (mounted) setState(() => _savingKey = null);
-    }
-  }
-
-  void _applyLocal(String key, bool value) {
-    if (_prefs == null) return;
-    setState(() {
-      switch (key) {
-        case 'low_stock_alerts':
-          _prefs!.lowStockAlerts = value;
-          break;
-        case 'leave_requests':
-          _prefs!.leaveRequests = value;
-          break;
-        case 'payment_reminders':
-          _prefs!.paymentReminders = value;
-          break;
-        case 'health_reminders':
-          _prefs!.healthReminders = value;
-          break;
-        case 'system_updates':
-          _prefs!.systemUpdates = value;
-          break;
-      }
+    NotificationPrefs.load().then((p) {
+      if (mounted) setState(() => _prefs = p);
     });
   }
 
-  void _handleError(String message) {
-    setState(() => _isLoading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+  Future<void> _mute(bool v) async {
+    await NotificationPrefs.setMuteAll(v);
+    final p = await NotificationPrefs.load();
+    if (mounted) setState(() => _prefs = p);
   }
 
-  // ===============================
-  // BUILD
-  // ===============================
+  Future<void> _group(String g, bool v) async {
+    await NotificationPrefs.setGroup(g, v);
+    final p = await NotificationPrefs.load();
+    if (mounted) setState(() => _prefs = p);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
+    final c = context.appColors;
+    final p = _prefs;
+    final types = [
+      ('low_stock', _box, SlTone.warn, 'Low stock'.tr, 'When feed or medicine runs low'.tr),
+      ('health', _syringe, SlTone.info, 'Health and vaccination'.tr, 'Checks and vaccines that are due'.tr),
+      ('payments', _wallet, SlTone.neutral, 'Payment reminders'.tr, 'Money customers have owed you for a while'.tr),
+      ('weather', _rain, SlTone.info, 'Weather'.tr, 'Heavy rain on the way'.tr),
+      ('crops', _sprout, SlTone.neutral, 'Crop health'.tr, 'When the satellite sees crops losing green'.tr),
+    ];
 
     return Scaffold(
-      backgroundColor: colors.cardBackground,
-      appBar: AppBar(
-        backgroundColor: colors.cardBackground,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(10),
-          child: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              decoration: BoxDecoration(
-                color: colors.scaffoldBackground,
-                borderRadius: BorderRadius.circular(12),
+      backgroundColor: c.scaffoldBackground,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
+          children: [
+            Row(children: [
+              _backButton(context, c),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Notifications'.tr,
+                    style: TextStyle(fontFamily: AppType.text, fontSize: 24, height: 30 / 24, fontWeight: FontWeight.w500, color: c.textPrimary)),
               ),
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: colors.textPrimary,
-                size: 18,
-              ),
+            ]),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text('Choose which alerts you get on this phone.'.tr, style: AppType.body.copyWith(color: c.textSecondary)),
             ),
-          ),
+            const SizedBox(height: 16),
+            if (p == null)
+              Padding(padding: const EdgeInsets.only(top: 48), child: Center(child: CircularProgressIndicator(color: c.shamba)))
+            else ...[
+              SlLedger(children: [
+                SlIconRow(
+                  icon: _bellOff,
+                  tone: SlTone.danger,
+                  title: 'Mute all notifications'.tr,
+                  meta: 'Silence everything at once'.tr,
+                  end: SlSwitch(value: p.muteAll, label: 'Mute all notifications'.tr, onChanged: _mute),
+                ),
+              ]),
+              SlGroupLabel('Alert types'.tr),
+              SlLedger(children: [
+                for (final (i, (key, icon, tone, title, meta)) in types.indexed) ...[
+                  if (i > 0) Divider(height: 1, thickness: 1, color: c.divider),
+                  SlIconRow(
+                    icon: icon,
+                    tone: tone,
+                    title: title,
+                    meta: meta,
+                    // Muting everything wins; the choices stay as they were.
+                    end: SlSwitch(value: !p.muteAll && p.on[key]!, label: title, onChanged: p.muteAll ? null : (v) => _group(key, v)),
+                  ),
+                ],
+              ]),
+            ],
+          ],
         ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: AppColors.brand))
-          : Column(
-              children: [
-                if (_savingKey != null)
-                  LinearProgressIndicator(
-                    color: AppColors.brand,
-                    backgroundColor: colors.divider,
-                    minHeight: 3,
-                  ),
-
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
-                    children: [
-                      const SizedBox(height: 4),
-
-                      // Title
-                      RichText(
-                        text: TextSpan(
-                          style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary,
-                            letterSpacing: -0.5,
-                            height: 1.1,
-                          ),
-                          // The second half of the word in the brand colour, in any language.
-                          children: () {
-                            final word = 'Notifications'.tr;
-                            final cut = (word.length * 6 / 13).round();
-                            return [
-                              TextSpan(text: word.substring(0, cut)),
-                              TextSpan(
-                                text: word.substring(cut),
-                                style: const TextStyle(color: AppColors.brand),
-                              ),
-                            ];
-                          }(),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      Text(
-                        'Control the types of alerts you receive across your workspace.'.tr,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: colors.textSecondary,
-                          height: 1.5,
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      ...notificationItems.map((item) {
-                        return _buildToggleRow(
-                          item: item,
-                          value: _getValue(item.key),
-                          isSaving: _savingKey == item.key,
-                          colors: colors,
-                        );
-                      }),
-
-                      const SizedBox(height: 12),
-
-                      // Master mute
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            top: BorderSide(color: colors.divider, width: 8),
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                color: colors.textPrimary,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: const Icon(
-                                Icons.notifications_off_rounded,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Mute all notifications'.tr,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: colors.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Silence everything at once'.tr,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: colors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Switch(
-                              value: false,
-                              onChanged: (val) {},
-                              activeColor: Colors.white,
-                              activeTrackColor: AppColors.brand,
-                              inactiveThumbColor: Colors.white,
-                              inactiveTrackColor: colors.border,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  // ===============================
-  // GET VALUE MAPPER
-  // ===============================
-  bool _getValue(String key) {
-    if (_prefs == null) return false;
-    switch (key) {
-      case 'low_stock_alerts':
-        return _prefs!.lowStockAlerts;
-      case 'leave_requests':
-        return _prefs!.leaveRequests;
-      case 'payment_reminders':
-        return _prefs!.paymentReminders;
-      case 'health_reminders':
-        return _prefs!.healthReminders;
-      case 'system_updates':
-        return _prefs!.systemUpdates;
-      default:
-        return false;
-    }
-  }
-
-  // ===============================
-  // ROW WIDGET
-  // ===============================
-  Widget _buildToggleRow({
-    required NotificationItem item,
-    required bool value,
-    required bool isSaving,
-    required AppColors colors,
-  }) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon pill — colors are intentionally vibrant/fixed
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: item.iconBackground,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(item.icon, color: item.iconColor, size: 22),
-              ),
-
-              const SizedBox(width: 14),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          item.title,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                        if (item.badge != null) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: context.appColors.brandSoft,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'STOCK',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.brand,
-                                letterSpacing: 0.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      item.subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        height: 1.45,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Switch(
-                value: value,
-                onChanged: isSaving ? null : (val) => _updatePref(item.key, val),
-                activeColor: Colors.white,
-                activeTrackColor: AppColors.brand,
-                inactiveThumbColor: Colors.white,
-                inactiveTrackColor: colors.border,
-              ),
-            ],
-          ),
-        ),
-        Divider(height: 1, thickness: 1, color: colors.divider),
-      ],
     );
   }
 }
+
+Widget _backButton(BuildContext context, AppColors c) => Semantics(
+      button: true,
+      label: 'Back'.tr,
+      excludeSemantics: true,
+      child: Container(
+        decoration: BoxDecoration(
+          color: c.cardBackground,
+          shape: BoxShape.circle,
+          boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () => Navigator.maybePop(context),
+            child: SizedBox(width: 44, height: 44, child: Icon(PhosphorIconsRegular.arrowLeft, size: 22, color: c.textPrimary)),
+          ),
+        ),
+      ),
+    );

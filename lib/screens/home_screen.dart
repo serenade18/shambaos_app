@@ -10,7 +10,7 @@ import 'fields/fields_screen.dart';
 import '../widgets/phosphor_icons.dart';
 import 'home/home_hero.dart';
 import 'records/record_menu.dart';
-import 'profile/notification_screen.dart';
+import 'alerts/alerts_screen.dart';
 import 'profile/profile_screen.dart';
 import 'profile/edit_profile_screen.dart';
 import '../services/app_colors.dart';
@@ -730,7 +730,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPlaceTap: _farm == null ? null : _openFarmMap,
                 onBellTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                  MaterialPageRoute(builder: (_) => const AlertsScreen()),
                 ),
               ),
               _buildMyFields(colors),

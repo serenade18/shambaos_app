@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../services/app_colors.dart';
 import 'package:flutter/services.dart';
+import '../../services/app_type.dart';
+import '../../widgets/app_bottom_nav.dart';
+import '../../widgets/ledger.dart';
+import '../../widgets/ledger_parts.dart';
 import '../auth/auth_service.dart';
+import '../customers/customer_screen.dart';
+import '../home_service.dart';
 import '../onboarding/welcome_screens.dart';
 import '../../main.dart';
 import 'edit_profile_screen.dart';
@@ -35,6 +41,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late String _username;
   bool _biometricAvailable = false;
   bool _biometricOn = false;
+  String? _role; // owner, manager or field_worker in this farm account
+  String? _farmName;
 
   @override
   void initState() {
@@ -46,6 +54,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     themeNotifier.addListener(_onThemeChange);
     _loadUser();
     _loadBiometric();
+    _loadFarm();
+  }
+
+  /// "Farm owner · Kamau farm": the person's role here and the farm's name.
+  Future<void> _loadFarm() async {
+    final (orgs, farms) = await (ApiService.get('/me/organisations', requiresAuth: true), HomeService.listFarms()).wait;
+    if (!mounted) return;
+    String? role;
+    if (!orgs.error && orgs.data is Map) {
+      final list = (orgs.data['memberships'] as List? ?? []).whereType<Map>().toList();
+      final mine = list.where((m) => '${m['organisation_id']}' == ApiService.orgId).firstOrNull ?? list.firstOrNull;
+      role = mine?['role']?.toString();
+    }
+    setState(() {
+      _role = role;
+      _farmName = farms.isEmpty ? null : '${farms.first['name'] ?? ''}';
+    });
   }
 
   Future<void> _loadBiometric() async {
@@ -168,504 +193,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _getInitials(String name) {
-    if (name.isEmpty) return 'U';
-    final parts = name.trim().split(' ');
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return 'U';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
+  String? get _roleLabel => switch (_role) {
+        'owner' => 'Farm owner'.tr,
+        'manager' => 'Farm manager'.tr,
+        'field_worker' => 'Field worker'.tr,
+        _ => null,
+      };
+
+  // The design's line icons (Lucide, ISC licence).
+  static const _users = '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>';
+  static const _bell = '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>';
+  static const _globe = '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>';
+  static const _fingerprint = '<path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/>';
+  static const _moon = '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>';
+
   @override
   Widget build(BuildContext context) {
+    final c = context.appColors;
     SystemChrome.setSystemUIOverlayStyle(context.overlayStyle);
+    Widget rule() => Divider(height: 1, thickness: 1, color: c.divider);
 
     return Scaffold(
-      backgroundColor: context.appColors.scaffoldBackground,
-
-      // ── White AppBar — matches MenuScreen exactly ──────
-      appBar: AppBar(
-        backgroundColor: context.appColors.cardBackground,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        systemOverlayStyle: context.overlayStyle,
-        centerTitle: false,
-        title: Text(
-          'Profile'.tr,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: context.appColors.textPrimary,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: context.appColors.brandText,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          // Notification icon on top right
-          IconButton(
-            icon: Icon(
-              Icons.notifications_outlined,
-              color: context.appColors.textPrimary,
-              size: 22,
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const NotificationScreen()),
-              );
-            },
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: context.appColors.divider),
-        ),
-      ),
-
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: c.scaffoldBackground,
+      extendBody: true, // the page scrolls under the nav bar
+      bottomNavigationBar: const AppBottomNav(currentIndex: 4),
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(16, 20, 16, AppBottomNav.scrollPadding(context)),
           children: [
-            // ── Profile identity card ──────────────────
-            _buildProfileCard(),
-
-            const SizedBox(height: 20),
-
-            // ── My Account section ─────────────────────
-            _buildSectionLabel(
-              icon: Icons.person_outline_rounded,
-              label: 'MY ACCOUNT'.tr,
-              trailing: '0 Points  ›'.tr,
-            ),
-            _buildMenuGroup([
-              _MenuItem(
-                color: const Color(0xFFFF6B35),
-                icon: Icons.card_membership_rounded,
-                label: 'Rewards Member'.tr,
-                onTap: () {},
+            Text('Profile'.tr,
+                style: TextStyle(fontFamily: AppType.text, fontSize: 24, height: 30 / 24, fontWeight: FontWeight.w500, color: c.textPrimary)),
+            const SizedBox(height: 16),
+            _identity(c),
+            SlGroupLabel('My account'.tr),
+            SlLedger(children: [
+              SlIconRow(
+                icon: _users,
+                title: 'Business centre'.tr,
+                meta: 'Your customers and what they owe'.tr,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersScreen())),
               ),
-              _MenuItem(
-                color: const Color(0xFF2196F3),
-                icon: Icons.favorite_outline_rounded,
-                label: 'Favourites'.tr,
-                onTap: () {},
+              rule(),
+              SlIconRow(
+                icon: _bell,
+                title: 'Notifications'.tr,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationScreen())),
               ),
-              _MenuItem(
-                color: const Color(0xFFE91E8C),
-                icon: Icons.credit_card_outlined,
-                label: 'Payment Method'.tr,
-                onTap: () {},
-              ),
-              _MenuItem(
-                color: AppColors.brand,
-                icon: Icons.calendar_today_outlined,
-                label: 'Scheduled'.tr,
-                onTap: () {},
-              ),
-              _MenuItem(
-                color: const Color(0xFFFFC107),
-                icon: Icons.business_center_outlined,
-                label: 'Business Centre'.tr,
-                onTap: () {},
-              ),
-              _MenuItem(
-                color: const Color(0xFF9C27B0),
-                icon: Icons.group_add_outlined,
-                label: 'Invite and Earn'.tr,
-                onTap: () {},
-              ),
-            ]),
-
-            const SizedBox(height: 20),
-
-            // ── General section ────────────────────────
-            _buildSectionLabel(
-              icon: Icons.settings_outlined,
-              label: 'GENERAL'.tr,
-            ),
-            _buildMenuGroup([
-              _MenuItem(
-                color: const Color(0xFFFF6B35),
-                icon: Icons.shield_outlined,
-                label: 'Privacy Policy'.tr,
-                onTap: () {},
-              ),
-              _MenuItem(
-                color: const Color(0xFF2196F3),
-                icon: Icons.description_outlined,
-                label: 'Terms of Service'.tr,
-                onTap: () {},
-              ),
-              _MenuItem(
-                color: AppColors.brand,
-                icon: Icons.notifications_outlined,
-                label: 'Notifications'.tr,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const NotificationScreen()),
-                  );
-                },
-              ),
-              _MenuItem(
-                color: const Color(0xFF9C27B0),
-                icon: Icons.language_outlined,
-                label: 'Language'.tr,
-                value: ApiService.languages[ApiService.locale],
+              rule(),
+              SlIconRow(
+                icon: _globe,
+                title: 'Language'.tr,
+                end: Text(ApiService.languages[ApiService.locale] ?? '', style: AppType.caption.copyWith(color: c.textSecondary)),
                 onTap: _showLanguagePicker,
               ),
-              _MenuItem(
-                color: Colors.blueGrey,
-                icon: Icons.dark_mode_outlined,
-                label: 'Dark Mode'.tr,
-                isToggle: true,
-                toggleValue: themeNotifier.isDark,
-                onToggle: (val) => themeNotifier.toggle(val),
-              ),
-              if (_biometricAvailable)
-                _MenuItem(
-                  color: const Color(0xFF00897B),
-                  icon: Icons.fingerprint_rounded,
-                  label: 'Biometric Login'.tr,
-                  isToggle: true,
-                  toggleValue: _biometricOn,
-                  onToggle: _toggleBiometric,
-                ),
             ]),
-
-            const SizedBox(height: 20),
-
-            // ── Logout ─────────────────────────────────
-            _buildLogoutTile(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // PROFILE CARD — avatar, name, email, edit button
-  // ══════════════════════════════════════════════════════════
-  Widget _buildProfileCard() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.appColors.cardBackground,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: context.appColors.divider, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Avatar circle
-          Container(
-            height: 60,
-            width: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.brand,
-            ),
-            child: Center(
-              child: Text(
-                _getInitials(_userName),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
+            SlGroupLabel('General'.tr),
+            SlLedger(children: [
+              if (_biometricAvailable) ...[
+                SlIconRow(
+                  icon: _fingerprint,
+                  title: 'Biometric login'.tr,
+                  end: SlSwitch(value: _biometricOn, label: 'Biometric login'.tr, onChanged: _toggleBiometric),
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-
-          // Name + email
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _userName.isEmpty ? 'User'.tr : _userName,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: context.appColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  _userEmail.isEmpty ? 'Farm Administrator'.tr : _userEmail,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: context.appColors.textSecondary,
-                  ),
-                ),
-                if (_userPhone.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    _userPhone,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: context.appColors.textHint,
-                    ),
-                  ),
-                ],
+                rule(),
               ],
-            ),
-          ),
-
-          // Edit button
-          GestureDetector(
-            onTap: () async {
-              final updated = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => EditProfileScreen(
-                    name: _userName,
-                    email: _userEmail,
-                    phone: _userPhone,
-                    username: _username,
-                  ),
+              SlIconRow(
+                icon: _moon,
+                title: 'Dark mode'.tr,
+                end: SlSwitch(value: themeNotifier.isDark, label: 'Dark mode'.tr, onChanged: (v) => themeNotifier.toggle(v)),
+              ),
+            ]),
+            const SizedBox(height: 20),
+            // The design's danger pill.
+            SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _showLogoutConfirm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: c.dangerTint,
+                  foregroundColor: c.dangerInk,
+                  elevation: 0,
+                  shape: const StadiumBorder(),
+                  textStyle: const TextStyle(fontFamily: AppType.text, fontSize: 17, fontWeight: FontWeight.w700),
                 ),
-              );
-              if (updated != null) {
-                setState(() {
-                  _userName = updated['name'];
-                  _userEmail = updated['email'];
-                  _userPhone = updated['phone'];
-                  _username = updated['username'];
-                });
-              }
-            },
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.brand,
-                borderRadius: BorderRadius.circular(10),
+                child: Text('Log out'.tr),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.edit_outlined, color: Colors.white, size: 14),
-                  SizedBox(width: 4),
-                  Text(
-                    'Edit'.tr,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // SECTION LABEL
-  // ══════════════════════════════════════════════════════════
-  Widget _buildSectionLabel({
-    required IconData icon,
-    required String label,
-    String? trailing,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-      child: Row(
-        children: [
-          Icon(icon, size: 13, color: context.appColors.textHint),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: context.appColors.textHint,
-              letterSpacing: 1.1,
-            ),
-          ),
-          const Spacer(),
-          if (trailing != null)
-            Text(
-              trailing,
-              style: TextStyle(
-                fontSize: 12,
-                color: context.appColors.brandText,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // MENU GROUP — white card, green-tinted icon boxes
-  // ══════════════════════════════════════════════════════════
-  Widget _buildMenuGroup(List<_MenuItem> items) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: context.appColors.cardBackground,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: context.appColors.divider, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: List.generate(items.length, (index) {
-          final item = items[index];
-          final isLast = index == items.length - 1;
-          return Column(
-            children: [
-              _buildMenuTile(item),
-              if (!isLast)
-                Divider(
-                  height: 1,
-                  indent: 66,
-                  endIndent: 16,
-                  color: context.appColors.divider,
-                ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // MENU TILE
-  // ══════════════════════════════════════════════════════════
-  Widget _buildMenuTile(_MenuItem item) {
-    return GestureDetector(
-      onTap: item.isToggle ? null : item.onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-        child: Row(
-          children: [
-            // A green icon well, the same for every item: colour is kept for states.
-            Container(
-              height: 38,
-              width: 38,
-              decoration: BoxDecoration(
-                color: context.appColors.brandSoft,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(item.icon, color: context.appColors.brandText, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                item.label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: context.appColors.textPrimary,
-                ),
-              ),
-            ),
-            if (item.isToggle)
-              Switch(
-                value: item.toggleValue ?? false,
-                onChanged: item.onToggle,
-                activeColor: Colors.white,
-                activeTrackColor: AppColors.brand,
-                inactiveThumbColor: Colors.white,
-                inactiveTrackColor: context.appColors.border,
-              )
-            else ...[
-              if (item.value != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Text(
-                    item.value!,
-                    style: TextStyle(fontSize: 13, color: context.appColors.textSecondary),
-                  ),
-                ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 13,
-                color: context.appColors.textHint,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // LOGOUT TILE
-  // ══════════════════════════════════════════════════════════
-  Widget _buildLogoutTile() {
-    return GestureDetector(
-      onTap: _showLogoutConfirm,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        decoration: BoxDecoration(
-          color: context.appColors.cardBackground,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFFFEBEB), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              height: 38,
-              width: 38,
-              decoration: BoxDecoration(
-                color: Colors.red.shade400,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child:
-                  const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
-            ),
-            const SizedBox(width: 14),
-            Text(
-              'Log out'.tr,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.red.shade400,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 13,
-              color: Colors.red.shade200,
             ),
           ],
         ),
@@ -673,9 +292,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ══════════════════════════════════════════════════════════
-  // LOGOUT DIALOG
-  // ══════════════════════════════════════════════════════════
+  /// The avatar, name, role and farm, and Edit (the design's sl-ent).
+  Widget _identity(AppColors c) {
+    final line = [_roleLabel, _farmName].whereType<String>().where((s) => s.isNotEmpty).join(' · ');
+    return SlCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(color: c.brandSoft, shape: BoxShape.circle),
+          alignment: Alignment.center,
+          child: Text(_getInitials(_userName),
+              style: TextStyle(fontFamily: AppType.text, fontSize: 19, fontWeight: FontWeight.w700, color: c.brandText)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(_userName.isEmpty ? 'Your name'.tr : _userName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontFamily: AppType.text, fontSize: 15, height: 20 / 15, fontWeight: FontWeight.w700, color: c.textPrimary)),
+            const SizedBox(height: 2),
+            Text(line.isNotEmpty ? line : (_userPhone.isNotEmpty ? _userPhone : _userEmail),
+                maxLines: 2, overflow: TextOverflow.ellipsis, style: AppType.caption.copyWith(color: c.textSecondary)),
+          ]),
+        ),
+        const SizedBox(width: 12),
+        OutlinedButton(
+          onPressed: _openEdit,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: c.brandText,
+            side: BorderSide(color: c.brandText, width: 1.5),
+            shape: const StadiumBorder(),
+            minimumSize: const Size(64, 44),
+            textStyle: const TextStyle(fontFamily: AppType.text, fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          child: Text('Edit'.tr),
+        ),
+      ]),
+    );
+  }
+
+  Future<void> _openEdit() async {
+    final updated = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfileScreen(name: _userName, email: _userEmail, phone: _userPhone, username: _username),
+      ),
+    );
+    if (updated != null && mounted) {
+      setState(() {
+        _userName = updated['name'];
+        _userEmail = updated['email'];
+        _userPhone = updated['phone'];
+        _username = updated['username'];
+      });
+    }
+  }
+
   void _showLogoutConfirm() {
     showDialog(
       context: context,
@@ -724,27 +399,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-}
-
-// ── Menu Item Model ──────────────────────────────────────────────
-class _MenuItem {
-  final Color color;
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  final bool isToggle;
-  final bool? toggleValue;
-  final ValueChanged<bool>? onToggle;
-  final String? value; // shown before the arrow, e.g. the chosen language
-
-  const _MenuItem({
-    required this.color,
-    required this.icon,
-    required this.label,
-    this.value,
-    this.onTap,
-    this.isToggle = false,
-    this.toggleValue,
-    this.onToggle,
-  });
 }
