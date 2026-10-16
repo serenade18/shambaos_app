@@ -114,14 +114,16 @@ class _FieldsScreenState extends State<FieldsScreen> {
 
     return Scaffold(
       backgroundColor: c.scaffoldBackground,
+      extendBody: true, // the list scrolls under the nav bar
       bottomNavigationBar: const AppBottomNav(currentIndex: 1),
       body: SafeArea(
+        bottom: false,
         child: RefreshIndicator(
           onRefresh: _load,
           color: c.shamba,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 48),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + MediaQuery.paddingOf(context).bottom),
             children: [
               Text('My fields'.tr, style: AppType.titleL.copyWith(color: c.textPrimary)),
               Text('Your animals and crops'.tr, style: AppType.caption.copyWith(color: c.textSecondary)),

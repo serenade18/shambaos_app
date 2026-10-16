@@ -65,7 +65,8 @@ class LineIcon extends StatelessWidget {
   final String paths;
   final double size;
   final Color color;
-  const LineIcon(this.paths, {super.key, this.size = 24, this.color = Ledger.ink});
+  final double strokeWidth;
+  const LineIcon(this.paths, {super.key, this.size = 24, this.color = Ledger.ink, this.strokeWidth = 2});
 
   static const arrowLeft = '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>';
   static const phone = '<path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/>';
@@ -77,7 +78,7 @@ class LineIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final hex = '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
     return SvgPicture.string(
-      '<svg viewBox="0 0 24 24" fill="none" stroke="$hex" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">$paths</svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="$hex" stroke-width="$strokeWidth" stroke-linecap="round" stroke-linejoin="round">$paths</svg>',
       width: size,
       height: size,
       excludeFromSemantics: true,

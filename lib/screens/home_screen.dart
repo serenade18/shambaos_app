@@ -703,6 +703,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: context.appColors.scaffoldBackground,
+      extendBody: true, // the page scrolls under the nav bar
       bottomNavigationBar: const AppBottomNav(),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -711,7 +712,7 @@ class _HomeScreenState extends State<HomeScreen> {
         displacement: 20,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.only(bottom: 12 + MediaQuery.paddingOf(context).bottom),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
