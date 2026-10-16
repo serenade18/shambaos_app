@@ -89,7 +89,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
               slivers: [
                 SliverToBoxAdapter(child: _hero(c, top)),
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(16, 20, 16, (f.isActive ? 104 : 24) + bottom),
+                  padding: EdgeInsets.fromLTRB(16, 20, 16, (f.isActive ? 124 : 32) + bottom),
                   sliver: SliverList.list(children: [
                     _sectionHead(c, 'Field analysis'.tr, null),
                     const SizedBox(height: 10),
