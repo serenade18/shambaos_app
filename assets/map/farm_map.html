@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Farm map</title>
+<!--
+  The farm map inside the app (FRM-01/03): a CesiumJS globe over Esri
+  satellite imagery, set up like the portal's maps (portal-shamba
+  src/components/map/cesium.ts). With a Cesium ion token from
+  GET /config/public it also gets Cesium World Terrain.
+
+  The app drives it through window.shamba (see farm_map_view.dart) and hears
+  back on the Shamba channel: ready, tap (a point on the ground), move (a
+  corner dragged to a new place) and error.
+-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css">
+<style>
+  html, body, #map { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #b9c7a8; }
+  .cesium-viewer-bottom { display: none; }
+  #credit { position: absolute; left: 8px; bottom: 4px; font: 10px/14px sans-serif; color: rgba(255,255,255,.85); text-shadow: 0 1px 2px rgba(0,0,0,.6); pointer-events: none; }
+</style>
+<script>window.CESIUM_BASE_URL = "https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/";</script>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<div id="credit">Imagery © Esri, Maxar, Earthstar Geographics</div>
+<script>
+(function () {
+  const send = (m) => { try { Shamba.postMessage(JSON.stringify(m)); } catch (e) {} };
+  if (!window.Cesium) { send({ type: "error", message: "map_library" }); return; }
+  const C = Cesium;
+
+  const SHAMBA = C.Color.fromCssColorString("#355442");
+  const DANGER = C.Color.fromCssColorString("#a3261b");
+  const ME = C.Color.fromCssColorString("#1f5f82");
+  const HEIGHT = { farm: 900, country: 1800000 };
+
+  const viewer = new C.Viewer("map", {
+    baseLayer: false, animation: false, timeline: false, baseLayerPicker: false, geocoder: false,
+    homeButton: false, sceneModePicker: false, navigationHelpButton: false, fullscreenButton: false,
+    infoBox: false, selectionIndicator: false,
+    // Only draw when something changes: phones in the field.
+    requestRenderMode: true, maximumRenderTimeChange: Infinity,
+  });
+  const scene = viewer.scene;
+  viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", maximumLevel: 19,
+  }));
+  viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", maximumLevel: 19,
+  }));
+  scene.globe.baseColor = C.Color.fromCssColorString("#b9c7a8");
+  scene.backgroundColor = C.Color.fromCssColorString("#b9c7a8");
+  if (scene.skyBox) scene.skyBox.show = false;
+  if (scene.skyAtmosphere) scene.skyAtmosphere.show = false;
+  if (scene.sun) scene.sun.show = false;
+  if (scene.moon) scene.moon.show = false;
+  scene.fog.enabled = false;
+  scene.screenSpaceCameraController.minimumZoomDistance = 40;
+  scene.screenSpaceCameraController.maximumZoomDistance = 25000000;
+  viewer.screenSpaceEventHandler.removeInputAction(C.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
+  // ── State the app sets ───────────────────────────────────
+  let ring = [];          // [[lng, lat], ...], open
+  let closed = false;     // join the last corner back to the first
+  let editable = false;   // taps add corners, corners can be dragged
+  let active = -1;        // the corner drawn filled
+  let bad = null;         // [i, j]: the two edges that cross
+  let me = null;          // {lng, lat, acc}
+
+  const at = ([lng, lat]) => C.Cartesian3.fromDegrees(lng, lat);
+  const lngLatAt = (pos) => {
+    const ray = viewer.camera.getPickRay(pos);
+    const hit = ray && scene.globe.pick(ray, scene);
+    if (!hit) return null;
+    const c = C.Cartographic.fromCartesian(hit);
+    return [C.Math.toDegrees(c.longitude), C.Math.toDegrees(c.latitude)];
+  };
+
+  // The shape: a light fill, the edge in white under green (red when it crosses).
+  const fill = viewer.entities.add({
+    polygon: {
+      hierarchy: new C.CallbackProperty(() => (closed && ring.length >= 3 ? new C.PolygonHierarchy(ring.map(at)) : undefined), false),
+      material: SHAMBA.withAlpha(0.22), classificationType: C.ClassificationType.TERRAIN,
+    },
+  });
+  const edgePositions = () => (ring.length < 2 ? [] : (closed ? [...ring, ring[0]] : ring).map(at));
+  // One line with a white outline: two stacked ground lines don't keep their order.
+  viewer.entities.add({
+    polyline: {
+      positions: new C.CallbackProperty(edgePositions, false), width: 7, clampToGround: true,
+      material: new C.PolylineOutlineMaterialProperty({
+        color: new C.CallbackProperty(() => (bad ? DANGER : SHAMBA), false), outlineColor: C.Color.WHITE, outlineWidth: 2,
+      }),
+    },
+  });
+  // The edge still to be drawn, back to the first corner.
+  viewer.entities.add({
+    polyline: {
+      positions: new C.CallbackProperty(() => (!closed && editable && ring.length >= 3 ? [at(ring[ring.length - 1]), at(ring[0])] : []), false),
+      width: 2.5, clampToGround: true, material: new C.PolylineDashMaterialProperty({ color: C.Color.WHITE, dashLength: 12 }),
+    },
+  });
+  // The two edges that cross, in red on top.
+  viewer.entities.add({
+    polyline: {
+      positions: new C.CallbackProperty(() => {
+        if (!bad || ring.length < 4) return [];
+        const n = ring.length, [i, j] = bad;
+        return [at(ring[i]), at(ring[(i + 1) % n])];
+      }, false), width: 8, clampToGround: true,
+      material: new C.PolylineOutlineMaterialProperty({ color: DANGER, outlineColor: C.Color.WHITE, outlineWidth: 2 }),
+    },
+  });
+  viewer.entities.add({
+    polyline: {
+      positions: new C.CallbackProperty(() => {
+        if (!bad || ring.length < 4) return [];
+        const n = ring.length, [i, j] = bad;
+        return [at(ring[j]), at(ring[(j + 1) % n])];
+      }, false), width: 8, clampToGround: true,
+      material: new C.PolylineOutlineMaterialProperty({ color: DANGER, outlineColor: C.Color.WHITE, outlineWidth: 2 }),
+    },
+  });
+
+  // Numbered corners, drawn once per look and reused.
+  const cornerImages = {};
+  function cornerImage(n, filled, danger) {
+    const key = n + (filled ? "f" : "") + (danger ? "d" : "");
+    if (cornerImages[key]) return cornerImages[key];
+    const s = 2, r = 13, c = document.createElement("canvas");
+    c.width = c.height = (r * 2 + 4) * s;
+    const g = c.getContext("2d");
+    g.scale(s, s);
+    g.beginPath(); g.arc(r + 2, r + 2, r, 0, Math.PI * 2);
+    const tone = danger ? "#a3261b" : "#355442";
+    g.fillStyle = filled ? tone : "#ffffff"; g.fill();
+    g.lineWidth = 3; g.strokeStyle = tone; g.stroke();
+    g.fillStyle = filled ? "#ffffff" : tone;
+    g.font = "700 12px sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(String(n), r + 2, r + 2.5);
+    return (cornerImages[key] = c.toDataURL());
+  }
+  let corners = [];
+  function drawCorners() {
+    corners.forEach((e) => viewer.entities.remove(e));
+    corners = ring.map((p, i) => viewer.entities.add({
+      position: at(p),
+      billboard: {
+        image: cornerImage(i + 1, i === active, bad && (i === bad[0] || i === (bad[0] + 1) % ring.length || i === bad[1] || i === (bad[1] + 1) % ring.length)),
+        heightReference: C.HeightReference.CLAMP_TO_GROUND, disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        width: 30, height: 30,
+      },
+    }));
+  }
+
+  // Where the phone is, with how sure the GPS is.
+  const meDot = viewer.entities.add({
+    position: new C.CallbackProperty(() => (me ? at([me.lng, me.lat]) : undefined), false),
+    point: { pixelSize: 18, color: ME, outlineColor: C.Color.WHITE, outlineWidth: 3, heightReference: C.HeightReference.CLAMP_TO_GROUND, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+    show: new C.CallbackProperty(() => !!me, false),
+  });
+  viewer.entities.add({
+    position: new C.CallbackProperty(() => (me ? at([me.lng, me.lat]) : undefined), false),
+    ellipse: {
+      semiMajorAxis: new C.CallbackProperty(() => (me ? Math.max(me.acc, 3) : 3), false),
+      semiMinorAxis: new C.CallbackProperty(() => (me ? Math.max(me.acc, 3) : 3), false),
+      material: ME.withAlpha(0.18), outline: false, classificationType: C.ClassificationType.TERRAIN,
+    },
+    show: new C.CallbackProperty(() => !!me, false),
+  });
+
+  // ── Touch: tap to add a corner, drag a corner to move it ──
+  const input = new C.ScreenSpaceEventHandler(scene.canvas);
+  const cornerAt = (pos) => {
+    let best = null, bestD = 28;
+    ring.forEach((p, i) => {
+      const s = C.SceneTransforms.worldToWindowCoordinates(scene, at(p));
+      if (!s) return;
+      const d = C.Cartesian2.distance(s, pos);
+      if (d < bestD) { best = i; bestD = d; }
+    });
+    return best;
+  };
+  let dragging = null, dragged = false;
+  input.setInputAction((e) => {
+    if (!editable) return;
+    dragging = cornerAt(e.position); dragged = false;
+    if (dragging !== null) scene.screenSpaceCameraController.enableInputs = false;
+  }, C.ScreenSpaceEventType.LEFT_DOWN);
+  input.setInputAction((e) => {
+    if (dragging === null) return;
+    const p = lngLatAt(e.endPosition);
+    if (!p) return;
+    dragged = true;
+    ring[dragging] = p;
+    corners[dragging].position = at(p);
+    scene.requestRender();
+  }, C.ScreenSpaceEventType.MOUSE_MOVE);
+  input.setInputAction(() => {
+    if (dragging !== null && dragged) send({ type: "move", index: dragging, lng: ring[dragging][0], lat: ring[dragging][1] });
+    dragging = null;
+    scene.screenSpaceCameraController.enableInputs = true;
+  }, C.ScreenSpaceEventType.LEFT_UP);
+  input.setInputAction((e) => {
+    if (!editable || dragged || cornerAt(e.position) !== null) return;
+    const p = lngLatAt(e.position);
+    if (p) send({ type: "tap", lng: p[0], lat: p[1] });
+  }, C.ScreenSpaceEventType.LEFT_CLICK);
+
+  // ── What the app can call ────────────────────────────────
+  function fit(points) {
+    if (points.length === 1) {
+      viewer.camera.setView({ destination: C.Cartesian3.fromDegrees(points[0][0], points[0][1], HEIGHT.farm) });
+    } else if (points.length > 1) {
+      const lngs = points.map((p) => p[0]), lats = points.map((p) => p[1]);
+      const w = Math.min(...lngs), e = Math.max(...lngs), s = Math.min(...lats), n = Math.max(...lats);
+      const padX = Math.max((e - w) * 0.25, 0.0008), padY = Math.max((n - s) * 0.45, 0.0008);
+      viewer.camera.setView({ destination: C.Rectangle.fromDegrees(w - padX, s - padY * 1.6, e + padX, n + padY) });
+    }
+    scene.requestRender();
+  }
+
+  window.shamba = {
+    /** Start: the ion token (for terrain) and where to look first. */
+    init({ token, center, ring: start }) {
+      if (start && start.length >= 1) fit(start);
+      else if (center) viewer.camera.setView({ destination: C.Cartesian3.fromDegrees(center[0], center[1], HEIGHT.farm) });
+      else viewer.camera.setView({ destination: C.Cartesian3.fromDegrees(37.9, 0.2, HEIGHT.country) }); // Kenya
+      if (token) {
+        C.Ion.defaultAccessToken = token;
+        C.createWorldTerrainAsync()
+          .then((t) => { if (!viewer.isDestroyed()) { viewer.terrainProvider = t; scene.requestRender(); } })
+          .catch(() => { /* no terrain: the flat globe still works */ });
+      }
+    },
+    /** The boundary and how to draw it. */
+    setRing(state) {
+      ring = state.ring || [];
+      closed = !!state.closed;
+      editable = !!state.editable;
+      active = state.active == null ? -1 : state.active;
+      bad = state.bad || null;
+      drawCorners();
+      scene.requestRender();
+    },
+    showMe(lng, lat, acc) { me = { lng, lat, acc }; scene.requestRender(); },
+    hideMe() { me = null; scene.requestRender(); },
+    lookAt(lng, lat) {
+      const h = Math.min(viewer.camera.positionCartographic.height, HEIGHT.farm);
+      viewer.camera.flyTo({ destination: C.Cartesian3.fromDegrees(lng, lat, h), duration: 0.8 });
+    },
+    fit() { fit(ring); },
+    zoom(by) { by > 0 ? viewer.camera.zoomIn(viewer.camera.positionCartographic.height * 0.4) : viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.6); scene.requestRender(); },
+  };
+
+  // Tell the app when the first imagery is on screen.
+  let told = false;
+  scene.globe.tileLoadProgressEvent.addEventListener((left) => {
+    if (!told && left === 0) { told = true; send({ type: "loaded" }); }
+  });
+  send({ type: "ready" });
+})();
+</script>
+</body>
+</html>

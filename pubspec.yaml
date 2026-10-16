@@ -27,6 +27,8 @@ dependencies:
   camera: ^0.12.1
   image_picker: ^1.2.4
   google_sign_in: ^7.2.0
+  webview_flutter: ^4.14.1
+  geolocator: ^14.1.1
 
 dev_dependencies:
   flutter_test:
@@ -99,6 +101,8 @@ flutter:
     - images/assets/icons/fish.png
     - images/assets/icons/goat.png
     - images/assets/icons/rabbit.png
+    # The farm map's Cesium page (lib/screens/farm/farm_map_view.dart).
+    - assets/map/farm_map.html
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -19,6 +19,7 @@ class HomeHero extends StatelessWidget {
   final bool weatherLoading;
   final VoidCallback onAvatarTap;
   final VoidCallback? onBellTap;
+  final VoidCallback? onPlaceTap; // opens the farm map
 
   const HomeHero({
     super.key,
@@ -29,6 +30,7 @@ class HomeHero extends StatelessWidget {
     required this.weatherLoading,
     required this.onAvatarTap,
     this.onBellTap,
+    this.onPlaceTap,
   });
 
   @override
@@ -165,7 +167,14 @@ class HomeHero extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _pill(c, PhosphorIconsRegular.mapPin, place ?? 'Your farm'.tr),
+                  if (onPlaceTap == null)
+                    _pill(c, PhosphorIconsRegular.mapPin, place ?? 'Your farm'.tr)
+                  else
+                    Semantics(
+                      button: true,
+                      hint: 'Map your farm'.tr,
+                      child: GestureDetector(onTap: onPlaceTap, child: _pill(c, PhosphorIconsRegular.mapPin, place ?? 'Your farm'.tr)),
+                    ),
                   const SizedBox(height: 10),
                   if (w == null)
                     Padding(
