@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/app_type.dart';
 import '../../services/app_theme.dart';
-import '../../services/app_colors.dart';
+import 'auth_ui.dart';
 import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import 'verify_otp_screen.dart';
@@ -10,40 +10,25 @@ import '../home_screen.dart';
 import '../../l10n/tr.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Brand tokens
-// ─────────────────────────────────────────────────────────────────────────────
-class _Brand {
-  static const Color brand         = AppColors.brand;
-  static const Color brandLight    = Color(0xFFE8F5E9);
-  static const Color brandBorder   = Color(0xFFD6ECD9);
-  static const Color scaffold      = Colors.white;
-  static const Color card          = Colors.white;
-  static const Color divider       = Color(0xFFF0F0F0);
-  static const Color textPrimary   = Color(0xFF1A1A1A);
-  static const Color textSecondary = Color(0xFF777777);
-  static const Color textHint      = Color(0xFFAAAAAA);
-  static const Color errorRed      = Color(0xFFE53935);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Country model
 // ─────────────────────────────────────────────────────────────────────────────
 class _Country {
   final String flag;
+  final String iso;
   final String name;
   final String dialCode;
-  const _Country({required this.flag, required this.name, required this.dialCode});
+  const _Country({required this.flag, required this.iso, required this.name, required this.dialCode});
 }
 
 List<_Country> get _countries => [
-  _Country(flag: '🇰🇪', name: 'Kenya'.tr,        dialCode: '+254'),
-  _Country(flag: '🇺🇬', name: 'Uganda'.tr,       dialCode: '+256'),
-  _Country(flag: '🇹🇿', name: 'Tanzania'.tr,     dialCode: '+255'),
-  _Country(flag: '🇷🇼', name: 'Rwanda'.tr,       dialCode: '+250'),
-  _Country(flag: '🇪🇹', name: 'Ethiopia'.tr,     dialCode: '+251'),
-  _Country(flag: '🇳🇬', name: 'Nigeria'.tr,      dialCode: '+234'),
-  _Country(flag: '🇬🇭', name: 'Ghana'.tr,        dialCode: '+233'),
-  _Country(flag: '🇿🇦', name: 'South Africa'.tr, dialCode: '+27'),
+  _Country(flag: '🇰🇪', iso: 'KE', name: 'Kenya'.tr,        dialCode: '+254'),
+  _Country(flag: '🇺🇬', iso: 'UG', name: 'Uganda'.tr,       dialCode: '+256'),
+  _Country(flag: '🇹🇿', iso: 'TZ', name: 'Tanzania'.tr,     dialCode: '+255'),
+  _Country(flag: '🇷🇼', iso: 'RW', name: 'Rwanda'.tr,       dialCode: '+250'),
+  _Country(flag: '🇪🇹', iso: 'ET', name: 'Ethiopia'.tr,     dialCode: '+251'),
+  _Country(flag: '🇳🇬', iso: 'NG', name: 'Nigeria'.tr,      dialCode: '+234'),
+  _Country(flag: '🇬🇭', iso: 'GH', name: 'Ghana'.tr,        dialCode: '+233'),
+  _Country(flag: '🇿🇦', iso: 'ZA', name: 'South Africa'.tr, dialCode: '+27'),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,7 +68,8 @@ class _LoginScreenState extends State<LoginScreen>
     super.initState();
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
     ));
 
     _animCtrl = AnimationController(
@@ -256,52 +242,39 @@ class _LoginScreenState extends State<LoginScreen>
     _phoneFocus.unfocus();
     showModalBottomSheet(
       context: context,
-      backgroundColor: _Brand.card,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+      backgroundColor: Ledger.sheet,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Ledger.radiusSheet))),
+      builder: (_) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
           const SizedBox(height: 12),
-          Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(
-                  color: _Brand.divider,
-                  borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 18),
-          Text('Select Country'.tr,
-              style: TextStyle(color: _Brand.textPrimary, fontSize: 16,
-                  fontWeight: FontWeight.w700)),
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: _Brand.divider),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _countries.length,
-            itemBuilder: (_, i) {
-              final c   = _countries[i];
-              final sel = c.dialCode == _selectedCountry.dialCode;
-              return ListTile(
-                onTap: () {
-                  setState(() => _selectedCountry = c);
-                  Navigator.pop(context);
-                },
-                tileColor: sel ? _Brand.brandLight : null,
-                leading: Text(c.flag, style: const TextStyle(fontSize: 22)),
-                title: Text(c.name,
-                    style: TextStyle(
-                        color: sel ? _Brand.brand : _Brand.textPrimary,
-                        fontWeight: sel ? FontWeight.w700 : FontWeight.w400,
-                        fontSize: 14)),
-                trailing: Text(c.dialCode,
-                    style: TextStyle(
-                        color: sel ? _Brand.brand : _Brand.textSecondary,
-                        fontWeight: FontWeight.w600, fontSize: 13)),
-              );
-            },
+          Container(width: 40, height: 5, decoration: BoxDecoration(color: Ledger.rule, borderRadius: BorderRadius.circular(999))),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Align(alignment: Alignment.centerLeft, child: Text('Select Country'.tr, style: Ledger.title.copyWith(fontSize: 19, height: 24 / 19))),
           ),
-          const SizedBox(height: 20),
-        ],
+          for (final c in _countries)
+            InkWell(
+              onTap: () {
+                setState(() => _selectedCountry = c);
+                Navigator.pop(context);
+              },
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 56),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: c.dialCode == _selectedCountry.dialCode ? Ledger.shambaTint : null,
+                  border: const Border(top: BorderSide(color: Ledger.rule)),
+                ),
+                child: Row(children: [
+                  Text(c.flag, style: const TextStyle(fontSize: 22)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(c.name, style: Ledger.label)),
+                  Text('${c.iso} ${c.dialCode}', style: Ledger.code.copyWith(fontSize: 15, color: Ledger.inkMuted)),
+                ]),
+              ),
+            ),
+          const SizedBox(height: 12),
+        ]),
       ),
     );
   }
@@ -310,22 +283,15 @@ class _LoginScreenState extends State<LoginScreen>
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: _Brand.card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Need Help?'.tr,
-            style: TextStyle(
-                color: _Brand.textPrimary, fontWeight: FontWeight.w700)),
+        backgroundColor: Ledger.sheet,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('Need Help?'.tr, style: Ledger.title.copyWith(fontSize: 19, height: 24 / 19)),
         content: Text(
           'Enter your phone number (e.g. 0712 123456).\nWe\'ll send a 6-digit SMS code to log in or create your account.'.tr,
-          style: TextStyle(
-              color: _Brand.textSecondary, height: 1.5, fontSize: 14),
+          style: Ledger.body,
         ),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Got it'.tr,
-                  style: TextStyle(
-                      color: _Brand.brand, fontWeight: FontWeight.w700))),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Got it'.tr, style: Ledger.link)),
         ],
       ),
     );
@@ -333,13 +299,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   // Shown while someone new who continued with Google adds their phone number.
   Widget _googleBanner() => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
-        decoration: BoxDecoration(
-          color: _Brand.brandLight,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _Brand.brandBorder),
-        ),
+        padding: const EdgeInsets.fromLTRB(14, 6, 4, 6),
+        decoration: BoxDecoration(color: Ledger.shambaTint, borderRadius: BorderRadius.circular(Ledger.radiusField)),
         child: Row(children: [
           Image.asset('images/assets/google.png', width: 20, height: 20),
           const SizedBox(width: 10),
@@ -348,14 +309,13 @@ class _LoginScreenState extends State<LoginScreen>
               _googleEmail != null
                   ? 'Continuing with Google as {googleEmail}'.trArgs({'googleEmail': _googleEmail})
                   : 'Continuing with Google'.tr,
-              style: const TextStyle(
-                  color: _Brand.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+              style: Ledger.caption.copyWith(color: Ledger.ink, fontWeight: FontWeight.w700),
             ),
           ),
           IconButton(
             onPressed: _cancelGoogle,
             tooltip: 'Use phone only'.tr,
-            icon: const Icon(Icons.close_rounded, color: _Brand.textSecondary, size: 18),
+            icon: const LineIcon(LineIcon.x, size: 18, color: Ledger.inkMuted),
           ),
         ]),
       );
@@ -366,340 +326,217 @@ class _LoginScreenState extends State<LoginScreen>
       Theme(data: AppTheme.light(), child: Builder(builder: _buildScreen));
 
   Widget _buildScreen(BuildContext context) {
-    final focused = _phoneFocus.hasFocus;
+    final google = _googleAvailable && _googleTicket == null;
+    final others = google || _biometricReady;
     return Scaffold(
-      backgroundColor: _Brand.scaffold,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ────────────────────────────────────────────────────
-            _stagger(0, Container(
-              width: double.infinity,
-              color: _Brand.card,
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                        color: _Brand.brandLight,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: _Brand.brandBorder)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.agriculture_rounded,
-                          color: _Brand.brand, size: 13),
-                      SizedBox(width: 5),
-                      Text('FARM INTELLIGENCE'.tr,
-                          style: TextStyle(
-                              color: _Brand.brand, fontSize: 10,
-                              fontWeight: FontWeight.w700, letterSpacing: 1.0)),
-                    ]),
+      backgroundColor: Ledger.paper,
+      // The photo fills whatever the sheet leaves, running 28 under its rounded top.
+      body: CustomMultiChildLayout(delegate: _PhotoAndSheet(), children: [
+        LayoutId(
+          id: _PhotoAndSheet.photo,
+          child: Stack(fit: StackFit.expand, children: [
+            Semantics(
+              image: true,
+              label: 'A farmer weeding young plants with her child on her back'.tr,
+              child: Image.asset('images/auth/farming.jpg', fit: BoxFit.cover, alignment: Alignment.topCenter),
+            ),
+            const Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              height: 200,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0x8C17211A), Color(0x0017211A)],
                   ),
-                  const SizedBox(height: 18),
-                  Text(_googleTicket != null ? 'One more step'.tr : "What's your phone number?".tr,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontSize: 30, fontWeight: FontWeight.w800,
-                          color: _Brand.textPrimary, height: 1.15)),
-                  const SizedBox(height: 8),
-                  Text(_googleTicket != null
-                          ? 'Add your phone number to finish setting up your account'.tr
-                          : 'We use it to create your account'.tr,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontSize: 14,
-                          color: _Brand.textSecondary,
-                          height: 1.5)),
-                ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: _stagger(0, Row(children: [
+                    const LeafLogo(size: 40),
+                    const SizedBox(width: 10),
+                    const Text('Shamba OS',
+                        style: TextStyle(fontFamily: AppType.text, fontSize: 20, height: 24 / 20, fontWeight: FontWeight.w700, color: Colors.white)),
+                  ])),
+                ),
+              ),
+            ),
+          ]),
+        ),
+
+        // ── The sheet ──────────────────────────────────────────
+        LayoutId(
+          id: _PhotoAndSheet.sheet,
+          child: SingleChildScrollView(
+            child: _stagger(1, Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+              decoration: const BoxDecoration(
+                color: Ledger.sheet,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(Ledger.radiusSheet)),
+                boxShadow: Ledger.shadowSheet,
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Text('KARIBU · WELCOME'.tr, style: Ledger.eyebrow),
+                  const SizedBox(height: 6),
+                  Text(_googleTicket != null ? 'One more step'.tr : 'Sign in with your phone'.tr, style: Ledger.title),
+                  const SizedBox(height: 6),
+                  Text(
+                    _googleTicket != null
+                        ? 'Add your phone number to finish setting up your account'.tr
+                        : 'We will send a 6-digit code by SMS.'.tr,
+                    style: Ledger.body,
+                  ),
+                  if (_googleTicket != null) ...[
+                    const SizedBox(height: 16),
+                    _googleBanner(),
+                  ],
+                  const SizedBox(height: 16),
+
+                  // Phone number, with the country code in front
+                  LedgerField(
+                    label: 'Phone number'.tr,
+                    focused: _phoneFocus.hasFocus,
+                    error: _errorMsg,
+                    prefix: Semantics(
+                      button: true,
+                      label: 'Country code {code}. Change country'.trArgs({'code': _selectedCountry.dialCode}),
+                      child: GestureDetector(
+                        onTap: _showCountryPicker,
+                        behavior: HitTestBehavior.opaque,
+                        child: ExcludeSemantics(
+                          child: Text('${_selectedCountry.iso} ${_selectedCountry.dialCode}',
+                              style: Ledger.code.copyWith(fontSize: 17, letterSpacing: 0)),
+                        ),
+                      ),
+                    ),
+                    input: TextField(
+                      controller: _phoneCtrl,
+                      focusNode: _phoneFocus,
+                      keyboardType: TextInputType.phone,
+                      autofillHints: const [AutofillHints.telephoneNumberNational],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                      onChanged: (_) {
+                        if (_errorMsg != null) setState(() => _errorMsg = null);
+                      },
+                      onSubmitted: (_) => _handleContinue(),
+                      style: Ledger.code,
+                      cursorColor: Ledger.shamba,
+                      decoration: InputDecoration(
+                        hintText: '712 345 678',
+                        hintStyle: Ledger.code.copyWith(color: Ledger.inkFaint),
+                        border: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        filled: false,
+                        isCollapsed: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  LedgerButton(label: 'Continue'.tr, busy: _isLoading, onPressed: _handleContinue),
+
+                  if (others) ...[
+                    const SizedBox(height: 16),
+                    Row(children: [
+                      const Expanded(child: Divider(height: 1, thickness: 1, color: Ledger.rule)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('or'.tr, style: Ledger.caption.copyWith(color: Ledger.inkFaint)),
+                      ),
+                      const Expanded(child: Divider(height: 1, thickness: 1, color: Ledger.rule)),
+                    ]),
+                    const SizedBox(height: 16),
+                    Row(children: [
+                      if (google)
+                        Expanded(
+                          child: LedgerButton(
+                            label: 'Continue with Google'.tr,
+                            kind: LedgerButtonKind.secondary,
+                            large: false,
+                            busy: _googleBusy,
+                            onPressed: _isLoading ? null : _handleGoogle,
+                          ),
+                        ),
+                      if (google && _biometricReady) const SizedBox(width: 10),
+                      if (_biometricReady)
+                        SizedBox(
+                          width: google ? 56 : null,
+                          child: google
+                              ? LedgerButton(
+                                  label: '',
+                                  semanticLabel: 'Sign in with biometrics'.tr,
+                                  kind: LedgerButtonKind.secondary,
+                                  large: false,
+                                  busy: _biometricBusy,
+                                  icon: const LineIcon(LineIcon.fingerprint),
+                                  onPressed: _isLoading ? null : _handleBiometric,
+                                )
+                              : null,
+                        ),
+                      if (_biometricReady && !google)
+                        Expanded(
+                          child: LedgerButton(
+                            label: 'Sign in with biometrics'.tr,
+                            kind: LedgerButtonKind.secondary,
+                            large: false,
+                            busy: _biometricBusy,
+                            icon: const LineIcon(LineIcon.fingerprint),
+                            onPressed: _isLoading ? null : _handleBiometric,
+                          ),
+                        ),
+                    ]),
+                  ],
+                  const SizedBox(height: 16),
+                  Center(
+                    child: TextButton(
+                      onPressed: _showHelp,
+                      style: TextButton.styleFrom(minimumSize: const Size(0, 32), foregroundColor: Ledger.shambaInk),
+                      child: Text('Need help to connect?'.tr, style: Ledger.link),
+                    ),
+                  ),
+                ]),
               ),
             )),
-
-            const Divider(height: 1, thickness: 1, color: _Brand.divider),
-
-            // ── Body ──────────────────────────────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-                child: Column(
-                  children: [
-                    if (_googleTicket != null) ...[
-                      _googleBanner(),
-                      const SizedBox(height: 12),
-                    ],
-                    // Phone input card
-                    _stagger(1, AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      decoration: BoxDecoration(
-                        color: _Brand.card,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _errorMsg != null
-                              ? _Brand.errorRed
-                              : focused ? _Brand.brand : _Brand.divider,
-                          width: focused || _errorMsg != null ? 1.5 : 1.0,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: focused
-                                ? _Brand.brand.withOpacity(0.10)
-                                : Colors.black.withOpacity(0.04),
-                            blurRadius: focused ? 14 : 6,
-                            offset: const Offset(0, 2),
-                          )
-                        ],
-                      ),
-                      child: Row(children: [
-                        // Country selector
-                        GestureDetector(
-                          onTap: _showCountryPicker,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 16),
-                            decoration: const BoxDecoration(
-                                border: Border(
-                                    right: BorderSide(color: _Brand.divider))),
-                            child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(_selectedCountry.flag,
-                                      style: const TextStyle(fontSize: 20)),
-                                  const SizedBox(width: 6),
-                                  Text(_selectedCountry.dialCode,
-                                      style: const TextStyle(
-                                          color: _Brand.textPrimary,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600)),
-                                  const SizedBox(width: 2),
-                                  const Icon(Icons.keyboard_arrow_down_rounded,
-                                      color: _Brand.textSecondary, size: 18),
-                                ]),
-                          ),
-                        ),
-                        // Number field
-                        Expanded(
-                          child: TextField(
-                            controller: _phoneCtrl,
-                            focusNode: _phoneFocus,
-                            keyboardType: TextInputType.phone,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(10),
-                            ],
-                            onChanged: (_) {
-                              if (_errorMsg != null) {
-                                setState(() => _errorMsg = null);
-                              }
-                            },
-                            style: const TextStyle(
-                                color: _Brand.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500),
-                            decoration: const InputDecoration(
-                              hintText: '712 123456',
-                              hintStyle: TextStyle(
-                                  color: _Brand.textHint, fontSize: 14),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 16),
-                            ),
-                            cursorColor: _Brand.brand,
-                          ),
-                        ),
-                      ]),
-                    )),
-
-                    // Error message
-                    if (_errorMsg != null) ...[
-                      const SizedBox(height: 8),
-                      _stagger(1, Row(children: [
-                        const Icon(Icons.error_outline_rounded,
-                            color: _Brand.errorRed, size: 15),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(_errorMsg!,
-                              style: const TextStyle(
-                                  color: _Brand.errorRed, fontSize: 12)),
-                        ),
-                      ])),
-                    ],
-
-                    const SizedBox(height: 12),
-
-                    // Help row
-                    _stagger(2, GestureDetector(
-                      onTap: _showHelp,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: _Brand.card,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: _Brand.divider),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2))
-                          ],
-                        ),
-                        child: Row(children: [
-                          Container(
-                            width: 44, height: 44,
-                            decoration: BoxDecoration(
-                                color: _Brand.brandLight,
-                                borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.help_outline_rounded,
-                                color: _Brand.brand, size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Need help to connect?'.tr,
-                                    style: TextStyle(
-                                        color: _Brand.textPrimary,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14)),
-                                SizedBox(height: 2),
-                                Text('Learn how SMS login works'.tr,
-                                    style: TextStyle(
-                                        color: _Brand.textSecondary,
-                                        fontSize: 12)),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 34, height: 34,
-                            decoration: const BoxDecoration(
-                                color: _Brand.brand, shape: BoxShape.circle),
-                            child: const Icon(Icons.arrow_forward_rounded,
-                                color: Colors.white, size: 16),
-                          ),
-                        ]),
-                      ),
-                    )),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Bottom bar ────────────────────────────────────────────────
-            Container(
-              color: _Brand.card,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Divider(height: 1, thickness: 1, color: _Brand.divider),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                  child: Column(children: [
-                    RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        style: TextStyle(fontFamily: AppType.text,
-                            color: _Brand.textHint, fontSize: 11, height: 1.5),
-                        children: [
-                          TextSpan(text: 'By continuing you agree to our '.tr),
-                          TextSpan(
-                              text: 'Terms of Service'.tr,
-                              style: TextStyle(
-                                  color: _Brand.brand,
-                                  fontWeight: FontWeight.w600)),
-                          TextSpan(text: ' and '),
-                          TextSpan(
-                              text: 'Privacy Policy'.tr,
-                              style: TextStyle(
-                                  color: _Brand.brand,
-                                  fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleContinue,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _Brand.brand,
-                          disabledBackgroundColor:
-                              _Brand.brand.withOpacity(0.45),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          textStyle: const TextStyle(fontFamily: AppType.text,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.3),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 22, height: 22,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2.5))
-                            : Text('Continue'.tr),
-                      ),
-                    ),
-                    if (_biometricReady) ...[
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: OutlinedButton.icon(
-                          onPressed: _biometricBusy || _isLoading ? null : _handleBiometric,
-                          icon: _biometricBusy
-                              ? const SizedBox(
-                                  width: 20, height: 20,
-                                  child: CircularProgressIndicator(
-                                      color: _Brand.brand, strokeWidth: 2.2))
-                              : const Icon(Icons.fingerprint_rounded, size: 24),
-                          label: Text('Sign in with biometrics'.tr),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: _Brand.brand,
-                            side: const BorderSide(color: _Brand.brand, width: 1.2),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            textStyle: const TextStyle(fontFamily: AppType.text,
-                                fontSize: 15, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
-                    ],
-                    if (_googleAvailable && _googleTicket == null) ...[
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: OutlinedButton.icon(
-                          onPressed: _googleBusy || _isLoading ? null : _handleGoogle,
-                          icon: _googleBusy
-                              ? const SizedBox(
-                                  width: 20, height: 20,
-                                  child: CircularProgressIndicator(
-                                      color: _Brand.textPrimary, strokeWidth: 2.2))
-                              : Image.asset('images/assets/google.png', width: 20, height: 20),
-                          label: Text('Continue with Google'.tr),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: _Brand.textPrimary,
-                            side: const BorderSide(color: _Brand.divider, width: 1.2),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            textStyle: const TextStyle(fontFamily: AppType.text,
-                                fontSize: 15, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ]),
-                ),
-              ]),
-            ),
-          ],
+          ),
         ),
-      ),
+      ]),
     );
   }
+}
+
+/// Lays the sheet at the bottom at its own height, and the photo above it,
+/// reaching 28 under the sheet so the rounded corners show the photo.
+class _PhotoAndSheet extends MultiChildLayoutDelegate {
+  static const photo = 'photo';
+  static const sheet = 'sheet';
+
+  @override
+  void performLayout(Size size) {
+    final sheetSize = layoutChild(sheet, BoxConstraints(maxWidth: size.width, minWidth: size.width, maxHeight: size.height));
+    positionChild(sheet, Offset(0, size.height - sheetSize.height));
+    final photoHeight = (size.height - sheetSize.height + Ledger.radiusSheet).clamp(0.0, size.height);
+    layoutChild(photo, BoxConstraints.tight(Size(size.width, photoHeight)));
+    positionChild(photo, Offset.zero);
+  }
+
+  @override
+  bool shouldRelayout(covariant MultiChildLayoutDelegate oldDelegate) => false;
 }
