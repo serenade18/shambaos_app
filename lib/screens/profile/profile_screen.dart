@@ -8,6 +8,7 @@ import '../../widgets/ledger_parts.dart';
 import '../auth/auth_service.dart';
 import '../customers/customer_screen.dart';
 import '../home_service.dart';
+import 'web_page_screen.dart';
 import '../onboarding/welcome_screens.dart';
 import '../../main.dart';
 import 'edit_profile_screen.dart';
@@ -200,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String? get _roleLabel => switch (_role) {
-        'owner' => 'Farm owner'.tr,
+        'owner' => 'Farm administrator'.tr,
         'manager' => 'Farm manager'.tr,
         'field_worker' => 'Field worker'.tr,
         _ => null,
@@ -211,6 +212,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const _bell = '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>';
   static const _globe = '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>';
   static const _fingerprint = '<path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/>';
+  static const _wallet = '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>';
+  static const _shield = '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>';
+  static const _file = '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>';
   static const _moon = '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>';
 
   @override
@@ -230,16 +234,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Text('Profile'.tr,
                 style: TextStyle(fontFamily: AppType.text, fontSize: 24, height: 30 / 24, fontWeight: FontWeight.w500, color: c.textPrimary)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _identity(c),
             SlGroupLabel('My account'.tr),
             SlLedger(children: [
               SlIconRow(
                 icon: _users,
                 title: 'Business centre'.tr,
-                meta: 'Your customers and what they owe'.tr,
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersScreen())),
               ),
+              rule(),
+              SlIconRow(icon: _wallet, title: 'Payment method'.tr, onTap: _showPaymentMethods),
               rule(),
               SlIconRow(
                 icon: _bell,
@@ -256,32 +261,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ]),
             SlGroupLabel('General'.tr),
             SlLedger(children: [
-              if (_biometricAvailable) ...[
-                SlIconRow(
-                  icon: _fingerprint,
-                  title: 'Biometric login'.tr,
-                  end: SlSwitch(value: _biometricOn, label: 'Biometric login'.tr, onChanged: _toggleBiometric),
-                ),
-                rule(),
-              ],
+              SlIconRow(
+                icon: _fingerprint,
+                title: 'Biometric login'.tr,
+                // Off and greyed on a phone without a fingerprint or face sensor.
+                end: SlSwitch(value: _biometricOn, label: 'Biometric login'.tr, onChanged: _biometricAvailable ? _toggleBiometric : null),
+              ),
+              rule(),
               SlIconRow(
                 icon: _moon,
                 title: 'Dark mode'.tr,
                 end: SlSwitch(value: themeNotifier.isDark, label: 'Dark mode'.tr, onChanged: (v) => themeNotifier.toggle(v)),
               ),
+              rule(),
+              SlIconRow(icon: _shield, title: 'Privacy policy'.tr, onTap: () => _openPage('Privacy policy'.tr, '$siteUrl/privacy')),
+              rule(),
+              SlIconRow(icon: _file, title: 'Terms of service'.tr, onTap: () => _openPage('Terms of service'.tr, '$siteUrl/terms')),
             ]),
             const SizedBox(height: 20),
-            // The design's danger pill.
+            // The design's danger button: white, with a red rule and red words.
             SizedBox(
-              height: 56,
-              child: ElevatedButton(
+              height: 52,
+              child: OutlinedButton(
                 onPressed: _showLogoutConfirm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: c.dangerTint,
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: c.cardBackground,
                   foregroundColor: c.dangerInk,
-                  elevation: 0,
+                  side: BorderSide(color: c.dangerInk, width: 1.5),
                   shape: const StadiumBorder(),
-                  textStyle: const TextStyle(fontFamily: AppType.text, fontSize: 17, fontWeight: FontWeight.w700),
+                  textStyle: const TextStyle(fontFamily: AppType.text, fontSize: 16, height: 20 / 16, fontWeight: FontWeight.w700),
                 ),
                 child: Text('Log out'.tr),
               ),
@@ -321,16 +329,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(width: 12),
         OutlinedButton(
           onPressed: _openEdit,
+          // The design's secondary button.
           style: OutlinedButton.styleFrom(
-            foregroundColor: c.brandText,
-            side: BorderSide(color: c.brandText, width: 1.5),
+            backgroundColor: c.cardBackground,
+            foregroundColor: c.textPrimary,
+            side: BorderSide(color: c.border, width: 1.5),
             shape: const StadiumBorder(),
-            minimumSize: const Size(64, 44),
-            textStyle: const TextStyle(fontFamily: AppType.text, fontSize: 15, fontWeight: FontWeight.w700),
+            minimumSize: const Size(0, 52),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            textStyle: const TextStyle(fontFamily: AppType.text, fontSize: 16, height: 20 / 16, fontWeight: FontWeight.w700),
           ),
           child: Text('Edit'.tr),
         ),
       ]),
+    );
+  }
+
+  void _openPage(String title, String url) =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => WebPageScreen(title: title, url: url)));
+
+  /// The ways a sale can be paid for, as the app records them.
+  void _showPaymentMethods() {
+    final c = context.appColors;
+    const phone = '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>';
+    const hash = '<path d="M4 9h16"/><path d="M4 15h16"/><path d="M10 3 8 21"/><path d="M16 3l-2 18"/>';
+    const cash = '<rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>';
+    const book = '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: c.scaffoldBackground,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('Payment method'.tr,
+                style: TextStyle(fontFamily: AppType.text, fontSize: 19, height: 24 / 19, fontWeight: FontWeight.w500, color: c.textPrimary)),
+            const SizedBox(height: 4),
+            Text('How customers can pay you when you record a sale.'.tr, style: AppType.caption.copyWith(color: c.textSecondary)),
+            const SizedBox(height: 14),
+            SlLedger(children: [
+              SlIconRow(icon: phone, title: 'M-Pesa prompt'.tr, meta: 'The customer gets a prompt on their phone to pay'.tr),
+              Divider(height: 1, thickness: 1, color: c.divider),
+              SlIconRow(icon: hash, title: 'M-Pesa code'.tr, meta: 'You type the code from their M-Pesa message'.tr),
+              Divider(height: 1, thickness: 1, color: c.divider),
+              SlIconRow(icon: cash, title: 'Cash'.tr),
+              Divider(height: 1, thickness: 1, color: c.divider),
+              SlIconRow(icon: book, title: 'On credit'.tr, meta: 'They pay later; it shows in what customers owe you'.tr),
+            ]),
+          ]),
+        ),
+      ),
     );
   }
 

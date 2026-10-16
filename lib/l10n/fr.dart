@@ -873,4 +873,21 @@ const fr = <String, String>{
   'Your name': 'Votre nom',
   '{n} alerts are hidden by your notification choices.': '{n} alertes sont masquées par vos choix de notifications.',
   '1 alert is hidden by your notification choices.': '1 alerte est masquée par vos choix de notifications.',
+
+  // Profile, as the canvas
+  'App updates': 'Mises à jour de l\'application',
+  'Could not open this page. Check your connection and try again.': 'Impossible d\'ouvrir cette page. Vérifiez votre connexion et réessayez.',
+  'How customers can pay you when you record a sale.': 'Comment les clients peuvent vous payer quand vous enregistrez une vente.',
+  'Leave requests': 'Demandes de congé',
+  'M-Pesa prompt': 'Demande M-Pesa',
+  'Money owed to you and bills due': 'L\'argent qu\'on vous doit et les factures à payer',
+  'New features and maintenance': 'Nouvelles fonctions et maintenance',
+  'Payment method': 'Moyen de paiement',
+  'Privacy policy': 'Politique de confidentialité',
+  'Terms of service': 'Conditions d\'utilisation',
+  'The customer gets a prompt on their phone to pay': 'Le client reçoit une demande de paiement sur son téléphone',
+  'They pay later; it shows in what customers owe you': 'Il paie plus tard ; cela apparaît dans ce que les clients vous doivent',
+  'When staff ask for days off': 'Quand le personnel demande des jours de congé',
+  'You type the code from their M-Pesa message': 'Vous saisissez le code de leur message M-Pesa',
+  'Farm administrator': 'Administrateur de la ferme',
 };
