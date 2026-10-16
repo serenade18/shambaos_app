@@ -217,37 +217,18 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                     const SizedBox(height: 20),
 
                     // ── The code ─────────────────────────────────────────────
-                    LedgerField(
-                      label: 'Sign-in code'.tr,
-                      focused: _codeFocus.hasFocus,
-                      error: _errorMsg,
-                      hint: 'This code expires in 10 minutes. Never share it with anyone.'.tr,
-                      input: Center(
-                        child: TextField(
-                          controller: _codeCtrl,
-                          focusNode: _codeFocus,
-                          autofocus: true,
-                          keyboardType: TextInputType.number,
-                          autofillHints: const [AutofillHints.oneTimeCode],
-                          textAlign: TextAlign.center,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(6),
-                          ],
-                          onChanged: _onCodeChanged,
-                          style: Ledger.code.copyWith(fontSize: 26, height: 1.2, letterSpacing: 5.2),
-                          cursorColor: Ledger.shamba,
-                          decoration: InputDecoration(
-                            hintText: '••••••',
-                            hintStyle: Ledger.code.copyWith(fontSize: 26, height: 1.2, letterSpacing: 5.2, color: Ledger.inkFaint),
-                            border: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            filled: false,
-                            isCollapsed: true,
-                          ),
-                        ),
-                      ),
+                    Text('Sign-in code'.tr, style: Ledger.label),
+                    const SizedBox(height: 6),
+                    _CodeBoxes(
+                      controller: _codeCtrl,
+                      focusNode: _codeFocus,
+                      hasError: _errorMsg != null,
+                      onChanged: _onCodeChanged,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _errorMsg ?? 'This code expires in 10 minutes. Never share it with anyone.'.tr,
+                      style: Ledger.caption.copyWith(color: _errorMsg != null ? Ledger.dangerInk : Ledger.inkMuted),
                     ),
                     const SizedBox(height: 20),
 
@@ -282,6 +263,86 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The code as six boxes, a wider gap after the third. One invisible field
+/// underneath takes the typing, so SMS autofill, paste and backspace work as in
+/// any text field; the boxes only show its digits.
+class _CodeBoxes extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool hasError;
+  final ValueChanged<String> onChanged;
+
+  const _CodeBoxes({required this.controller, required this.focusNode, required this.hasError, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 60,
+      child: Stack(children: [
+        ExcludeSemantics(
+          child: ListenableBuilder(
+            listenable: Listenable.merge([controller, focusNode]),
+            builder: (_, _) {
+              final digits = controller.text;
+              // The box the next digit goes in; the last one once all six are in.
+              final current = focusNode.hasFocus ? digits.length.clamp(0, 5) : -1;
+              return Row(children: [
+                for (var i = 0; i < 6; i++) ...[
+                  if (i > 0) SizedBox(width: i == 3 ? 16 : 8),
+                  Expanded(child: _box(i < digits.length ? digits[i] : '', i == current, i < digits.length)),
+                ],
+              ]);
+            },
+          ),
+        ),
+        Positioned.fill(
+          child: Opacity(
+            opacity: 0,
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              autofillHints: const [AutofillHints.oneTimeCode],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(6),
+              ],
+              onChanged: onChanged,
+              showCursor: false,
+              decoration: InputDecoration(
+                labelText: 'Sign-in code'.tr,
+                border: InputBorder.none,
+                counterText: '',
+              ),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _box(String digit, bool focused, bool filled) {
+    final border = hasError
+        ? Ledger.dangerInk
+        : filled || focused
+            ? Ledger.shambaInk
+            : Ledger.ruleStrong;
+    return Container(
+      height: 60,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Ledger.sheet,
+        borderRadius: BorderRadius.circular(Ledger.radiusField),
+        border: Border.all(color: border, width: 1.5),
+        // The 3px focus ring.
+        boxShadow: focused && !hasError ? const [BoxShadow(color: Ledger.focus, spreadRadius: 3)] : null,
+      ),
+      child: Text(digit, style: Ledger.code.copyWith(fontSize: 26, height: 1, letterSpacing: 0)),
     );
   }
 }
