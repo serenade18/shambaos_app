@@ -796,4 +796,13 @@ const sw = <String, String>{
   'birds': 'ndege',
   'trays': 'trei',
   '{title} · {day}': '{title} · {day}',
+  // What the AI found and Ask Tulip (Shamba Ledger redesign).
+  'About my {name}: {summary} What should I do?': 'Kuhusu {name} yangu: {summary} Nifanye nini?',
+  'High': 'Juu',
+  'Medium': 'Wastani',
+  'Not sure': 'Haijulikani',
+  'Your farm assistant · knows your records': 'Msaidizi wako wa shamba · anajua rekodi zako',
+  'Your photo': 'Picha yako',
+  '{level} confidence': 'Uhakika: {level}',
+  '{name} · TODAY': '{name} · LEO',
 };

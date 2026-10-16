@@ -796,4 +796,13 @@ const fr = <String, String>{
   'birds': 'oiseaux',
   'trays': 'plateaux',
   '{title} · {day}': '{title} · {day}',
+  // What the AI found and Ask Tulip (Shamba Ledger redesign).
+  'About my {name}: {summary} What should I do?': 'À propos de mon {name} : {summary} Que dois-je faire ?',
+  'High': 'Élevée',
+  'Medium': 'Moyenne',
+  'Not sure': 'Pas sûr',
+  'Your farm assistant · knows your records': 'Votre assistant de ferme · connaît vos registres',
+  'Your photo': 'Votre photo',
+  '{level} confidence': 'Confiance : {level}',
+  '{name} · TODAY': '{name} · AUJOURD\'HUI',
 };
