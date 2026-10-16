@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
-import '../../widgets/ledger.dart';
+import '../auth/auth_ui.dart';
 import '../../widgets/phosphor_icons.dart';
 import 'field_service.dart';
 import 'field_widgets.dart';
@@ -27,7 +29,7 @@ class FieldScanScreen extends StatefulWidget {
 class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _sweep =
       AnimationController(vsync: this, duration: const Duration(milliseconds: 2200))..repeat(reverse: true);
-  final _pages = PageController(viewportFraction: 0.86);
+  final _pages = PageController(viewportFraction: 0.94);
 
   CameraController? _camera;
   String? _cameraProblem; // why there is no live preview
@@ -157,6 +159,14 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Where the scanning frame sits: 240 by 300 on a 390-wide phone, a little above the middle.
+  static Rect _frameRect(Size size) {
+    final w = (size.width * 0.62).clamp(200.0, 300.0);
+    final h = w * 1.25;
+    final cy = size.height * 0.415;
+    return Rect.fromCenter(center: Offset(size.width / 2, cy), width: w, height: h);
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
@@ -165,206 +175,232 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
     final field = _field;
     final camera = _camera;
     final live = camera != null && camera.value.isInitialized;
+    final top = MediaQuery.paddingOf(context).top;
+    final bottom = MediaQuery.paddingOf(context).bottom;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            // What the camera sees, the frozen photo being checked, or why there is no camera.
-            if (_captured != null)
-              Image.memory(_captured!, fit: BoxFit.cover, gaplessPlayback: true)
-            else if (live)
-              _Preview(camera)
-            else
-              _NoCamera(problem: _cameraProblem),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.center,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x00000000), Color(0x8C17211A)],
+        backgroundColor: const Color(0xFF101511),
+        body: LayoutBuilder(builder: (context, box) {
+          final frame = _frameRect(box.biggest);
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // What the camera sees, the frozen photo being checked, or why there is no camera.
+              if (_captured != null)
+                Image.memory(_captured!, fit: BoxFit.cover, gaplessPlayback: true)
+              else if (live)
+                _Preview(camera)
+              else
+                _NoCamera(problem: _cameraProblem),
+              // A shade at the top so the title reads.
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                height: 180 + top,
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x9917211A), Color(0x0017211A)],
+                    ),
+                  ),
                 ),
               ),
-            ),
-            if (live || _captured != null)
-              Center(
-                child: FractionallySizedBox(
-                  widthFactor: 0.62,
-                  heightFactor: 0.36,
+              // The frame: the rest of the picture dimmed, a light rounded edge,
+              // and a band of green sweeping through while the photo is checked.
+              if (live || _captured != null)
+                Positioned.fill(
                   child: AnimatedBuilder(
                     animation: _sweep,
                     builder: (_, _) => CustomPaint(
-                      painter: _ScanFramePainter(c.shamba, _checking || !reduceMotion ? _sweep.value : 0.5),
+                      painter: _ScanFramePainter(frame, c.shamba, _checking && !reduceMotion ? _sweep.value : null),
                     ),
                   ),
                 ),
+              if (live || _captured != null)
+                Positioned(
+                  left: 40,
+                  right: 40,
+                  top: frame.bottom + 16,
+                  child: Text(
+                    _checking ? 'Checking your photo…'.tr : 'Fill the frame with the leaves, fruit or animal'.tr,
+                    textAlign: TextAlign.center,
+                    style: AppType.label.copyWith(color: Colors.white),
+                  ),
+                ),
+              // Close and the title.
+              Positioned(
+                left: 16,
+                right: 16,
+                top: top + 20,
+                child: Row(children: [
+                  _glassButton(c, 44, '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', 'Close'.tr,
+                      () => Navigator.canPop(context) ? Navigator.pop(context) : Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Scan with AI'.tr,
+                        style: const TextStyle(fontFamily: AppType.text, fontSize: 17, height: 22 / 17, fontWeight: FontWeight.w700, color: Colors.white)),
+                  ),
+                ]),
               ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+              // The field the photo is for: swipe to choose another.
+              Positioned(left: 16, right: 16, bottom: 136 + bottom, child: _picker(c)),
+              // Choose a photo, the shutter, Ask Tulip.
+              Positioned(
+                left: 32,
+                right: 32,
+                bottom: 32 + bottom,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        if (Navigator.canPop(context)) const PhotoBackButton(),
-                        const Spacer(),
-                        _tulipButton(c),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), borderRadius: BorderRadius.circular(999)),
-                        child: Text(
-                          _checking ? 'Checking your photo…'.tr : 'Fill the frame with the leaves, fruit or animal'.tr,
-                          style: AppType.caption.copyWith(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    _picker(c),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        _roundButton(c, PhosphorIconsRegular.image, 'Choose a photo'.tr,
-                            _checking || field == null ? null : _pick),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: SizedBox(
-                            height: 56,
-                            child: ElevatedButton.icon(
-                              onPressed: _checking || field == null || !live ? null : _scan,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: c.cardBackground,
-                                foregroundColor: c.textPrimary,
-                                disabledBackgroundColor: c.cardBackground.withValues(alpha: 0.7),
-                                disabledForegroundColor: c.textSecondary,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                textStyle: AppType.label.copyWith(fontSize: 16),
-                              ),
-                              icon: _checking
-                                  ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: c.shamba))
-                                  : const Icon(PhosphorIconsFill.sparkle, size: 20),
-                              label: Text(_checking ? 'Checking…'.tr : 'Scan with AI'.tr),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    _glassButton(c, 52, _Icons.image, 'Choose a photo'.tr, _checking || field == null ? null : _pick),
+                    _shutter(c, _checking || field == null || !live ? null : _scan),
+                    _glassButton(c, 52, _Icons.chat, 'Ask Tulip'.tr, () => Navigator.pushNamed(context, '/chat')),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        }),
       ),
     );
   }
 
-  /// The fields to choose from, one card each: swipe to choose.
+  /// The fields to choose from, one frosted card each: swipe to choose.
   Widget _picker(AppColors c) {
     final fields = _fields;
     if (fields == null) {
-      return Center(child: CircularProgressIndicator(color: c.cardBackground));
+      return const SizedBox(height: 72, child: Center(child: CircularProgressIndicator(color: Colors.white)));
     }
     if (fields.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: SlLedger(children: [
-          SlLedgerRow(
-            title: _noFarm ? 'Set up your farm first'.tr : 'No fields to scan yet'.tr,
-            meta: _noFarm
-                ? 'Add your farm, then the animals and crops you keep.'.tr
-                : 'Add the animals you keep and the crops you grow.'.tr,
-          ),
-        ]),
+      return _glass(
+        c,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(_noFarm ? 'Set up your farm first'.tr : 'No fields to scan yet'.tr, style: AppType.label.copyWith(color: c.textPrimary)),
+            const SizedBox(height: 2),
+            Text(
+              _noFarm ? 'Add your farm, then the animals and crops you keep.'.tr : 'Add the animals you keep and the crops you grow.'.tr,
+              style: AppType.caption.copyWith(color: c.textSecondary),
+            ),
+          ]),
+        ),
       );
     }
-    return Column(
-      children: [
-        SizedBox(
-          height: 96,
-          child: PageView.builder(
-            controller: _pages,
-            itemCount: fields.length,
-            onPageChanged: _checking ? null : (i) => setState(() => _index = i),
-            physics: _checking ? const NeverScrollableScrollPhysics() : null,
-            itemBuilder: (_, i) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              child: FieldCard(field: fields[i], compact: true),
-            ),
-          ),
-        ),
-        if (fields.length > 1) ...[
-          const SizedBox(height: 10),
-          Semantics(
-            label: 'Field {p0} of {length}. Swipe to choose another.'.trArgs({'p0': _index + 1, 'length': fields.length}),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 0; i < fields.length; i++)
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: i == _index ? 18 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: i == _index ? c.maize : Colors.white.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(3),
+    return SizedBox(
+      height: 72,
+      child: PageView.builder(
+        controller: _pages,
+        itemCount: fields.length,
+        padEnds: false,
+        onPageChanged: _checking ? null : (i) => setState(() => _index = i),
+        physics: _checking ? const NeverScrollableScrollPhysics() : null,
+        itemBuilder: (_, i) {
+          final f = fields[i];
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Semantics(
+              label: fields.length > 1 ? 'Field {p0} of {length}. Swipe to choose another.'.trArgs({'p0': i + 1, 'length': fields.length}) : null,
+              child: _glass(
+                c,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(color: c.brandSoft, shape: BoxShape.circle),
+                      alignment: Alignment.center,
+                      child: Image.asset(fieldIcon(f.type, crop: f.isCrop), width: 30, height: 30, excludeFromSemantics: true),
                     ),
-                  ),
-              ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Text(f.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontFamily: AppType.text, fontSize: 15, height: 20 / 15, fontWeight: FontWeight.w700, color: c.textPrimary)),
+                        Text(
+                          fields.length > 1
+                              ? 'Field {p0} of {length}. Swipe to choose another.'.trArgs({'p0': i + 1, 'length': fields.length})
+                              : f.size,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppType.caption.copyWith(color: c.textSecondary),
+                        ),
+                      ]),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// A frosted panel over the camera (sl-glass).
+  Widget _glass(AppColors c, {required Widget child, double radius = 24}) => ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Material(color: c.cardBackground.withValues(alpha: 0.86), child: child),
+        ),
+      );
+
+  /// A round frosted button (sl-iconbtn).
+  Widget _glassButton(AppColors c, double size, String icon, String label, VoidCallback? onTap) => Semantics(
+        button: true,
+        label: label,
+        excludeSemantics: true,
+        child: Opacity(
+          opacity: onTap == null ? 0.6 : 1,
+          child: _glass(
+            c,
+            radius: 999,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: SizedBox(width: size, height: size, child: Center(child: LineIcon(icon, size: 24, color: c.textPrimary))),
             ),
           ),
-        ],
-      ],
-    );
-  }
-
-  Widget _roundButton(AppColors c, IconData icon, String label, VoidCallback? onTap) {
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      child: Material(
-        color: c.cardBackground.withValues(alpha: onTap == null ? 0.7 : 1),
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: SizedBox(width: 56, height: 56, child: Icon(icon, size: 24, color: c.textPrimary)),
         ),
-      ),
-    );
-  }
+      );
 
-  /// Tulip, the chat assistant, from the corner of the AI screen.
-  Widget _tulipButton(AppColors c) {
-    return Material(
-      color: c.cardBackground,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: () => Navigator.pushNamed(context, '/chat'),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(PhosphorIconsRegular.chatCircleText, size: 20, color: c.textPrimary),
-              const SizedBox(width: 8),
-              Text('Ask Tulip'.tr, style: AppType.label.copyWith(color: c.textPrimary)),
-            ],
+  /// The shutter: a white ring round a white disc; a spinner while checking.
+  Widget _shutter(AppColors c, VoidCallback? onTap) => Semantics(
+        button: true,
+        label: 'Take the photo'.tr,
+        excludeSemantics: true,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 4)),
+            alignment: Alignment.center,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: onTap == null && !_checking ? 0.5 : 1), shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: _checking ? SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 3, color: c.shamba)) : null,
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
+}
+
+/// The scan screen's line icons (Lucide, ISC licence).
+class _Icons {
+  static const image = '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>';
+  static const chat = '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>';
 }
 
 /// The live camera image, filling the screen without stretching.
@@ -411,56 +447,47 @@ class _NoCamera extends StatelessWidget {
   }
 }
 
-/// Green corner brackets with a band of light sweeping down and up inside them.
+/// The scanning frame: the picture dimmed outside a rounded rectangle, a light
+/// 3 px edge, and, while a photo is checked, a band of green sweeping through.
 class _ScanFramePainter extends CustomPainter {
+  final Rect frame;
   final Color color;
-  final double t;
-  _ScanFramePainter(this.color, this.t);
+  final double? t; // the sweep's position, null when still
+  _ScanFramePainter(this.frame, this.color, this.t);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final frame = RRect.fromRectAndRadius(rect, const Radius.circular(18));
+    final rrect = RRect.fromRectAndRadius(frame, const Radius.circular(28));
+    final outside = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(Offset.zero & size)
+      ..addRRect(rrect);
+    canvas.drawPath(outside, Paint()..color = const Color(0x4017211A));
 
-    // The sweep: a soft band of the brand green, clipped to the frame.
-    canvas.save();
-    canvas.clipRRect(frame);
-    canvas.drawRect(rect, Paint()..color = color.withValues(alpha: 0.10));
-    final bandH = size.height * 0.45;
-    final y = -bandH + (size.height + bandH) * t;
-    final band = Rect.fromLTWH(0, y, size.width, bandH);
-    canvas.drawRect(
-      band,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [color.withValues(alpha: 0), color.withValues(alpha: 0.45), color.withValues(alpha: 0)],
-        ).createShader(band),
-    );
-    canvas.restore();
+    if (t != null) {
+      canvas.save();
+      canvas.clipRRect(rrect);
+      final bandH = frame.height * 0.45;
+      final y = frame.top - bandH + (frame.height + bandH) * t!;
+      final band = Rect.fromLTWH(frame.left, y, frame.width, bandH);
+      canvas.drawRect(
+        band,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [color.withValues(alpha: 0), color.withValues(alpha: 0.45), color.withValues(alpha: 0)],
+          ).createShader(band),
+      );
+      canvas.restore();
+    }
 
-    // The thin outline and the four strong corners.
-    canvas.drawRRect(frame, Paint()
+    canvas.drawRRect(rrect, Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = Colors.white.withValues(alpha: 0.55));
-    final corner = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..color = color;
-    const r = 18.0;
-    final l = size.width * 0.22;
-    final w = size.width, h = size.height;
-    final path = Path()
-      ..moveTo(0, l)..lineTo(0, r)..arcToPoint(const Offset(r, 0), radius: const Radius.circular(r))..lineTo(l, 0)
-      ..moveTo(w - l, 0)..lineTo(w - r, 0)..arcToPoint(Offset(w, r), radius: const Radius.circular(r))..lineTo(w, l)
-      ..moveTo(w, h - l)..lineTo(w, h - r)..arcToPoint(Offset(w - r, h), radius: const Radius.circular(r))..lineTo(w - l, h)
-      ..moveTo(l, h)..lineTo(r, h)..arcToPoint(Offset(0, h - r), radius: const Radius.circular(r))..lineTo(0, h - l);
-    canvas.drawPath(path, corner);
+      ..strokeWidth = 3
+      ..color = Colors.white.withValues(alpha: 0.86));
   }
 
   @override
-  bool shouldRepaint(_ScanFramePainter old) => old.t != t || old.color != color;
+  bool shouldRepaint(_ScanFramePainter old) => old.t != t || old.frame != frame || old.color != color;
 }

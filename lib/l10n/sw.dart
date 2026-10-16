@@ -785,4 +785,15 @@ const sw = <String, String>{
   'Record today': 'Rekodi leo',
   'What do you want to record?': 'Unataka kurekodi nini?',
   'Overdue since {date}': 'Imechelewa tangu {date}',
+  // Daily record and Scan with AI (Shamba Ledger redesign).
+  '+10 trays': '+trei 10',
+  'Birds that died': 'Ndege waliokufa',
+  'Leave at 0 if none': 'Acha 0 kama hakuna',
+  'Less': 'Punguza',
+  'More': 'Ongeza',
+  'Save today\'s record': 'Hifadhi rekodi ya leo',
+  'Take the photo': 'Piga picha',
+  'birds': 'ndege',
+  'trays': 'trei',
+  '{title} · {day}': '{title} · {day}',
 };
