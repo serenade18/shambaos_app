@@ -1,78 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
 import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/ledger.dart';
-import '../../widgets/phosphor_icons.dart';
+import '../../widgets/ledger_parts.dart';
 import 'field_detail_screen.dart';
 import 'field_service.dart';
 import 'field_widgets.dart';
 import '../../l10n/tr.dart';
-
-/// The round category buttons above a list of fields. Tapping one filters the
-/// list; tapping it again shows everything.
-class FieldCategories extends StatelessWidget {
-  final FieldCategory? selected;
-  final ValueChanged<FieldCategory?> onChanged;
-  final Set<FieldCategory> present; // categories the farm has
-
-  const FieldCategories({super.key, required this.selected, required this.onChanged, required this.present});
-
-  static List<(FieldCategory, IconData, String)> get items => [
-    (FieldCategory.animals, PhosphorIconsRegular.cow, 'Animals'.tr),
-    (FieldCategory.poultry, PhosphorIconsRegular.egg, 'Poultry'.tr),
-    (FieldCategory.crops, PhosphorIconsRegular.grains, 'Crops'.tr),
-    (FieldCategory.orchards, PhosphorIconsRegular.tree, 'Orchards'.tr),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        for (final (cat, icon, label) in items)
-          _circle(c, icon, label, selected == cat, present.contains(cat), () => onChanged(selected == cat ? null : cat)),
-        _circle(c, PhosphorIconsRegular.squaresFour, 'All'.tr, selected == null, true, () => onChanged(null)),
-      ],
-    );
-  }
-
-  Widget _circle(AppColors c, IconData icon, String label, bool on, bool enabled, VoidCallback onTap) {
-    return Semantics(
-      button: true,
-      selected: on,
-      label: label,
-      excludeSemantics: true,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: enabled ? onTap : null,
-        child: Opacity(
-          opacity: enabled ? 1 : 0.4,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-            child: Column(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: on ? c.shamba : c.brandSoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, size: 26, color: on ? c.onShamba : c.brandText),
-                ),
-                const SizedBox(height: 6),
-                Text(label, style: AppType.caption.copyWith(color: c.textPrimary, fontWeight: on ? FontWeight.w700 : FontWeight.w400)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// Opens a field's page.
 void openField(BuildContext context, Field f) =>
@@ -106,11 +43,29 @@ class _FieldsScreenState extends State<FieldsScreen> {
     });
   }
 
+  static List<(FieldCategory, String)> get _categories => [
+        (FieldCategory.animals, 'Animals'.tr),
+        (FieldCategory.poultry, 'Poultry'.tr),
+        (FieldCategory.crops, 'Crops'.tr),
+        (FieldCategory.orchards, 'Orchards'.tr),
+      ];
+
+  /// "300 birds · started 3 Oct", "2 acres · planted 3 Oct".
+  String _meta(Field f) {
+    final date = {'date': DateFormat('d MMM', Localizations.localeOf(context).toString()).format(f.startedOn)};
+    final when = f.isCrop ? 'planted {date}'.trArgs(date) : 'started {date}'.trArgs(date);
+    return [f.size, when].where((p) => p.isNotEmpty).join(' · ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
     final fields = _fields;
     final shown = fields?.where((f) => _category == null || f.category == _category).toList();
+    final counts = <FieldCategory, int>{};
+    for (final f in fields ?? const <Field>[]) {
+      counts[f.category] = (counts[f.category] ?? 0) + 1;
+    }
 
     return Scaffold(
       backgroundColor: c.scaffoldBackground,
@@ -123,21 +78,34 @@ class _FieldsScreenState extends State<FieldsScreen> {
           color: c.shamba,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + MediaQuery.paddingOf(context).bottom),
+            padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + MediaQuery.paddingOf(context).bottom),
             children: [
-              Text('My fields'.tr, style: AppType.titleL.copyWith(color: c.textPrimary)),
+              Text('My fields'.tr,
+                  style: TextStyle(fontFamily: AppType.text, fontSize: 24, height: 30 / 24, fontWeight: FontWeight.w500, color: c.textPrimary)),
+              const SizedBox(height: 2),
               Text('Your animals and crops'.tr, style: AppType.caption.copyWith(color: c.textSecondary)),
-              const SizedBox(height: 20),
               if (fields != null && fields.isNotEmpty) ...[
-                FieldCategories(
-                  selected: _category,
-                  present: fields.map((f) => f.category).toSet(),
-                  onChanged: (cat) => setState(() => _category = cat),
+                const SizedBox(height: 16),
+                // How many of each, as chips; tapping one filters the list.
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  clipBehavior: Clip.none,
+                  child: Row(children: [
+                    SlChip('All {n}'.trArgs({'n': fields.length}), selected: _category == null, onTap: () => setState(() => _category = null)),
+                    for (final (cat, label) in _categories)
+                      if (counts.containsKey(cat)) ...[
+                        const SizedBox(width: 8),
+                        SlChip('$label ${counts[cat]}',
+                            selected: _category == cat, onTap: () => setState(() => _category = _category == cat ? null : cat)),
+                      ],
+                  ]),
                 ),
-                const SizedBox(height: 20),
               ],
+              const SizedBox(height: 16),
+              const SlSeasonStrip(),
+              const SizedBox(height: 16),
               if (fields == null)
-                Padding(padding: const EdgeInsets.only(top: 80), child: Center(child: CircularProgressIndicator(color: c.shamba)))
+                Padding(padding: const EdgeInsets.only(top: 48), child: Center(child: CircularProgressIndicator(color: c.shamba)))
               else if (fields.isEmpty)
                 SlLedger(children: [
                   SlLedgerRow(
@@ -149,8 +117,14 @@ class _FieldsScreenState extends State<FieldsScreen> {
                 ])
               else
                 for (final f in shown!) ...[
-                  FieldCard(field: f, onTap: () => openField(context, f)),
-                  const SizedBox(height: 12),
+                  SlEntRow(
+                    icon: FieldIcons.of(f.type, crop: f.isCrop),
+                    title: f.name,
+                    meta: _meta(f),
+                    end: SlTag(fieldKind(f.type)),
+                    onTap: () => openField(context, f),
+                  ),
+                  const SizedBox(height: 10),
                 ],
             ],
           ),

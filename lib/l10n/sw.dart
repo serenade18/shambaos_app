@@ -774,4 +774,10 @@ const sw = <String, String>{
   'hectares': 'hekta',
   'metres walked': 'mita zilizotembewa',
   '{n} corners': 'kona {n}',
+  // Home and Fields (Shamba Ledger redesign).
+  'All {n}': 'Zote {n}',
+  'Next 7 days': 'Siku 7 zijazo',
+  'planted {date}': 'ilipandwa {date}',
+  'started {date}': 'ilianza {date}',
+  '{rainProbability}% chance of rain': 'Uwezekano wa mvua {rainProbability}%',
 };
