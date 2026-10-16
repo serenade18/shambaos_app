@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import '../../services/app_theme.dart';
 import 'auth_service.dart';
 import 'auth_ui.dart';
-import '../home_screen.dart';
+import 'after_sign_in.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import '../../l10n/tr.dart';
 
@@ -110,15 +110,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     setState(() => _isVerifying = false);
 
     if (res.statusCode == 200 && !res.error) {
-      Navigator.of(context).pushAndRemoveUntil(
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const HomeScreen(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
-        (_) => false,
-      );
+      await goHomeAfterSignIn(context);
     } else {
       _codeCtrl.clear();
       _codeFocus.requestFocus();

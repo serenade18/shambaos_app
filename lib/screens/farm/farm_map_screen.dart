@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../l10n/tr.dart';
 import '../../services/app_theme.dart';
 import '../../services/app_type.dart';
@@ -23,6 +24,20 @@ class FarmMapScreen extends StatefulWidget {
 
   static Future<bool?> open(BuildContext context, Map<String, dynamic> farm) =>
       Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => FarmMapScreen(farm: farm)));
+
+  /// Bumped each time a boundary is saved, so Home can reload the farm.
+  static final boundarySaved = ValueNotifier<int>(0);
+
+  static String _laterKey(String farmId) => 'farm_map_later_$farmId';
+
+  /// True once the farmer chose "Later" for this farm: sign-in stops offering the map.
+  static Future<bool> putOff(String farmId) async =>
+      (await SharedPreferences.getInstance()).getBool(_laterKey(farmId)) ?? false;
+
+  static Future<void> _setPutOff(String farmId, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    value ? await prefs.setBool(_laterKey(farmId), true) : await prefs.remove(_laterKey(farmId));
+  }
 
   @override
   State<FarmMapScreen> createState() => _FarmMapScreenState();
@@ -213,6 +228,12 @@ class _FarmMapScreenState extends State<FarmMapScreen> {
     _redraw();
   }
 
+  /// Not now: don't offer the map at sign-in again (Home still does).
+  void _later() {
+    FarmMapScreen._setPutOff('${widget.farm['id']}', true);
+    Navigator.of(context).pop(false);
+  }
+
   void _toast(String text) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Ledger.ink, content: Text(text)));
 
   // ── Saving ───────────────────────────────────────────────
@@ -240,6 +261,8 @@ class _FarmMapScreenState extends State<FarmMapScreen> {
         _hadBoundary = true;
         _stage = _Stage.saved;
       });
+      FarmMapScreen.boundarySaved.value++;
+      FarmMapScreen._setPutOff('${widget.farm['id']}', false);
       _redraw();
       _map.fit();
     } else {
@@ -258,8 +281,13 @@ class _FarmMapScreenState extends State<FarmMapScreen> {
     final top = MediaQuery.paddingOf(context).top;
     return PopScope(
       canPop: _stage == _Stage.start || _stage == _Stage.saved || _ring.isEmpty || _hadBoundary,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _confirmLeave();
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _confirmLeave();
+          return;
+        }
+        // Backing out of the start screen is the same as "Later".
+        if (_stage == _Stage.start && result == null) FarmMapScreen._setPutOff('${widget.farm['id']}', true);
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFB9C7A8),
@@ -344,6 +372,8 @@ class _FarmMapScreenState extends State<FarmMapScreen> {
         onTap: () {
           if (_stage == _Stage.saved) {
             Navigator.of(context).pop(true);
+          } else if (_stage == _Stage.start) {
+            _later();
           } else if (close || _hadBoundary) {
             Navigator.of(context).maybePop();
           } else if (_ring.isNotEmpty) {
@@ -472,7 +502,7 @@ class _FarmMapScreenState extends State<FarmMapScreen> {
         ),
         const SizedBox(height: 10),
         TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
+          onPressed: _later,
           style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48), foregroundColor: Ledger.shambaInk),
           child: Text(
             '${widget.farm['county'] ?? ''}'.isEmpty

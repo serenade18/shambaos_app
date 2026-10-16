@@ -127,6 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUser();
     _loadFarmStatus();
+    FarmMapScreen.boundarySaved.addListener(_loadFarmStatus);
     _posterPageController = PageController(
       initialPage: _posterItems.length * 100,
       viewportFraction: 1.0,
@@ -135,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    FarmMapScreen.boundarySaved.removeListener(_loadFarmStatus);
     _posterPageController.dispose();
     super.dispose();
   }
@@ -243,12 +245,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// The farm map; reloads the farm when a boundary was saved.
+  /// The farm map.
   Future<void> _openFarmMap() async {
     final farm = _farm;
     if (farm == null) return;
-    final saved = await FarmMapScreen.open(context, farm);
-    if (saved == true && mounted) _loadFarmStatus();
+    await FarmMapScreen.open(context, farm); // Home reloads through FarmMapScreen.boundarySaved
   }
 
   void _openProfile() {
