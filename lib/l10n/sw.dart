@@ -780,4 +780,9 @@ const sw = <String, String>{
   'planted {date}': 'ilipandwa {date}',
   'started {date}': 'ilianza {date}',
   '{rainProbability}% chance of rain': 'Uwezekano wa mvua {rainProbability}%',
+  // Field page and record menu (Shamba Ledger redesign).
+  'FOR A FIELD': 'KWA SHAMBA MOJA',
+  'Record today': 'Rekodi leo',
+  'What do you want to record?': 'Unataka kurekodi nini?',
+  'Overdue since {date}': 'Imechelewa tangu {date}',
 };
