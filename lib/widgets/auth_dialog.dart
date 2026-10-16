@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/app_colors.dart';
+import '../l10n/tr.dart';
 
 // ════════════════════════════════════════════════════════════════
 //  auth_dialog.dart  —  Reusable success/error dialog
@@ -229,8 +230,8 @@ class _AuthDialogContentState extends State<_AuthDialogContent>
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Try Again',
+                      child: Text(
+                        'Try Again'.tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

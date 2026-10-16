@@ -8,6 +8,7 @@ import 'edit_profile_screen.dart';
 import 'notification_screen.dart';
 import '../../services/api_service.dart';
 import '../../services/biometric_service.dart';
+import '../../l10n/tr.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String userName;
@@ -69,8 +70,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(problem ??
           (value
-              ? 'Biometric login is on. Next time, sign in with your fingerprint or face.'
-              : 'Biometric login is off.')),
+              ? 'Biometric login is on. Next time, sign in with your fingerprint or face.'.tr
+              : 'Biometric login is off.'.tr)),
     ));
   }
 
@@ -108,6 +109,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _onThemeChange() => setState(() {});
 
+  // ── Language ───────────────────────────────────────────────────────────────
+  void _showLanguagePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.appColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 18),
+            Text('Language'.tr,
+                style: TextStyle(
+                    color: context.appColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            Text('Messages from Shamba OS, SMS and emails use it'.tr,
+                style: TextStyle(color: context.appColors.textSecondary, fontSize: 12)),
+            const SizedBox(height: 10),
+            for (final entry in ApiService.languages.entries)
+              ListTile(
+                title: Text(entry.value,
+                    style: TextStyle(color: context.appColors.textPrimary, fontSize: 15)),
+                trailing: entry.key == ApiService.locale
+                    ? const Icon(Icons.check_rounded, color: AppColors.brand)
+                    : null,
+                onTap: () {
+                  Navigator.pop(sheet);
+                  _setLanguage(entry.key);
+                },
+              ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _setLanguage(String code) async {
+    if (code == ApiService.locale) return;
+    final previous = ApiService.locale;
+    await ApiService.setLocale(code);
+    if (mounted) setState(() {});
+
+    final res = await ApiService.patch('/me', {'preferred_locale': code});
+    if (!mounted) return;
+    if (!res.error && res.data is Map) {
+      await ApiService.setUser(Map<String, dynamic>.from(res.data));
+    } else {
+      await ApiService.setLocale(previous);
+      if (!mounted) return;
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(res.message ?? "Couldn't change the language. Check your connection.".tr),
+      ));
+    }
+  }
+
   String _getInitials(String name) {
     if (name.isEmpty) return 'U';
     final parts = name.trim().split(' ');
@@ -130,7 +189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         systemOverlayStyle: context.overlayStyle,
         centerTitle: false,
         title: Text(
-          'Profile',
+          'Profile'.tr,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -182,44 +241,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // ── My Account section ─────────────────────
             _buildSectionLabel(
               icon: Icons.person_outline_rounded,
-              label: 'MY ACCOUNT',
-              trailing: '0 Points  ›',
+              label: 'MY ACCOUNT'.tr,
+              trailing: '0 Points  ›'.tr,
             ),
             _buildMenuGroup([
               _MenuItem(
                 color: const Color(0xFFFF6B35),
                 icon: Icons.card_membership_rounded,
-                label: 'Rewards Member',
+                label: 'Rewards Member'.tr,
                 onTap: () {},
               ),
               _MenuItem(
                 color: const Color(0xFF2196F3),
                 icon: Icons.favorite_outline_rounded,
-                label: 'Favourites',
+                label: 'Favourites'.tr,
                 onTap: () {},
               ),
               _MenuItem(
                 color: const Color(0xFFE91E8C),
                 icon: Icons.credit_card_outlined,
-                label: 'Payment Method',
+                label: 'Payment Method'.tr,
                 onTap: () {},
               ),
               _MenuItem(
                 color: AppColors.brand,
                 icon: Icons.calendar_today_outlined,
-                label: 'Scheduled',
+                label: 'Scheduled'.tr,
                 onTap: () {},
               ),
               _MenuItem(
                 color: const Color(0xFFFFC107),
                 icon: Icons.business_center_outlined,
-                label: 'Business Centre',
+                label: 'Business Centre'.tr,
                 onTap: () {},
               ),
               _MenuItem(
                 color: const Color(0xFF9C27B0),
                 icon: Icons.group_add_outlined,
-                label: 'Invite and Earn',
+                label: 'Invite and Earn'.tr,
                 onTap: () {},
               ),
             ]),
@@ -229,25 +288,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // ── General section ────────────────────────
             _buildSectionLabel(
               icon: Icons.settings_outlined,
-              label: 'GENERAL',
+              label: 'GENERAL'.tr,
             ),
             _buildMenuGroup([
               _MenuItem(
                 color: const Color(0xFFFF6B35),
                 icon: Icons.shield_outlined,
-                label: 'Privacy Policy',
+                label: 'Privacy Policy'.tr,
                 onTap: () {},
               ),
               _MenuItem(
                 color: const Color(0xFF2196F3),
                 icon: Icons.description_outlined,
-                label: 'Terms of Service',
+                label: 'Terms of Service'.tr,
                 onTap: () {},
               ),
               _MenuItem(
                 color: AppColors.brand,
                 icon: Icons.notifications_outlined,
-                label: 'Notifications',
+                label: 'Notifications'.tr,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -259,13 +318,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _MenuItem(
                 color: const Color(0xFF9C27B0),
                 icon: Icons.language_outlined,
-                label: 'Language',
-                onTap: () {},
+                label: 'Language'.tr,
+                value: ApiService.languages[ApiService.locale],
+                onTap: _showLanguagePicker,
               ),
               _MenuItem(
                 color: Colors.blueGrey,
                 icon: Icons.dark_mode_outlined,
-                label: 'Dark Mode',
+                label: 'Dark Mode'.tr,
                 isToggle: true,
                 toggleValue: themeNotifier.isDark,
                 onToggle: (val) => themeNotifier.toggle(val),
@@ -274,7 +334,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _MenuItem(
                   color: const Color(0xFF00897B),
                   icon: Icons.fingerprint_rounded,
-                  label: 'Biometric Login',
+                  label: 'Biometric Login'.tr,
                   isToggle: true,
                   toggleValue: _biometricOn,
                   onToggle: _toggleBiometric,
@@ -339,7 +399,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _userName.isEmpty ? 'User' : _userName,
+                  _userName.isEmpty ? 'User'.tr : _userName,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -348,7 +408,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  _userEmail.isEmpty ? 'Farm Administrator' : _userEmail,
+                  _userEmail.isEmpty ? 'Farm Administrator'.tr : _userEmail,
                   style: TextStyle(
                     fontSize: 13,
                     color: context.appColors.textSecondary,
@@ -398,13 +458,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: AppColors.brand,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.edit_outlined, color: Colors.white, size: 14),
                   SizedBox(width: 4),
                   Text(
-                    'Edit',
+                    'Edit'.tr,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 13,
@@ -537,12 +597,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 inactiveThumbColor: Colors.white,
                 inactiveTrackColor: context.appColors.border,
               )
-            else
+            else ...[
+              if (item.value != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(
+                    item.value!,
+                    style: TextStyle(fontSize: 13, color: context.appColors.textSecondary),
+                  ),
+                ),
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 13,
                 color: context.appColors.textHint,
               ),
+            ],
           ],
         ),
       ),
@@ -585,7 +654,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(width: 14),
             Text(
-              'Log out',
+              'Log out'.tr,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.red.shade400,
@@ -613,19 +682,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Log Out',
+        title: Text(
+          'Log Out'.tr,
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
         ),
         content: Text(
-          'Are you sure you want to log out?',
+          'Are you sure you want to log out?'.tr,
           style: TextStyle(color: context.appColors.textSecondary, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              'Cancel'.tr,
               style: TextStyle(color: context.appColors.textSecondary),
             ),
           ),
@@ -645,8 +714,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text(
-              'Log Out',
+            child: Text(
+              'Log Out'.tr,
               style: TextStyle(
                   color: Colors.white, fontWeight: FontWeight.w600),
             ),
@@ -666,11 +735,13 @@ class _MenuItem {
   final bool isToggle;
   final bool? toggleValue;
   final ValueChanged<bool>? onToggle;
+  final String? value; // shown before the arrow, e.g. the chosen language
 
   const _MenuItem({
     required this.color,
     required this.icon,
     required this.label,
+    this.value,
     this.onTap,
     this.isToggle = false,
     this.toggleValue,

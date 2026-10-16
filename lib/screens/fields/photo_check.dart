@@ -1,5 +1,6 @@
 import '../../services/api_service.dart';
 import 'field_service.dart';
+import '../../l10n/tr.dart';
 
 /// One thing the AI found in the photo.
 class PhotoFinding {
@@ -45,8 +46,8 @@ class PhotoCheckService {
     );
     if (res.error || res.data is! Map) {
       throw FieldLoadError(res.statusCode == 500 && res.data == null
-          ? 'No connection. Check your internet and try again.'
-          : res.message ?? 'Could not check the photo. Try again.');
+          ? 'No connection. Check your internet and try again.'.tr
+          : res.message ?? 'Could not check the photo. Try again.'.tr);
     }
     return PhotoCheck(Map<String, dynamic>.from(res.data));
   }

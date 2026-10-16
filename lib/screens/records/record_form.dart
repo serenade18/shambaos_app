@@ -8,6 +8,7 @@ import '../../services/app_type.dart';
 import '../../widgets/phosphor_icons.dart';
 import '../fields/field_service.dart';
 import 'record_service.dart';
+import '../../l10n/tr.dart';
 
 /// What a record form shares: saving, and the server's errors shown on its fields.
 mixin RecordForm<T extends StatefulWidget> on State<T> {
@@ -49,10 +50,10 @@ mixin RecordForm<T extends StatefulWidget> on State<T> {
       saving = false;
       fieldErrors = fields;
       error = res.data == null
-          ? 'Could not save. Check your connection and try again.'
+          ? 'Could not save. Check your connection and try again.'.tr
           : fields.isNotEmpty && res.data is Map && res.data['code'] == 'validation_error'
               ? _checkFields
-              : (res.message ?? 'Could not save. Try again.');
+              : (res.message ?? 'Could not save. Try again.'.tr);
     });
   }
 
@@ -64,7 +65,7 @@ mixin RecordForm<T extends StatefulWidget> on State<T> {
   }
 }
 
-const _checkFields = 'Check the fields marked below.';
+String get _checkFields => 'Check the fields marked below.'.tr;
 
 /// Opens a record form; when it saves, says so and returns true.
 Future<bool> openRecord(BuildContext context, Widget form) async {
@@ -82,7 +83,7 @@ class RecordPage extends StatelessWidget {
   final bool saving;
   final String? error;
   final VoidCallback? onSave;
-  final String saveLabel;
+  final String? saveLabel;
 
   const RecordPage({
     super.key,
@@ -92,7 +93,7 @@ class RecordPage extends StatelessWidget {
     required this.saving,
     this.error,
     required this.onSave,
-    this.saveLabel = 'Save',
+    this.saveLabel,
   });
 
   @override
@@ -104,7 +105,7 @@ class RecordPage extends StatelessWidget {
         backgroundColor: c.cardBackground,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Back'.tr,
           onPressed: () => Navigator.pop(context),
           icon: Icon(PhosphorIconsRegular.arrowLeft, color: c.textPrimary),
         ),
@@ -149,7 +150,7 @@ class RecordPage extends StatelessWidget {
                       onPressed: saving ? null : onSave,
                       child: saving
                           ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: c.shamba))
-                          : Text(saveLabel),
+                          : Text(saveLabel ?? 'Save'.tr),
                     ),
                   ),
                 ],
@@ -185,19 +186,21 @@ class RecordSection extends StatelessWidget {
 
 /// The day a record is for: today unless changed, never later.
 class RecordDateField extends StatelessWidget {
-  final String label;
+  final String? label;
   final DateTime value;
   final ValueChanged<DateTime> onChanged;
   final String? errorText;
   final DateTime? first;
 
-  const RecordDateField({super.key, this.label = 'Date', required this.value, required this.onChanged, this.errorText, this.first});
+  const RecordDateField({super.key, this.label, required this.value, required this.onChanged, this.errorText, this.first});
 
   static String friendly(DateTime d) {
     final today = DateUtils.dateOnly(DateTime.now());
     final day = DateUtils.dateOnly(d);
-    if (day == today) return 'Today, ${DateFormat('d MMM').format(d)}';
-    if (day == today.subtract(const Duration(days: 1))) return 'Yesterday, ${DateFormat('d MMM').format(d)}';
+    if (day == today) return 'Today, {date}'.trArgs({'date': DateFormat('d MMM').format(d)});
+    if (day == today.subtract(const Duration(days: 1))) {
+      return 'Yesterday, {date}'.trArgs({'date': DateFormat('d MMM').format(d)});
+    }
     return DateFormat('EEE d MMM yyyy').format(d);
   }
 
@@ -218,7 +221,7 @@ class RecordDateField extends StatelessWidget {
       },
       child: InputDecorator(
         decoration: InputDecoration(
-          labelText: label,
+          labelText: label ?? 'Date'.tr,
           errorText: errorText,
           suffixIcon: Icon(PhosphorIconsRegular.calendarBlank, color: c.textSecondary),
         ),
@@ -358,7 +361,7 @@ class RecordLoading extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: Text(error!, style: AppType.body.copyWith(color: c.dangerInk))),
-        TextButton(onPressed: onRetry, child: const Text('Try again')),
+        TextButton(onPressed: onRetry, child: Text('Try again'.tr)),
       ],
     );
   }
@@ -398,7 +401,7 @@ class ItemLineFields extends StatefulWidget {
   final bool Function(Item) where;
   final Set<String> suggest;
   final String itemLabel;
-  final String qtyLabel;
+  final String? qtyLabel;
   final String? priceLabel; // shown when set: "Price per unit"
   final String? currency;
   final Map<String, String?> errors; // item, qty, unit, price
@@ -412,7 +415,7 @@ class ItemLineFields extends StatefulWidget {
     required this.where,
     this.suggest = const {},
     required this.itemLabel,
-    this.qtyLabel = 'How much',
+    this.qtyLabel,
     this.priceLabel,
     this.currency,
     this.errors = const {},
@@ -489,7 +492,7 @@ class _ItemLineFieldsState extends State<ItemLineFields> {
       for (final s in _suggestions)
         DropdownMenuItem(
           value: 's:${s.code}',
-          child: Text('Add ${s.name}', overflow: TextOverflow.ellipsis, style: TextStyle(color: c.brandText)),
+          child: Text('Add {name}'.trArgs({'name': s.name}), overflow: TextOverflow.ellipsis, style: TextStyle(color: c.brandText)),
         ),
     ];
     final units = line.item?.units ?? const <String>[];
@@ -503,7 +506,7 @@ class _ItemLineFieldsState extends State<ItemLineFields> {
               child: options.isEmpty
                   ? InputDecorator(
                       decoration: InputDecoration(labelText: widget.itemLabel, errorText: e['item']),
-                      child: Text('None on this farm yet. Add them in the web dashboard.',
+                      child: Text('None on this farm yet. Add them in the web dashboard.'.tr,
                           style: AppType.caption.copyWith(color: c.textSecondary)),
                     )
                   : DropdownButtonFormField<String>(
@@ -526,7 +529,7 @@ class _ItemLineFieldsState extends State<ItemLineFields> {
             ),
             if (widget.onRemove != null)
               IconButton(
-                tooltip: 'Remove',
+                tooltip: 'Remove'.tr,
                 onPressed: widget.onRemove,
                 icon: Icon(PhosphorIconsRegular.x, color: c.textSecondary),
               ),
@@ -540,7 +543,7 @@ class _ItemLineFieldsState extends State<ItemLineFields> {
             Expanded(
               child: RecordNumberField(
                 controller: line.qty,
-                label: widget.qtyLabel,
+                label: widget.qtyLabel ?? 'How much'.tr,
                 suffix: line.unit,
                 errorText: e['qty'],
                 onChanged: (_) => widget.onChanged(),
@@ -564,7 +567,7 @@ class _ItemLineFieldsState extends State<ItemLineFields> {
         if (units.length > 1) ...[
           const SizedBox(height: 12),
           RecordChoices<String>(
-            label: 'Counted in',
+            label: 'Counted in'.tr,
             options: [for (final u in units) (u, u)],
             value: line.unit,
             errorText: e['unit'],
@@ -593,7 +596,7 @@ class AnimalPicker extends StatefulWidget {
   final Animal? value;
   final ValueChanged<Animal?> onChanged;
   final bool Function(Animal)? where;
-  final String label;
+  final String? label;
   final String? noneLabel;
   final String? errorText;
 
@@ -603,7 +606,7 @@ class AnimalPicker extends StatefulWidget {
     required this.value,
     required this.onChanged,
     this.where,
-    this.label = 'Animal',
+    this.label,
     this.noneLabel,
     this.errorText,
   });
@@ -639,16 +642,16 @@ class _AnimalPickerState extends State<AnimalPicker> {
     if (animals == null) return RecordLoading(error: _loadError, onRetry: _load);
     if (animals.isEmpty && widget.noneLabel == null) {
       return InputDecorator(
-        decoration: InputDecoration(labelText: widget.label, errorText: widget.errorText),
-        child: Text('No animals to choose. Add them to this herd first.', style: AppType.caption.copyWith(color: c.textSecondary)),
+        decoration: InputDecoration(labelText: widget.label ?? 'Animal'.tr, errorText: widget.errorText),
+        child: Text('No animals to choose. Add them to this herd first.'.tr, style: AppType.caption.copyWith(color: c.textSecondary)),
       );
     }
     return DropdownButtonFormField<String>(
       initialValue: widget.value?.id ?? '',
       isExpanded: true,
-      decoration: InputDecoration(labelText: widget.label, errorText: widget.errorText),
+      decoration: InputDecoration(labelText: widget.label ?? 'Animal'.tr, errorText: widget.errorText),
       items: [
-        DropdownMenuItem(value: '', child: Text(widget.noneLabel ?? 'Choose an animal')),
+        DropdownMenuItem(value: '', child: Text(widget.noneLabel ?? 'Choose an animal'.tr)),
         for (final a in animals) DropdownMenuItem(value: a.id, child: Text(a.label, overflow: TextOverflow.ellipsis)),
       ],
       onChanged: (id) => widget.onChanged(id == null || id.isEmpty ? null : animals.firstWhere((a) => a.id == id)),
@@ -677,7 +680,6 @@ class _PartyPickerState extends State<PartyPicker> {
   List<Party>? _parties;
   String? _loadError;
 
-  String get _who => widget.suppliers ? 'supplier' : 'customer';
 
   @override
   void initState() {
@@ -715,7 +717,7 @@ class _PartyPickerState extends State<PartyPicker> {
             key: ValueKey('${widget.value?.id}-${parties.length}'),
             initialValue: widget.value?.id,
             isExpanded: true,
-            decoration: InputDecoration(labelText: widget.suppliers ? 'Supplier' : 'Customer', errorText: widget.errorText),
+            decoration: InputDecoration(labelText: widget.suppliers ? 'Supplier'.tr : 'Customer'.tr, errorText: widget.errorText),
             items: [
               for (final p in parties)
                 DropdownMenuItem(
@@ -732,7 +734,7 @@ class _PartyPickerState extends State<PartyPicker> {
           child: TextButton.icon(
             onPressed: _add,
             icon: Icon(PhosphorIconsRegular.plus, size: 18, color: c.brandText),
-            label: Text('New $_who'),
+            label: Text(widget.suppliers ? 'New supplier'.tr : 'New customer'.tr),
           ),
         ),
       ],
@@ -755,7 +757,6 @@ class _NewPartyDialogState extends State<_NewPartyDialog> {
   String? _problem;
   bool _saving = false;
 
-  String get _who => widget.suppliers ? 'supplier' : 'customer';
 
   @override
   void dispose() {
@@ -766,7 +767,7 @@ class _NewPartyDialogState extends State<_NewPartyDialog> {
 
   Future<void> _add() async {
     final name = _name.text.trim();
-    if (name.isEmpty) return setState(() => _problem = 'Enter a name.');
+    if (name.isEmpty) return setState(() => _problem = 'Enter a name.'.tr);
     setState(() {
       _saving = true;
       _problem = null;
@@ -778,7 +779,7 @@ class _NewPartyDialogState extends State<_NewPartyDialog> {
     if (res.error || res.data is! Map) {
       setState(() {
         _saving = false;
-        _problem = res.message ?? 'Could not add the $_who.';
+        _problem = res.message ?? (widget.suppliers ? 'Could not add the supplier.'.tr : 'Could not add the customer.'.tr);
       });
       return;
     }
@@ -788,13 +789,13 @@ class _NewPartyDialogState extends State<_NewPartyDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('New $_who'),
+      title: Text(widget.suppliers ? 'New supplier'.tr : 'New customer'.tr),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          RecordTextField(controller: _name, label: 'Name', caps: TextCapitalization.words, maxLength: 120),
+          RecordTextField(controller: _name, label: 'Name'.tr, caps: TextCapitalization.words, maxLength: 120),
           const SizedBox(height: 12),
-          RecordTextField(controller: _phone, label: 'Phone (optional)', keyboard: TextInputType.phone, maxLength: 32),
+          RecordTextField(controller: _phone, label: 'Phone (optional)'.tr, keyboard: TextInputType.phone, maxLength: 32),
           if (_problem != null) ...[
             const SizedBox(height: 12),
             Text(_problem!, style: AppType.caption.copyWith(color: context.appColors.dangerInk)),
@@ -802,8 +803,8 @@ class _NewPartyDialogState extends State<_NewPartyDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        TextButton(onPressed: _saving ? null : _add, child: const Text('Add')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel'.tr)),
+        TextButton(onPressed: _saving ? null : _add, child: Text('Add'.tr)),
       ],
     );
   }

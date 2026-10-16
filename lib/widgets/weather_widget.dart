@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/app_colors.dart';
 import '../models/weather_model.dart';
 import '../screens/home_service.dart';
+import '../l10n/tr.dart';
 
 class WeatherWidget extends StatefulWidget {
   const WeatherWidget({super.key});
@@ -74,7 +75,7 @@ class WeatherWidgetState extends State<WeatherWidget> {
             Icon(Icons.cloud_off_outlined, color: context.appColors.textHint, size: 18),
             SizedBox(width: 8),
             Text(
-              'Weather unavailable',
+              'Weather unavailable'.tr,
               style: TextStyle(color: context.appColors.textHint, fontSize: 13),
             ),
           ],
@@ -161,11 +162,11 @@ class WeatherWidgetState extends State<WeatherWidget> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _stat(Icons.water_drop_outlined, 'Chance', '${w.rainProbability}%'),
+            _stat(Icons.water_drop_outlined, 'Chance'.tr, '${w.rainProbability}%'),
             _statDivider(),
-            _stat(Icons.umbrella_outlined, 'Rain', '${w.precipitation} mm'),
+            _stat(Icons.umbrella_outlined, 'Rain'.tr, '${w.precipitation} mm'),
             _statDivider(),
-            _stat(Icons.thermostat_outlined, 'Low', '${w.tempMin.round()}°'),
+            _stat(Icons.thermostat_outlined, 'Low'.tr, '${w.tempMin.round()}°'),
           ],
         ),
       ],
@@ -174,8 +175,8 @@ class WeatherWidgetState extends State<WeatherWidget> {
 
   // "Today, Nairobi, Embakasi, E..." — mirrors the screenshot label
   String _buildLocationLabel(WeatherModel w) {
-    final location = fieldName.isEmpty ? 'Your Field' : fieldName;
-    return 'Today, $location';
+    final location = fieldName.isEmpty ? 'Your Field'.tr : fieldName;
+    return 'Today, {location}'.trArgs({'location': location});
   }
 
   String _capitalise(String s) {

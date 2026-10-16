@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/app_colors.dart';
+import '../../l10n/tr.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -13,87 +14,88 @@ class _MarketScreenState extends State<MarketScreen> {
   // ══════════════════════════════════════════════════════════
   // DATA
   // ══════════════════════════════════════════════════════════
-  final List<Map<String, dynamic>> _markets = [
+  List<Map<String, dynamic>> get _markets => [
     {
       'id': 1,
-      'name': 'Wakulima Market',
-      'location': 'Nairobi CBD',
-      'distance': '2.1 km',
+      'name': 'Wakulima Market'.tr,
+      'location': 'Nairobi CBD'.tr,
+      'distance': '2.1 km'.tr,
       'type': 'Wholesale',
       'status': 'open',
-      'hours': '5:00 AM – 6:00 PM',
-      'products': ['Vegetables', 'Grains', 'Fruits'],
+      'hours': '5:00 AM – 6:00 PM'.tr,
+      'products': ['Vegetables'.tr, 'Grains'.tr, 'Fruits'.tr],
       'buyers': 340,
       'rating': 4.7,
       'icon': Icons.store_rounded,
     },
     {
       'id': 2,
-      'name': 'Gikomba Market',
-      'location': 'Gikomba',
-      'distance': '3.4 km',
+      'name': 'Gikomba Market'.tr,
+      'location': 'Gikomba'.tr,
+      'distance': '3.4 km'.tr,
       'type': 'Wholesale',
       'status': 'busy',
-      'hours': '6:00 AM – 8:00 PM',
-      'products': ['Cereals', 'Pulses', 'Potatoes'],
+      'hours': '6:00 AM – 8:00 PM'.tr,
+      'products': ['Cereals'.tr, 'Pulses'.tr, 'Potatoes'.tr],
       'buyers': 510,
       'rating': 4.5,
       'icon': Icons.local_shipping_rounded,
     },
     {
       'id': 3,
-      'name': 'Organic Growers Hub',
-      'location': 'Kilimani',
-      'distance': '5.0 km',
+      'name': 'Organic Growers Hub'.tr,
+      'location': 'Kilimani'.tr,
+      'distance': '5.0 km'.tr,
       'type': 'Organic',
       'status': 'open',
-      'hours': '7:00 AM – 4:00 PM',
-      'products': ['Organic Veg', 'Herbs', 'Honey'],
+      'hours': '7:00 AM – 4:00 PM'.tr,
+      'products': ['Organic Veg'.tr, 'Herbs'.tr, 'Honey'.tr],
       'buyers': 120,
       'rating': 4.9,
       'icon': Icons.eco_rounded,
     },
     {
       'id': 4,
-      'name': 'City Park Retail Market',
-      'location': 'Ngara',
-      'distance': '1.8 km',
+      'name': 'City Park Retail Market'.tr,
+      'location': 'Ngara'.tr,
+      'distance': '1.8 km'.tr,
       'type': 'Retail',
       'status': 'open',
-      'hours': '8:00 AM – 7:00 PM',
-      'products': ['Fruits', 'Vegetables', 'Eggs'],
+      'hours': '8:00 AM – 7:00 PM'.tr,
+      'products': ['Fruits'.tr, 'Vegetables'.tr, 'Eggs'.tr],
       'buyers': 230,
       'rating': 4.3,
       'icon': Icons.shopping_cart_rounded,
     },
     {
       'id': 5,
-      'name': 'Kenya Export Market',
-      'location': 'Industrial Area',
-      'distance': '8.2 km',
+      'name': 'Kenya Export Market'.tr,
+      'location': 'Industrial Area'.tr,
+      'distance': '8.2 km'.tr,
       'type': 'Export',
       'status': 'open',
-      'hours': '6:00 AM – 5:00 PM',
-      'products': ['Cut Flowers', 'French Beans', 'Avocado'],
+      'hours': '6:00 AM – 5:00 PM'.tr,
+      'products': ['Cut Flowers'.tr, 'French Beans'.tr, 'Avocado'.tr],
       'buyers': 85,
       'rating': 4.8,
       'icon': Icons.flight_takeoff_rounded,
     },
     {
       'id': 6,
-      'name': 'Kangemi Retail Hub',
-      'location': 'Kangemi',
-      'distance': '6.7 km',
+      'name': 'Kangemi Retail Hub'.tr,
+      'location': 'Kangemi'.tr,
+      'distance': '6.7 km'.tr,
       'type': 'Retail',
       'status': 'closed',
-      'hours': 'Opens at 7:00 AM',
-      'products': ['Maize', 'Beans', 'Kale'],
+      'hours': 'Opens at 7:00 AM'.tr,
+      'products': ['Maize'.tr, 'Beans'.tr, 'Kale'.tr],
       'buyers': 180,
       'rating': 4.1,
       'icon': Icons.local_grocery_store_rounded,
     },
   ];
 
+  // English names, matched against each market's type; shown translated.
   final List<String> _filters = ['All', 'Wholesale', 'Retail', 'Organic', 'Export'];
   String _activeFilter = 'All';
   int? _selectedId;
@@ -212,7 +214,7 @@ class _MarketScreenState extends State<MarketScreen> {
           if (!_isSearching)
             Expanded(
               child: Text(
-                'Markets Near You',
+                'Markets Near You'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -228,7 +230,7 @@ class _MarketScreenState extends State<MarketScreen> {
                 onChanged: (v) => setState(() => _searchQuery = v),
                 style: TextStyle(fontSize: 15, color: colors.textPrimary),
                 decoration: InputDecoration(
-                  hintText: 'Search markets, produce...',
+                  hintText: 'Search markets, produce...'.tr,
                   hintStyle: TextStyle(color: colors.textSecondary, fontSize: 15),
                   border: InputBorder.none,
                   isDense: true,
@@ -291,7 +293,7 @@ class _MarketScreenState extends State<MarketScreen> {
                     ),
                   ),
                   child: Text(
-                    f,
+                    f.tr,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -322,8 +324,8 @@ class _MarketScreenState extends State<MarketScreen> {
             const SizedBox(height: 12),
             Text(
               _searchQuery.isNotEmpty
-                  ? 'No markets found for "$_searchQuery"'
-                  : 'No markets in this category',
+                  ? 'No markets found for "{searchQuery}"'.trArgs({'searchQuery': _searchQuery})
+                  : 'No markets in this category'.tr,
               style: TextStyle(fontSize: 14, color: context.appColors.textHint),
               textAlign: TextAlign.center,
             ),
@@ -345,7 +347,7 @@ class _MarketScreenState extends State<MarketScreen> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 10, top: 4),
             child: Text(
-              '${items.length} market${items.length == 1 ? '' : 's'} available',
+              items.length == 1 ? '{n} market available'.trArgs({'n': 1}) : '{n} markets available'.trArgs({'n': items.length}),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -545,7 +547,7 @@ class _MarketScreenState extends State<MarketScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      isSelected ? 'Selected — Tap to Remove' : 'Sell Here',
+                      isSelected ? 'Selected — Tap to Remove'.tr : 'Sell Here'.tr,
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
@@ -572,17 +574,17 @@ class _MarketScreenState extends State<MarketScreen> {
       case 'open':
         bg = context.appColors.brandSoft;
         fg = context.appColors.brandText;
-        label = 'Open';
+        label = 'Open'.tr;
         break;
       case 'busy':
         bg = const Color(0xFFFFF8E1);
         fg = const Color(0xFFE65100);
-        label = 'Busy';
+        label = 'Busy'.tr;
         break;
       default:
         bg = const Color(0xFFFBE9E7);
         fg = const Color(0xFFBF360C);
-        label = 'Closed';
+        label = 'Closed'.tr;
     }
 
     return Container(
@@ -645,7 +647,7 @@ class _MarketScreenState extends State<MarketScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Selected: ${market['name']}',
+                    'Selected: {name}'.trArgs({'name': market['name']}),
                     style: TextStyle(
                       fontSize: 12.5,
                       color: colors.textSecondary,
@@ -657,7 +659,7 @@ class _MarketScreenState extends State<MarketScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _confirmSelection,
                       icon: const Icon(Icons.send_rounded, size: 17),
-                      label: const Text('Confirm Market'),
+                      label: Text('Confirm Market'.tr),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.brand,
                         foregroundColor: Colors.white,
@@ -685,7 +687,7 @@ class _MarketScreenState extends State<MarketScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('✓ Listed at ${market['name']}!'),
+        content: Text('✓ Listed at {name}!'.trArgs({'name': market['name']})),
         backgroundColor: AppColors.brand,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

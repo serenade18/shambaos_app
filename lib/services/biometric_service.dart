@@ -1,5 +1,6 @@
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../l10n/tr.dart';
 
 class BiometricService {
   static final LocalAuthentication _auth = LocalAuthentication();
@@ -64,7 +65,7 @@ class BiometricService {
   static Future<bool> authenticate() async {
     try {
       return await _auth.authenticate(
-        localizedReason: 'Use your fingerprint or face to login',
+        localizedReason: 'Use your fingerprint or face to login'.tr,
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,

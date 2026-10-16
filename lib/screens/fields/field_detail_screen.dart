@@ -11,6 +11,7 @@ import '../records/record_forms.dart';
 import '../records/record_menu.dart';
 import 'field_service.dart';
 import 'field_widgets.dart';
+import '../../l10n/tr.dart';
 
 /// One field: its photo, how it is doing, and the jobs in its plan.
 class FieldDetailScreen extends StatefulWidget {
@@ -78,7 +79,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                 backgroundColor: c.shamba,
                 foregroundColor: c.onShamba,
                 icon: const Icon(PhosphorIconsBold.plus),
-                label: const Text('Record'),
+                label: Text('Record'.tr),
               )
             : null,
         body: RefreshIndicator(
@@ -117,7 +118,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                 sliver: SliverList.list(children: [
                   Row(
                     children: [
-                      Expanded(child: Text('Field analysis', style: AppType.titleM.copyWith(color: c.textPrimary))),
+                      Expanded(child: Text('Field analysis'.tr, style: AppType.titleM.copyWith(color: c.textPrimary))),
                       Icon(PhosphorIconsFill.sparkle, size: 18, color: c.brandText),
                     ],
                   ),
@@ -198,11 +199,11 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
-          child: Text(f.isCrop ? 'Activity this field' : 'Vaccinations',
+          child: Text(f.isCrop ? 'Activity this field'.tr : 'Vaccinations'.tr,
               style: AppType.titleM.copyWith(color: c.textPrimary)),
         ),
         if (tasks != null && tasks.isNotEmpty)
-          Text('$done / ${tasks.length} completed', style: AppType.label.copyWith(color: c.textSecondary)),
+          Text('{done} / {total} completed'.trArgs({'done': done, 'total': tasks.length}), style: AppType.label.copyWith(color: c.textSecondary)),
       ],
     );
   }
@@ -212,12 +213,12 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     if (_error != null && tasks == null) {
       return [
         SlLedger(children: [
-          SlLedgerRow(title: 'Could not load this field', meta: _error),
+          SlLedgerRow(title: 'Could not load this field'.tr, meta: _error),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: OutlinedButton(onPressed: _load, child: const Text('Try again')),
+              child: OutlinedButton(onPressed: _load, child: Text('Try again'.tr)),
             ),
           ),
         ]),
@@ -228,7 +229,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     }
     if (tasks.isEmpty) {
       return [
-        const SlLedger(children: [SlLedgerRow(title: 'Nothing planned', meta: 'No vaccinations are due for this group.')]),
+        SlLedger(children: [SlLedgerRow(title: 'Nothing planned'.tr, meta: 'No vaccinations are due for this group.'.tr)]),
       ];
     }
     return [for (final t in tasks) _taskCard(c, t)];
@@ -251,10 +252,10 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
 
   Widget _taskCard(AppColors c, FieldTask t) {
     final dateText = t.date == null
-        ? (t.done ? 'Done' : 'To do')
+        ? (t.done ? 'Done'.tr : 'To do'.tr)
         : t.done
-            ? 'Done ${DateFormat('d MMM').format(t.date!)}'
-            : 'Due ${DateFormat('EEE d MMM').format(t.date!)}';
+            ? 'Done {date}'.trArgs({'date': DateFormat('d MMM').format(t.date!)})
+            : 'Due {date}'.trArgs({'date': DateFormat('EEE d MMM').format(t.date!)});
     final canRecord = f.isActive && !t.done && (f.isCrop ? t.code != null : t.vaccine != null);
 
     Widget trailing;
@@ -266,10 +267,10 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
       );
     } else {
       trailing = switch (t.status) {
-        'done' => const SlStatusTag('Done', status: SlStatus.good),
-        'overdue' => const SlStatusTag('Overdue', status: SlStatus.danger),
-        'due' => const SlStatusTag('Due soon', status: SlStatus.warn),
-        _ => const SlStatusTag('Upcoming'),
+        'done' => SlStatusTag('Done'.tr, status: SlStatus.good),
+        'overdue' => SlStatusTag('Overdue'.tr, status: SlStatus.danger),
+        'due' => SlStatusTag('Due soon'.tr, status: SlStatus.warn),
+        _ => SlStatusTag('Upcoming'.tr),
       };
     }
 
@@ -310,7 +311,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                 ),
                 const SizedBox(width: 10),
                 Semantics(
-                  label: t.done ? 'Done' : (canRecord ? 'Not done. Tap to record' : 'Not done'),
+                  label: t.done ? 'Done'.tr : (canRecord ? 'Not done. Tap to record'.tr : 'Not done'.tr),
                   child: trailing,
                 ),
               ],

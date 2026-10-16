@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../l10n/tr.dart';
 import 'biometric_service.dart';
 
 class ApiResponse {
@@ -34,12 +36,31 @@ class ApiService {
   // The organisation (farm account) requests act on, sent as X-Org-Id.
   static String? _orgId;
 
+  // The language the person chose: en, sw or fr. Sent as Accept-Language, so the
+  // server answers in it, and saved on their account, which SMS and emails follow.
+  static const Map<String, String> languages = {'en': 'English', 'sw': 'Kiswahili', 'fr': 'Français'};
+  static String _locale = 'en';
+  static String get locale => _locale;
+  // Tells the app to redraw in a newly chosen language.
+  static final ValueNotifier<String> language = ValueNotifier('en');
+
   // ================= INIT =================
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _accessToken = prefs.getString('access_token');
     _refreshToken = prefs.getString('refresh_token');
     _orgId = prefs.getString('org_id');
+    _locale = prefs.getString('locale') ?? 'en';
+    language.value = _locale;
+  }
+
+  // Kept on sign-out: it belongs to the phone as much as the person.
+  static Future<void> setLocale(String code) async {
+    if (!languages.containsKey(code)) return;
+    _locale = code;
+    language.value = code;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('locale', code);
   }
 
   static String? get refreshToken => _refreshToken;
@@ -88,6 +109,9 @@ class ApiService {
   static Future<void> setUser(Map<String, dynamic> user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user', jsonEncode(user));
+    // The account's language wins, e.g. after signing in on a new phone.
+    final locale = user['preferred_locale'];
+    if (locale is String) await setLocale(locale);
   }
 
   static Future<Map<String, dynamic>?> getUser() async {
@@ -127,7 +151,7 @@ class ApiService {
   static Map<String, String> _headers({bool requiresAuth = true}) {
     return {
       'Content-Type': 'application/json',
-      'Accept-Language': 'en',
+      'Accept-Language': _locale,
       if (requiresAuth && _accessToken != null)
         'Authorization': 'Bearer $_accessToken',
       if (requiresAuth && _orgId != null) 'X-Org-Id': _orgId!,
@@ -338,7 +362,7 @@ class ApiService {
       }
       return (null, ApiResponse(error: true, data: data, message: _errorMessage(data), statusCode: response.statusCode));
     } catch (e) {
-      return (null, ApiResponse(error: true, message: 'No connection. Check your internet and try again.', statusCode: 0));
+      return (null, ApiResponse(error: true, message: 'No connection. Check your internet and try again.'.tr, statusCode: 0));
     }
   }
 

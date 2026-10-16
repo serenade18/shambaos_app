@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/app_colors.dart';
+import '../../l10n/tr.dart';
 
 class PlantScreen extends StatefulWidget {
   const PlantScreen({super.key});
@@ -10,50 +11,50 @@ class PlantScreen extends StatefulWidget {
 }
 
 class _PlantScreenState extends State<PlantScreen> {
-  final List<Map<String, String>> animals = [
+  List<Map<String, String>> get animals => [
     {
-      'title': 'Maize',
-      'subtitle': 'Manage your maize',
+      'title': 'Maize'.tr,
+      'subtitle': 'Manage your maize'.tr,
       'image': 'images/assets/icons/corn.png',
     },
     {
-      'title': 'Beans',
-      'subtitle': 'Manage your beans',
+      'title': 'Beans'.tr,
+      'subtitle': 'Manage your beans'.tr,
       'image': 'images/assets/icons/beans.png',
     },
     {
-      'title': 'Bananas',
-      'subtitle': 'Manage your bananas',
+      'title': 'Bananas'.tr,
+      'subtitle': 'Manage your bananas'.tr,
       'image': 'images/assets/icons/banana.png',
     },
     {
-      'title': 'Avocados',
-      'subtitle': 'Manage your avocados',
+      'title': 'Avocados'.tr,
+      'subtitle': 'Manage your avocados'.tr,
       'image': 'images/assets/icons/avocado.png',
     },
     {
-      'title': 'Rice',
-      'subtitle': 'Manage your rice',
+      'title': 'Rice'.tr,
+      'subtitle': 'Manage your rice'.tr,
       'image': 'images/assets/icons/rice.png',
     },
     {
-      'title': 'Wheat',
-      'subtitle': 'Manage your wheat',
+      'title': 'Wheat'.tr,
+      'subtitle': 'Manage your wheat'.tr,
       'image': 'images/assets/icons/wheat.png',
     },
     {
-      'title': 'Tomatoes',
-      'subtitle': 'Manage your tomatoes',
+      'title': 'Tomatoes'.tr,
+      'subtitle': 'Manage your tomatoes'.tr,
       'image': 'images/assets/icons/tomato.png',
     },
     {
-      'title': 'Spinach',
-      'subtitle': 'Manage your spinach',
+      'title': 'Spinach'.tr,
+      'subtitle': 'Manage your spinach'.tr,
       'image': 'images/assets/icons/spinach.png',
     },
     {
-      'title': 'Sukuma (Kales)',
-      'subtitle': 'Manage your kales',
+      'title': 'Sukuma (Kales)'.tr,
+      'subtitle': 'Manage your kales'.tr,
       'image': 'images/assets/icons/kale.png',
     },
   ];
@@ -135,7 +136,7 @@ class _PlantScreenState extends State<PlantScreen> {
               if (!_isSearching)
                 Expanded(
                   child: Text(
-                    'Plant Husbandry',
+                    'Plant Husbandry'.tr,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -154,7 +155,7 @@ class _PlantScreenState extends State<PlantScreen> {
                       color: colors.textPrimary,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Search plants...',
+                      hintText: 'Search plants...'.tr,
                       hintStyle: TextStyle(
                         color: colors.textSecondary,
                         fontSize: 15,
@@ -213,7 +214,7 @@ class _PlantScreenState extends State<PlantScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'No plants found for "$_searchQuery"',
+              'No plants found for "{searchQuery}"'.trArgs({'searchQuery': _searchQuery}),
               style: TextStyle(
                 fontSize: 14,
                 color: context.appColors.textHint,

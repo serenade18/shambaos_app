@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/api_service.dart';
 import '../../services/biometric_service.dart';
+import '../../l10n/tr.dart';
 
 class AuthService {
   static const String _appVersion = '1.0.0';
@@ -71,7 +74,7 @@ class AuthService {
         'email': email,
         'username': username ?? email.split('@').first,
         'password': password,
-        'locale': 'en',
+        'locale': ApiService.locale,
       },
       requiresAuth: false,
     );
@@ -200,12 +203,12 @@ class AuthService {
   /// Returns null on success, or why it could not be turned on.
   static Future<String?> enableBiometricLogin() async {
     if (!await BiometricService.isAvailable()) {
-      return 'Set up a fingerprint or face unlock on this phone first.';
+      return 'Set up a fingerprint or face unlock on this phone first.'.tr;
     }
     final user = await ApiService.getUser();
     final refresh = ApiService.refreshToken;
-    if (user?['id'] == null || refresh == null) return 'Sign in again, then turn this on.';
-    if (!await BiometricService.authenticate()) return 'Biometric check was cancelled.';
+    if (user?['id'] == null || refresh == null) return 'Sign in again, then turn this on.'.tr;
+    if (!await BiometricService.authenticate()) return 'Biometric check was cancelled.'.tr;
 
     await BiometricService.enableForUser(
       userId: user!['id'].toString(),
@@ -226,10 +229,10 @@ class AuthService {
     final userId = await BiometricService.getCurrentBiometricUser();
     final refresh = userId == null ? null : await BiometricService.getRefreshToken(userId);
     if (userId == null || refresh == null) {
-      return ApiResponse(error: true, message: 'Biometric login is not set up.', statusCode: 400);
+      return ApiResponse(error: true, message: 'Biometric login is not set up.'.tr, statusCode: 400);
     }
     if (!await BiometricService.authenticate()) {
-      return ApiResponse(error: true, message: 'Biometric check was cancelled.', statusCode: 401);
+      return ApiResponse(error: true, message: 'Biometric check was cancelled.'.tr, statusCode: 401);
     }
 
     final response = await ApiService.post('/auth/token/refresh', {'refresh': refresh}, requiresAuth: false);
@@ -239,8 +242,8 @@ class AuthService {
       return ApiResponse(
         error: true,
         message: response.statusCode == 401
-            ? 'Your session has ended. Sign in with your phone number.'
-            : response.message ?? 'Could not sign in. Check your connection.',
+            ? 'Your session has ended. Sign in with your phone number.'.tr
+            : response.message ?? 'Could not sign in. Check your connection.'.tr,
         statusCode: response.statusCode,
       );
     }
@@ -271,7 +274,7 @@ class AuthService {
   }) {
     return ApiService.post(
       '/auth/password/forgot',
-      {'email': email, 'locale': 'en'},
+      {'email': email, 'locale': ApiService.locale},
       requiresAuth: false,
     );
   }
@@ -296,7 +299,7 @@ class AuthService {
   }) async {
     final response = await ApiService.post(
       '/auth/otp/request',
-      {'phone': phone, 'locale': 'en'},
+      {'phone': phone, 'locale': ApiService.locale},
       requiresAuth: false,
     );
 
@@ -319,16 +322,99 @@ class AuthService {
   static Future<ApiResponse> verifyOtp({
     required String phone,
     required String otp,
+    String? googleTicket,
   }) async {
     final response = await ApiService.post(
       '/auth/otp/verify',
-      {'phone': phone, 'code': otp, 'locale': 'en', 'device': await _device()},
+      {
+        'phone': phone,
+        'code': otp,
+        'locale': ApiService.locale,
+        'device': await _device(),
+        // Someone new who continued with Google: links that Google account.
+        'google_ticket': ?googleTicket,
+      },
       requiresAuth: false,
     );
 
     // !response.error = OTP verified successfully
     if (!response.error) await _saveSignIn(response.data);
 
+    return response;
+  }
+
+  // ─────────────────────────────────────────────
+  // GOOGLE SIGN-IN. The client IDs come from the server (GET /config/public),
+  // where super admins set them in the staff portal; until they do, the
+  // button stays hidden. The plugin can only be set up once per run, so a
+  // changed ID takes effect the next time the app starts.
+  // ─────────────────────────────────────────────
+  static const String googleCancelled = 'Google sign-in was cancelled.';
+  static ({String web, String ios})? _googleIds;
+  static bool _googleInitialized = false;
+
+  static bool get _isIOS => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  static Future<({String web, String ios})?> _googleClientIds() async {
+    if (_googleIds != null) return _googleIds;
+    final res = await ApiService.get('/config/public', requiresAuth: false);
+    if (res.error || res.data is! Map) return null;
+    final web = (res.data['google_web_client_id'] ?? '').toString();
+    final ios = (res.data['google_ios_client_id'] ?? '').toString();
+    // iPhones need their own client ID as well as the server's.
+    if (web.isEmpty || (_isIOS && ios.isEmpty)) return null;
+    return _googleIds = (web: web, ios: ios);
+  }
+
+  static Future<bool> isGoogleAvailable() async {
+    if (kIsWeb) return false;
+    return await _googleClientIds() != null;
+  }
+
+  /// Signs in with Google. On success the data is either a full sign-in, or
+  /// {needs_phone: true, google_ticket, email, name} for someone new, who then
+  /// adds their phone number with an SMS code (verifyOtp with the ticket).
+  static Future<ApiResponse> googleSignIn() async {
+    final ids = await _googleClientIds();
+    if (ids == null) {
+      return ApiResponse(error: true, message: "Google sign-in isn't available right now.".tr, statusCode: 503);
+    }
+
+    String? idToken;
+    try {
+      if (!_googleInitialized) {
+        // serverClientId makes Google issue the ID token for our server, which checks it.
+        await GoogleSignIn.instance.initialize(clientId: _isIOS ? ids.ios : null, serverClientId: ids.web);
+        _googleInitialized = true;
+      }
+      final account = await GoogleSignIn.instance.authenticate();
+      idToken = account.authentication.idToken;
+    } on GoogleSignInException catch (e) {
+      final cancelled = e.code == GoogleSignInExceptionCode.canceled;
+      return ApiResponse(
+        error: true,
+        message: cancelled ? googleCancelled : "Google sign-in didn't work. Try again.".tr,
+        statusCode: cancelled ? 499 : 400,
+      );
+    } catch (_) {
+      return ApiResponse(error: true, message: "Google sign-in didn't work. Try again.".tr, statusCode: 400);
+    }
+    if (idToken == null) {
+      return ApiResponse(error: true, message: "Google sign-in didn't work. Try again.".tr, statusCode: 400);
+    }
+
+    final response = await ApiService.post(
+      '/auth/google',
+      {'id_token': idToken, 'device': await _device()},
+      requiresAuth: false,
+    );
+    // Our own session keeps them signed in, so let go of Google straight away:
+    // the account picker shows again next time, for a shared phone.
+    unawaited(GoogleSignIn.instance.signOut());
+
+    if (!response.error && response.data is Map && response.data['needs_phone'] != true) {
+      await _saveSignIn(response.data);
+    }
     return response;
   }
 }

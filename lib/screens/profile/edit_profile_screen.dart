@@ -4,6 +4,7 @@ import 'profile_service.dart';
 import '../../services/app_colors.dart';
 import '../../widgets/auth_dialog.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import '../../l10n/tr.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final String name;
@@ -82,16 +83,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       AuthDialog.show(
         context,
         type: AuthDialogType.success,
-        title: 'Profile Updated',
-        message: 'Your changes have been saved successfully.',
+        title: 'Profile Updated'.tr,
+        message: 'Your changes have been saved successfully.'.tr,
         onDone: () => Navigator.pop(context, true),
       );
     } else {
       AuthDialog.show(
         context,
         type: AuthDialogType.error,
-        title: 'Update Failed',
-        message: response.message ?? 'Could not update profile.',
+        title: 'Update Failed'.tr,
+        message: response.message ?? 'Could not update profile.'.tr,
       );
     }
   }
@@ -111,7 +112,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Personal info',
+          'Personal info'.tr,
           style: TextStyle(
             color: colors.textPrimary,
             fontWeight: FontWeight.bold,
@@ -145,7 +146,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Take a Selfie',
+                          'Take a Selfie'.tr,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -154,7 +155,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Add a profile photo to identify yourself in our community',
+                          'Add a profile photo to identify yourself in our community'.tr,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: colors.textSecondary,
@@ -171,16 +172,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 40),
 
                   // ── Form fields ─────────────────────────────────
-                  _fieldLabel('Name', colors),
+                  _fieldLabel('Name'.tr, colors),
                   _buildInput(nameController, colors),
 
-                  _fieldLabel('Email', colors),
+                  _fieldLabel('Email'.tr, colors),
                   _buildInput(emailController, colors),
 
-                  _fieldLabel('Phone Number', colors),
+                  _fieldLabel('Phone Number'.tr, colors),
                   _buildPhoneInput(colors),
 
-                  _fieldLabel('Username', colors),
+                  _fieldLabel('Username'.tr, colors),
                   _buildInput(usernameController, colors),
 
                   const SizedBox(height: 40),
@@ -209,8 +210,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text(
-                              'Save Changes',
+                          : Text(
+                              'Save Changes'.tr,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -292,8 +293,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       onPressed: () {},
       icon: const Icon(Icons.camera_alt_outlined,
           color: AppColors.brand, size: 20),
-      label: const Text(
-        'Take Photo',
+      label: Text(
+        'Take Photo'.tr,
         style: TextStyle(
           color: AppColors.brand,
           fontWeight: FontWeight.bold,

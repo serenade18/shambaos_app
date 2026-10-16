@@ -9,6 +9,7 @@ import 'field_detail_screen.dart';
 import 'field_service.dart';
 import 'field_widgets.dart';
 import 'photo_check.dart';
+import '../../l10n/tr.dart';
 
 /// What the AI saw in the farmer's photo: how worried to be, what it found, and
 /// what to do. "Scan again" goes back to the camera.
@@ -24,10 +25,10 @@ class ScanResultScreen extends StatelessWidget {
     final c = context.appColors;
     final heroH = MediaQuery.sizeOf(context).height * 0.38;
     final (Color fg, Color bg, IconData icon, String headline) = switch (check.condition) {
-      'healthy' => (c.goodInk, c.goodTint, PhosphorIconsFill.checkCircle, 'Looks healthy'),
-      'act_now' => (c.dangerInk, c.dangerTint, PhosphorIconsFill.warning, 'Act this week'),
-      'watch' => (c.warnInk, c.warnTint, PhosphorIconsFill.eye, 'Keep an eye on it'),
-      _ => (c.rainInk, c.rainTint, PhosphorIconsFill.question, 'Photo not clear enough'),
+      'healthy' => (c.goodInk, c.goodTint, PhosphorIconsFill.checkCircle, 'Looks healthy'.tr),
+      'act_now' => (c.dangerInk, c.dangerTint, PhosphorIconsFill.warning, 'Act this week'.tr),
+      'watch' => (c.warnInk, c.warnTint, PhosphorIconsFill.eye, 'Keep an eye on it'.tr),
+      _ => (c.rainInk, c.rainTint, PhosphorIconsFill.question, 'Photo not clear enough'.tr),
     };
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -84,14 +85,14 @@ class ScanResultScreen extends StatelessWidget {
                   SlLedger(children: [
                     SlLedgerRow(
                       leading: Icon(PhosphorIconsRegular.info, color: c.warnInk),
-                      title: "This doesn't look like ${field.name}",
-                      meta: 'Check you chose the right field, or take a closer photo.',
+                      title: "This doesn't look like {name}".trArgs({'name': field.name}),
+                      meta: 'Check you chose the right field, or take a closer photo.'.tr,
                     ),
                   ]),
                 ],
                 if (check.findings.isNotEmpty) ...[
                   const SizedBox(height: 24),
-                  Text('What the AI found', style: AppType.titleM.copyWith(color: c.textPrimary)),
+                  Text('What the AI found'.tr, style: AppType.titleM.copyWith(color: c.textPrimary)),
                   const SizedBox(height: 10),
                   SlLedger(children: [
                     for (final f in check.findings)
@@ -99,16 +100,16 @@ class ScanResultScreen extends StatelessWidget {
                         title: f.title,
                         meta: f.detail,
                         status: switch (f.severity) {
-                          'good' => const SlStatusTag('Good', status: SlStatus.good),
-                          'act' => const SlStatusTag('Act now', status: SlStatus.danger),
-                          _ => const SlStatusTag('Watch', status: SlStatus.warn),
+                          'good' => SlStatusTag('Good'.tr, status: SlStatus.good),
+                          'act' => SlStatusTag('Act now'.tr, status: SlStatus.danger),
+                          _ => SlStatusTag('Watch'.tr, status: SlStatus.warn),
                         },
                       ),
                   ]),
                 ],
                 if (check.actions.isNotEmpty) ...[
                   const SizedBox(height: 24),
-                  Text('What to do', style: AppType.titleM.copyWith(color: c.textPrimary)),
+                  Text('What to do'.tr, style: AppType.titleM.copyWith(color: c.textPrimary)),
                   const SizedBox(height: 10),
                   // Steps are in order: the most urgent first.
                   for (var i = 0; i < check.actions.length; i++)
@@ -137,7 +138,7 @@ class ScanResultScreen extends StatelessWidget {
                 ],
                 const SizedBox(height: 12),
                 Text(
-                  'AI can be wrong. For a sick animal, or anything spreading fast, call your vet or the county agriculture office.',
+                  'AI can be wrong. For a sick animal, or anything spreading fast, call your vet or the county agriculture office.'.tr,
                   style: AppType.caption.copyWith(color: c.textSecondary),
                 ),
                 const SizedBox(height: 20),
@@ -146,7 +147,7 @@ class ScanResultScreen extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(PhosphorIconsRegular.camera, size: 20),
-                    label: const Text('Scan again'),
+                    label: Text('Scan again'.tr),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -157,7 +158,7 @@ class ScanResultScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(builder: (_) => FieldDetailScreen(field: field)),
                     ),
-                    child: Text('Open ${field.name}'),
+                    child: Text('Open {name}'.trArgs({'name': field.name})),
                   ),
                 ),
               ]),

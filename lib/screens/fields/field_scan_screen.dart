@@ -11,6 +11,7 @@ import 'field_service.dart';
 import 'field_widgets.dart';
 import 'photo_check.dart';
 import 'scan_result_screen.dart';
+import '../../l10n/tr.dart';
 
 /// The AI screen, opened from the centre of the bottom nav: the live camera with a
 /// scanning frame. Swipe the card to choose the field, point the camera at the crop
@@ -72,7 +73,7 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        if (mounted) setState(() => _cameraProblem = 'This phone has no camera. Choose a photo instead.');
+        if (mounted) setState(() => _cameraProblem = 'This phone has no camera. Choose a photo instead.'.tr);
         return;
       }
       final back = cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.back, orElse: () => cameras.first);
@@ -90,11 +91,11 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
       if (!mounted) return;
       setState(() => _cameraProblem = switch (e.code) {
             'CameraAccessDenied' || 'CameraAccessDeniedWithoutPrompt' || 'CameraAccessRestricted' =>
-              'Camera access is off. Allow it in your phone settings, or choose a photo.',
-            _ => 'The camera could not start. Choose a photo instead.',
+              'Camera access is off. Allow it in your phone settings, or choose a photo.'.tr,
+            _ => 'The camera could not start. Choose a photo instead.'.tr,
           });
     } catch (_) {
-      if (mounted) setState(() => _cameraProblem = 'The camera could not start. Choose a photo instead.');
+      if (mounted) setState(() => _cameraProblem = 'The camera could not start. Choose a photo instead.'.tr);
     }
   }
 
@@ -118,7 +119,7 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
       final shot = await camera.takePicture();
       await _check(await shot.readAsBytes());
     } on CameraException {
-      _say('Could not take the photo. Try again.');
+      _say('Could not take the photo. Try again.'.tr);
     }
   }
 
@@ -220,7 +221,7 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), borderRadius: BorderRadius.circular(999)),
                         child: Text(
-                          _checking ? 'Checking your photo…' : 'Fill the frame with the leaves, fruit or animal',
+                          _checking ? 'Checking your photo…'.tr : 'Fill the frame with the leaves, fruit or animal'.tr,
                           style: AppType.caption.copyWith(color: Colors.white),
                         ),
                       ),
@@ -230,7 +231,7 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
                     const SizedBox(height: 20),
                     Row(
                       children: [
-                        _roundButton(c, PhosphorIconsRegular.image, 'Choose a photo',
+                        _roundButton(c, PhosphorIconsRegular.image, 'Choose a photo'.tr,
                             _checking || field == null ? null : _pick),
                         const SizedBox(width: 12),
                         Expanded(
@@ -249,7 +250,7 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
                               icon: _checking
                                   ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: c.shamba))
                                   : const Icon(PhosphorIconsFill.sparkle, size: 20),
-                              label: Text(_checking ? 'Checking…' : 'Scan with AI'),
+                              label: Text(_checking ? 'Checking…'.tr : 'Scan with AI'.tr),
                             ),
                           ),
                         ),
@@ -276,10 +277,10 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: SlLedger(children: [
           SlLedgerRow(
-            title: _noFarm ? 'Set up your farm first' : 'No fields to scan yet',
+            title: _noFarm ? 'Set up your farm first'.tr : 'No fields to scan yet'.tr,
             meta: _noFarm
-                ? 'Add your farm, then the animals and crops you keep.'
-                : 'Add the animals you keep and the crops you grow.',
+                ? 'Add your farm, then the animals and crops you keep.'.tr
+                : 'Add the animals you keep and the crops you grow.'.tr,
           ),
         ]),
       );
@@ -302,7 +303,7 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
         if (fields.length > 1) ...[
           const SizedBox(height: 10),
           Semantics(
-            label: 'Field ${_index + 1} of ${fields.length}. Swipe to choose another.',
+            label: 'Field {p0} of {length}. Swipe to choose another.'.trArgs({'p0': _index + 1, 'length': fields.length}),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -357,7 +358,7 @@ class _FieldScanScreenState extends State<FieldScanScreen> with TickerProviderSt
             children: [
               Icon(PhosphorIconsRegular.chatCircleText, size: 20, color: c.textPrimary),
               const SizedBox(width: 8),
-              Text('Ask Tulip', style: AppType.label.copyWith(color: c.textPrimary)),
+              Text('Ask Tulip'.tr, style: AppType.label.copyWith(color: c.textPrimary)),
             ],
           ),
         ),

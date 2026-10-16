@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import 'verify_otp_screen.dart';
 import '../home_screen.dart';
+import '../../l10n/tr.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Brand tokens
@@ -34,15 +35,15 @@ class _Country {
   const _Country({required this.flag, required this.name, required this.dialCode});
 }
 
-const List<_Country> _countries = [
-  _Country(flag: '🇰🇪', name: 'Kenya',        dialCode: '+254'),
-  _Country(flag: '🇺🇬', name: 'Uganda',       dialCode: '+256'),
-  _Country(flag: '🇹🇿', name: 'Tanzania',     dialCode: '+255'),
-  _Country(flag: '🇷🇼', name: 'Rwanda',       dialCode: '+250'),
-  _Country(flag: '🇪🇹', name: 'Ethiopia',     dialCode: '+251'),
-  _Country(flag: '🇳🇬', name: 'Nigeria',      dialCode: '+234'),
-  _Country(flag: '🇬🇭', name: 'Ghana',        dialCode: '+233'),
-  _Country(flag: '🇿🇦', name: 'South Africa', dialCode: '+27'),
+List<_Country> get _countries => [
+  _Country(flag: '🇰🇪', name: 'Kenya'.tr,        dialCode: '+254'),
+  _Country(flag: '🇺🇬', name: 'Uganda'.tr,       dialCode: '+256'),
+  _Country(flag: '🇹🇿', name: 'Tanzania'.tr,     dialCode: '+255'),
+  _Country(flag: '🇷🇼', name: 'Rwanda'.tr,       dialCode: '+250'),
+  _Country(flag: '🇪🇹', name: 'Ethiopia'.tr,     dialCode: '+251'),
+  _Country(flag: '🇳🇬', name: 'Nigeria'.tr,      dialCode: '+234'),
+  _Country(flag: '🇬🇭', name: 'Ghana'.tr,        dialCode: '+233'),
+  _Country(flag: '🇿🇦', name: 'South Africa'.tr, dialCode: '+27'),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -69,6 +70,11 @@ class _LoginScreenState extends State<LoginScreen>
   String? _errorMsg;
   bool    _biometricReady = false;
   bool    _biometricBusy  = false;
+  bool    _googleAvailable = false;
+  bool    _googleBusy      = false;
+  // Set when someone new continued with Google: they add a phone number to finish.
+  String? _googleTicket;
+  String? _googleEmail;
 
   static const int _n = 5;
 
@@ -103,7 +109,52 @@ class _LoginScreenState extends State<LoginScreen>
     });
     _phoneFocus.addListener(() => setState(() {}));
     _checkBiometric();
+    _checkGoogle();
   }
+
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => const HomeScreen(),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+      (_) => false,
+    );
+  }
+
+  // ── Google sign-in ─────────────────────────────────────────────────────────
+  Future<void> _checkGoogle() async {
+    final available = await AuthService.isGoogleAvailable();
+    if (mounted) setState(() => _googleAvailable = available);
+  }
+
+  Future<void> _handleGoogle() async {
+    if (_googleBusy || _isLoading) return;
+    setState(() { _googleBusy = true; _errorMsg = null; });
+
+    final res = await AuthService.googleSignIn();
+    if (!mounted) return;
+    setState(() => _googleBusy = false);
+
+    if (res.error) {
+      if (res.message != AuthService.googleCancelled) {
+        setState(() => _errorMsg = res.message ?? "Google sign-in didn't work. Try again.".tr);
+      }
+    } else if (res.data is Map && res.data['needs_phone'] == true) {
+      setState(() {
+        _googleTicket = res.data['google_ticket']?.toString();
+        final email = res.data['email']?.toString() ?? '';
+        _googleEmail = email.isEmpty ? null : email;
+      });
+      _phoneFocus.requestFocus();
+    } else {
+      _goHome();
+    }
+  }
+
+  void _cancelGoogle() => setState(() { _googleTicket = null; _googleEmail = null; });
 
   // ── Biometric login ────────────────────────────────────────────────────────
   Future<void> _checkBiometric() async {
@@ -123,22 +174,14 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _biometricBusy = false);
 
     if (!res.error) {
-      Navigator.of(context).pushAndRemoveUntil(
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => const HomeScreen(),
-          transitionsBuilder: (_, anim, __, child) =>
-              FadeTransition(opacity: anim, child: child),
-          transitionDuration: const Duration(milliseconds: 400),
-        ),
-        (_) => false,
-      );
+      _goHome();
     } else {
       final ready = await AuthService.canUseBiometricLogin();
       if (!mounted) return;
       setState(() {
         _biometricReady = ready;
         // A cancelled prompt needs no message.
-        _errorMsg = res.message == 'Biometric check was cancelled.' ? null : res.message;
+        _errorMsg = res.message == 'Biometric check was cancelled.'.tr ? null : res.message;
       });
     }
   }
@@ -191,6 +234,7 @@ class _LoginScreenState extends State<LoginScreen>
           pageBuilder: (_, __, ___) => VerifyOtpScreen(
             phone: phone,
             displayPhone: '${_selectedCountry.dialCode} $raw',
+            googleTicket: _googleTicket,
           ),
           transitionsBuilder: (_, anim, __, child) => SlideTransition(
             position: Tween<Offset>(
@@ -203,8 +247,8 @@ class _LoginScreenState extends State<LoginScreen>
       );
     } else {
       setState(() => _errorMsg = res.data is Map
-          ? res.data['message'] ?? 'Failed to send OTP. Try again.'
-          : res.message ?? 'Failed to send OTP. Try again.');
+          ? res.data['message'] ?? 'Failed to send OTP. Try again.'.tr
+          : res.message ?? 'Failed to send OTP. Try again.'.tr);
     }
   }
 
@@ -225,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen>
                   color: _Brand.divider,
                   borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 18),
-          const Text('Select Country',
+          Text('Select Country'.tr,
               style: TextStyle(color: _Brand.textPrimary, fontSize: 16,
                   fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
@@ -268,25 +312,53 @@ class _LoginScreenState extends State<LoginScreen>
       builder: (_) => AlertDialog(
         backgroundColor: _Brand.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Need Help?',
+        title: Text('Need Help?'.tr,
             style: TextStyle(
                 color: _Brand.textPrimary, fontWeight: FontWeight.w700)),
-        content: const Text(
-          'Enter your phone number (e.g. 0712 123456).\n'
-          'We\'ll send a 6-digit SMS code to log in or create your account.',
+        content: Text(
+          'Enter your phone number (e.g. 0712 123456).\nWe\'ll send a 6-digit SMS code to log in or create your account.'.tr,
           style: TextStyle(
               color: _Brand.textSecondary, height: 1.5, fontSize: 14),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Got it',
+              child: Text('Got it'.tr,
                   style: TextStyle(
                       color: _Brand.brand, fontWeight: FontWeight.w700))),
         ],
       ),
     );
   }
+
+  // Shown while someone new who continued with Google adds their phone number.
+  Widget _googleBanner() => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+        decoration: BoxDecoration(
+          color: _Brand.brandLight,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _Brand.brandBorder),
+        ),
+        child: Row(children: [
+          Image.asset('images/assets/google.png', width: 20, height: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _googleEmail != null
+                  ? 'Continuing with Google as {googleEmail}'.trArgs({'googleEmail': _googleEmail})
+                  : 'Continuing with Google'.tr,
+              style: const TextStyle(
+                  color: _Brand.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+          IconButton(
+            onPressed: _cancelGoogle,
+            tooltip: 'Use phone only'.tr,
+            icon: const Icon(Icons.close_rounded, color: _Brand.textSecondary, size: 18),
+          ),
+        ]),
+      );
 
   // The sign-in screens keep their light design in both themes.
   @override
@@ -315,24 +387,26 @@ class _LoginScreenState extends State<LoginScreen>
                         color: _Brand.brandLight,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: _Brand.brandBorder)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: const [
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.agriculture_rounded,
                           color: _Brand.brand, size: 13),
                       SizedBox(width: 5),
-                      Text('FARM INTELLIGENCE',
+                      Text('FARM INTELLIGENCE'.tr,
                           style: TextStyle(
                               color: _Brand.brand, fontSize: 10,
                               fontWeight: FontWeight.w700, letterSpacing: 1.0)),
                     ]),
                   ),
                   const SizedBox(height: 18),
-                  const Text("What's your phone number?",
+                  Text(_googleTicket != null ? 'One more step'.tr : "What's your phone number?".tr,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 30, fontWeight: FontWeight.w800,
                           color: _Brand.textPrimary, height: 1.15)),
                   const SizedBox(height: 8),
-                  const Text('We use it to create your account',
+                  Text(_googleTicket != null
+                          ? 'Add your phone number to finish setting up your account'.tr
+                          : 'We use it to create your account'.tr,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 14,
@@ -350,6 +424,10 @@ class _LoginScreenState extends State<LoginScreen>
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                 child: Column(
                   children: [
+                    if (_googleTicket != null) ...[
+                      _googleBanner(),
+                      const SizedBox(height: 12),
+                    ],
                     // Phone input card
                     _stagger(1, AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -477,17 +555,17 @@ class _LoginScreenState extends State<LoginScreen>
                                 color: _Brand.brand, size: 22),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Need help to connect?',
+                                Text('Need help to connect?'.tr,
                                     style: TextStyle(
                                         color: _Brand.textPrimary,
                                         fontWeight: FontWeight.w600,
                                         fontSize: 14)),
                                 SizedBox(height: 2),
-                                Text('Learn how SMS login works',
+                                Text('Learn how SMS login works'.tr,
                                     style: TextStyle(
                                         color: _Brand.textSecondary,
                                         fontSize: 12)),
@@ -519,19 +597,19 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Column(children: [
                     RichText(
                       textAlign: TextAlign.center,
-                      text: const TextSpan(
+                      text: TextSpan(
                         style: TextStyle(fontFamily: AppType.text,
                             color: _Brand.textHint, fontSize: 11, height: 1.5),
                         children: [
-                          TextSpan(text: 'By continuing you agree to our '),
+                          TextSpan(text: 'By continuing you agree to our '.tr),
                           TextSpan(
-                              text: 'Terms of Service',
+                              text: 'Terms of Service'.tr,
                               style: TextStyle(
                                   color: _Brand.brand,
                                   fontWeight: FontWeight.w600)),
                           TextSpan(text: ' and '),
                           TextSpan(
-                              text: 'Privacy Policy',
+                              text: 'Privacy Policy'.tr,
                               style: TextStyle(
                                   color: _Brand.brand,
                                   fontWeight: FontWeight.w600)),
@@ -562,7 +640,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 width: 22, height: 22,
                                 child: CircularProgressIndicator(
                                     color: Colors.white, strokeWidth: 2.5))
-                            : const Text('Continue'),
+                            : Text('Continue'.tr),
                       ),
                     ),
                     if (_biometricReady) ...[
@@ -578,10 +656,35 @@ class _LoginScreenState extends State<LoginScreen>
                                   child: CircularProgressIndicator(
                                       color: _Brand.brand, strokeWidth: 2.2))
                               : const Icon(Icons.fingerprint_rounded, size: 24),
-                          label: const Text('Sign in with biometrics'),
+                          label: Text('Sign in with biometrics'.tr),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: _Brand.brand,
                             side: const BorderSide(color: _Brand.brand, width: 1.2),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            textStyle: const TextStyle(fontFamily: AppType.text,
+                                fontSize: 15, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (_googleAvailable && _googleTicket == null) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: OutlinedButton.icon(
+                          onPressed: _googleBusy || _isLoading ? null : _handleGoogle,
+                          icon: _googleBusy
+                              ? const SizedBox(
+                                  width: 20, height: 20,
+                                  child: CircularProgressIndicator(
+                                      color: _Brand.textPrimary, strokeWidth: 2.2))
+                              : Image.asset('images/assets/google.png', width: 20, height: 20),
+                          label: Text('Continue with Google'.tr),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: _Brand.textPrimary,
+                            side: const BorderSide(color: _Brand.divider, width: 1.2),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
                             textStyle: const TextStyle(fontFamily: AppType.text,

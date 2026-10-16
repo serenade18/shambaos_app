@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import '../home_screen.dart';
 import 'package:sms_autofill/sms_autofill.dart';
+import '../../l10n/tr.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Brand tokens (keep in sync with login_screen.dart)
@@ -27,11 +28,13 @@ class _Brand {
 class VerifyOtpScreen extends StatefulWidget {
   final String phone;        // E.164 e.g. +254712123456  (sent to API)
   final String displayPhone; // Formatted for display e.g. +254 712 123456
+  final String? googleTicket; // Someone new who continued with Google
 
   const VerifyOtpScreen({
     super.key,
     required this.phone,
     required this.displayPhone,
+    this.googleTicket,
   });
 
   @override
@@ -158,7 +161,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
 
     setState(() { _isVerifying = true; _errorMsg = null; });
 
-    final res = await AuthService.verifyOtp(phone: widget.phone, otp: otp);
+    final res = await AuthService.verifyOtp(
+        phone: widget.phone, otp: otp, googleTicket: widget.googleTicket);
 
     if (!mounted) return;
     setState(() => _isVerifying = false);
@@ -176,7 +180,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
     } else {
       for (final c in _ctrls) { c.clear(); }
       _foci[0].requestFocus();
-      setState(() => _errorMsg = res.message ?? 'Invalid code. Please try again.');
+      setState(() => _errorMsg = res.message ?? 'Invalid code. Please try again.'.tr);
     }
   }
 
@@ -194,12 +198,12 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
 
     if (!res.error) {
       _startCountdown();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         backgroundColor: _Brand.brand,
-        content: Text('New code sent!'),
+        content: Text('New code sent!'.tr),
       ));
     } else {
-      setState(() => _errorMsg = res.message ?? 'Could not resend. Try again.');
+      setState(() => _errorMsg = res.message ?? 'Could not resend. Try again.'.tr);
     }
   }
 
@@ -219,8 +223,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
           icon: const Icon(Icons.arrow_back_rounded, color: _Brand.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Verification',
+        title: Text(
+          'Verification'.tr,
           style: TextStyle(
             color: _Brand.textPrimary,
             fontSize: 16,
@@ -260,8 +264,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                             Icons.sms_outlined, color: _Brand.brand, size: 30),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Enter the 6-digit code',
+                      Text(
+                        'Enter the 6-digit code'.tr,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 24,
@@ -279,7 +283,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                               color: _Brand.textSecondary,
                               height: 1.5),
                           children: [
-                            const TextSpan(text: 'Sent via SMS to\n'),
+                            TextSpan(text: 'Sent via SMS to\n'.tr),
                             TextSpan(
                               text: widget.displayPhone,
                               style: const TextStyle(
@@ -349,8 +353,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text(
-                                  "Didn't receive a code? ",
+                                Text(
+                                  "Didn't receive a code? ".tr,
                                   style: TextStyle(
                                       color: _Brand.textSecondary, fontSize: 13),
                                 ),
@@ -366,8 +370,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                                             : _resendOtp,
                                         child: Text(
                                           _resendSeconds > 0
-                                              ? 'Resend in ${_resendSeconds}s'
-                                              : 'Resend',
+                                              ? 'Resend in {resendSeconds}s'.trArgs({'resendSeconds': _resendSeconds})
+                                              : 'Resend'.tr,
                                           style: TextStyle(
                                             color: _resendSeconds > 0
                                                 ? _Brand.textHint
@@ -390,14 +394,14 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: _Brand.brandBorder),
                               ),
-                              child: const Row(
+                              child: Row(
                                 children: [
                                   Icon(Icons.info_outline_rounded,
                                       color: _Brand.brand, size: 18),
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'This code expires in 10 minutes.\nNever share it with anyone.',
+                                      'This code expires in 10 minutes.\nNever share it with anyone.'.tr,
                                       style: TextStyle(
                                         color: _Brand.brand,
                                         fontSize: 12,
@@ -454,7 +458,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen>
                                         child: CircularProgressIndicator(
                                             color: Colors.white, strokeWidth: 2.5),
                                       )
-                                    : const Text('Verify & Sign In'),
+                                    : Text('Verify & Sign In'.tr),
                               ),
                             ),
                           ),

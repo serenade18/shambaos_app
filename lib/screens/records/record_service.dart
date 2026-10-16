@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
 import '../fields/field_service.dart';
 import '../home_service.dart';
+import '../../l10n/tr.dart';
 
 /// Something the farm buys, uses or produces, from GET /items. Units are what it can be
 /// counted in: a bag of 70 kg, a kg.
@@ -11,7 +12,7 @@ class Item {
   Item(this.raw);
 
   String get id => raw['id'];
-  String get name => raw['name'] is Map ? '${raw['name']['en'] ?? ''}' : '${raw['name'] ?? ''}';
+  String get name => raw['name'] is Map ? '${raw['name'][ApiService.locale] ?? raw['name']['en'] ?? ''}' : '${raw['name'] ?? ''}';
   String get kind => raw['kind'] ?? ''; // input | output
   String get category => raw['category'] ?? '';
   String get displayUnit => raw['display_unit'] ?? '';
@@ -28,7 +29,7 @@ class Suggestion {
   Suggestion(this.raw);
 
   String get code => raw['code'];
-  String get name => raw['name'] is Map ? '${raw['name']['en'] ?? ''}' : '${raw['name'] ?? ''}';
+  String get name => raw['name'] is Map ? '${raw['name'][ApiService.locale] ?? raw['name']['en'] ?? ''}' : '${raw['name'] ?? ''}';
   String get category => raw['category'] ?? '';
 }
 
@@ -58,35 +59,35 @@ class Party {
 
 /// The ways a sale can be paid for here. An M-Pesa prompt needs the payments set up, so
 /// the app takes the code from the customer's SMS instead.
-const paymentMethods = [('cash', 'Cash'), ('mpesa_code', 'M-Pesa code'), ('credit', 'On credit')];
+List<(String, String)> get paymentMethods => [('cash', 'Cash'.tr), ('mpesa_code', 'M-Pesa code'.tr), ('credit', 'On credit'.tr)];
 
 /// Crop work, as the API names it.
-const activityTypes = [
-  ('land_preparation', 'Land preparation'),
-  ('planting', 'Planting'),
-  ('transplanting', 'Transplanting'),
-  ('weeding', 'Weeding'),
-  ('spraying', 'Spraying'),
-  ('fertilising', 'Fertilising'),
-  ('irrigation', 'Irrigation'),
-  ('pruning', 'Pruning or staking'),
-  ('other', 'Other work'),
+List<(String, String)> get activityTypes => [
+  ('land_preparation', 'Land preparation'.tr),
+  ('planting', 'Planting'.tr),
+  ('transplanting', 'Transplanting'.tr),
+  ('weeding', 'Weeding'.tr),
+  ('spraying', 'Spraying'.tr),
+  ('fertilising', 'Fertilising'.tr),
+  ('irrigation', 'Irrigation'.tr),
+  ('pruning', 'Pruning or staking'.tr),
+  ('other', 'Other work'.tr),
 ];
 
 /// What money in or out is for, when it isn't a sale or a purchase.
-const costCategories = [
-  ('labour', 'Labour'),
-  ('transport', 'Transport'),
-  ('rent', 'Rent or lease'),
-  ('services', 'Services (tractor, vet)'),
-  ('utilities', 'Water and power'),
-  ('repairs', 'Repairs and tools'),
-  ('other', 'Other'),
+List<(String, String)> get costCategories => [
+  ('labour', 'Labour'.tr),
+  ('transport', 'Transport'.tr),
+  ('rent', 'Rent or lease'.tr),
+  ('services', 'Services (tractor, vet)'.tr),
+  ('utilities', 'Water and power'.tr),
+  ('repairs', 'Repairs and tools'.tr),
+  ('other', 'Other'.tr),
 ];
-const revenueCategories = [
-  ('grant', 'Grant or support'),
-  ('hire', 'Hiring out'),
-  ('other', 'Other'),
+List<(String, String)> get revenueCategories => [
+  ('grant', 'Grant or support'.tr),
+  ('hire', 'Hiring out'.tr),
+  ('other', 'Other'.tr),
 ];
 
 /// Pigs and rabbits give birth to litters, raised as a batch; other herds name each young one.
@@ -111,7 +112,7 @@ class RecordService {
     String? next = path;
     for (var page = 0; next != null && page < 20; page++) {
       final res = await ApiService.get(next);
-      if (res.error) throw FieldLoadError(res.message ?? 'Could not load the list. Check your connection.');
+      if (res.error) throw FieldLoadError(res.message ?? 'Could not load the list. Check your connection.'.tr);
       final data = res.data;
       if (data is! Map) break;
       out.addAll([for (final r in (data['results'] as List? ?? const [])) Map<String, dynamic>.from(r)]);
@@ -142,7 +143,7 @@ class RecordService {
   /// Adds a suggested input to the farm, and returns it.
   static Future<(Item?, String?)> addSuggestion(Suggestion s) async {
     final res = await ApiService.post('/items', {'suggestion': s.code});
-    if (res.error || res.data is! Map) return (null, res.message ?? 'Could not add ${s.name}.');
+    if (res.error || res.data is! Map) return (null, res.message ?? 'Could not add {name}.'.trArgs({'name': s.name}));
     _items = null;
     return (Item(Map<String, dynamic>.from(res.data)), null);
   }

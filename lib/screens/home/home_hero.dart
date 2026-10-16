@@ -7,6 +7,7 @@ import '../../models/weather_model.dart';
 import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
 import '../../widgets/phosphor_icons.dart';
+import '../../l10n/tr.dart';
 
 /// The top of Home: a farm photograph with the greeting, today's weather for
 /// the farm, and two weather tiles laid over it on frosted cards.
@@ -74,12 +75,12 @@ class HomeHero extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _tile(c, PhosphorIconsRegular.cloudRain, c.rainInk, 'Rain today',
+                    child: _tile(c, PhosphorIconsRegular.cloudRain, c.rainInk, 'Rain today'.tr,
                         today == null ? '—' : '${_num(today!.precipitation)} mm'),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _tile(c, PhosphorIconsRegular.thermometer, c.warnInk, 'Low tonight',
+                    child: _tile(c, PhosphorIconsRegular.thermometer, c.warnInk, 'Low tonight'.tr,
                         today == null ? '—' : '${today!.tempMin.round()}°C'),
                   ),
                 ],
@@ -93,12 +94,12 @@ class HomeHero extends StatelessWidget {
 
   Widget _greeting(AppColors c) {
     final hour = DateTime.now().hour;
-    final hello = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    final hello = hour < 12 ? 'Good morning'.tr : hour < 17 ? 'Good afternoon'.tr : 'Good evening'.tr;
     return Row(
       children: [
         Semantics(
           button: true,
-          label: 'Profile',
+          label: 'Profile'.tr,
           child: GestureDetector(
             onTap: onAvatarTap,
             child: Container(
@@ -116,12 +117,12 @@ class HomeHero extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(hello, style: AppType.caption.copyWith(color: c.textSecondary)),
-              Text(userName.isEmpty ? 'Karibu' : userName,
+              Text(userName.isEmpty ? 'Karibu'.tr : userName,
                   maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.titleM.copyWith(color: c.textPrimary)),
             ],
           ),
         ),
-        _roundButton(c, PhosphorIconsRegular.bell, 'Notifications', onBellTap),
+        _roundButton(c, PhosphorIconsRegular.bell, 'Notifications'.tr, onBellTap),
       ],
     );
   }
@@ -164,13 +165,13 @@ class HomeHero extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _pill(c, PhosphorIconsRegular.mapPin, place ?? 'Your farm'),
+                  _pill(c, PhosphorIconsRegular.mapPin, place ?? 'Your farm'.tr),
                   const SizedBox(height: 10),
                   if (w == null)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Text(
-                        weatherLoading ? 'Loading the forecast…' : 'The forecast shows here once your farm has a location.',
+                        weatherLoading ? 'Loading the forecast…'.tr : 'The forecast shows here once your farm has a location.'.tr,
                         style: AppType.body.copyWith(color: c.textSecondary),
                       ),
                     )
@@ -192,8 +193,8 @@ class HomeHero extends StatelessWidget {
                       spacing: 6,
                       runSpacing: 6,
                       children: [
-                        _pill(c, PhosphorIconsRegular.drop, '${w.rainProbability}% rain'),
-                        _pill(c, PhosphorIconsRegular.thermometer, 'Low ${w.tempMin.round()}°'),
+                        _pill(c, PhosphorIconsRegular.drop, '{rainProbability}% rain'.trArgs({'rainProbability': w.rainProbability})),
+                        _pill(c, PhosphorIconsRegular.thermometer, 'Low {p0}°'.trArgs({'p0': w.tempMin.round()})),
                         _pill(c, PhosphorIconsRegular.cloud, _cap(w.description)),
                       ],
                     ),

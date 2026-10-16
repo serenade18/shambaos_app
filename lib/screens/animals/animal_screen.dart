@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/app_colors.dart';
+import '../../l10n/tr.dart';
 
 class AnimalScreen extends StatefulWidget {
   const AnimalScreen({super.key});
@@ -10,35 +11,35 @@ class AnimalScreen extends StatefulWidget {
 }
 
 class _AnimalScreenState extends State<AnimalScreen> {
-  final List<Map<String, String>> animals = [
+  List<Map<String, String>> get animals => [
     {
-      'title': 'Dairy Cow',
-      'subtitle': 'Manage dairy cattle farming operations',
+      'title': 'Dairy Cow'.tr,
+      'subtitle': 'Manage dairy cattle farming operations'.tr,
       'image': 'images/assets/icons/cow.png',
     },
     {
-      'title': 'Goats',
-      'subtitle': 'Manage goat farming operations',
+      'title': 'Goats'.tr,
+      'subtitle': 'Manage goat farming operations'.tr,
       'image': 'images/assets/icons/goat.png',
     },
     {
-      'title': 'Poultry',
-      'subtitle': 'Manage egg & meat production',
+      'title': 'Poultry'.tr,
+      'subtitle': 'Manage egg & meat production'.tr,
       'image': 'images/assets/icons/chicken.png',
     },
     {
-      'title': 'Rabbit Farming',
-      'subtitle': 'Manage rabbit farming operations',
+      'title': 'Rabbit Farming'.tr,
+      'subtitle': 'Manage rabbit farming operations'.tr,
       'image': 'images/assets/icons/rabbit.png',
     },
     {
-      'title': 'Pig Farming',
-      'subtitle': 'Manage pig farming operations',
+      'title': 'Pig Farming'.tr,
+      'subtitle': 'Manage pig farming operations'.tr,
       'image': 'images/assets/icons/pig.png',
     },
     {
-      'title': 'Fish Farming',
-      'subtitle': 'Manage aquaculture operations',
+      'title': 'Fish Farming'.tr,
+      'subtitle': 'Manage aquaculture operations'.tr,
       'image': 'images/assets/icons/fish.png',
     },
   ];
@@ -117,7 +118,7 @@ class _AnimalScreenState extends State<AnimalScreen> {
           if (!_isSearching)
             Expanded(
               child: Text(
-                'Animal Husbandry',
+                'Animal Husbandry'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -136,7 +137,7 @@ class _AnimalScreenState extends State<AnimalScreen> {
                   color: colors.textPrimary,
                 ),
                 decoration: InputDecoration(
-                  hintText: 'Search animals...',
+                  hintText: 'Search animals...'.tr,
                   hintStyle: TextStyle(
                     color: colors.textSecondary,
                     fontSize: 15,
@@ -193,7 +194,7 @@ class _AnimalScreenState extends State<AnimalScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'No animals found for "$_searchQuery"',
+              'No animals found for "{searchQuery}"'.trArgs({'searchQuery': _searchQuery}),
               style: TextStyle(
                 fontSize: 14,
                 color: context.appColors.textHint,

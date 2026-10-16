@@ -7,6 +7,7 @@ import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
 import '../../widgets/ledger.dart';
 import 'dashboard_service.dart';
+import '../../l10n/tr.dart';
 
 /// The farm at a glance (GET /dashboard): profit, money owed both ways, stock
 /// bought, alerts, today's records and stock levels, kept as ledgers.
@@ -69,7 +70,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Row(
         children: [
           IconButton(
-            tooltip: 'Back',
+            tooltip: 'Back'.tr,
             onPressed: () => Navigator.pop(context),
             icon: Icon(PhosphorIconsRegular.arrowLeft, color: c.textPrimary),
           ),
@@ -78,13 +79,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Dashboard', style: AppType.titleL.copyWith(color: c.textPrimary)),
+                Text('Dashboard'.tr, style: AppType.titleL.copyWith(color: c.textPrimary)),
                 if (data != null) Text(data.farmName, style: AppType.caption.copyWith(color: c.textSecondary)),
               ],
             ),
           ),
           IconButton(
-            tooltip: 'Refresh',
+            tooltip: 'Refresh'.tr,
             onPressed: _loading ? null : _load,
             icon: Icon(PhosphorIconsRegular.arrowClockwise, color: c.textPrimary),
           ),
@@ -102,12 +103,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     final result = _result!;
     if (result.noFarm) {
-      return _message(c, PhosphorIconsRegular.barn, 'No farm yet',
-          'Set up your farm to see its profit, alerts and stock here.');
+      return _message(c, PhosphorIconsRegular.barn, 'No farm yet'.tr,
+          'Set up your farm to see its profit, alerts and stock here.'.tr);
     }
     if (result.data == null) {
-      return _message(c, PhosphorIconsRegular.cloudSlash, 'Could not load the dashboard',
-          result.error ?? 'Check your connection and try again.', retry: true);
+      return _message(c, PhosphorIconsRegular.cloudSlash, 'Could not load the dashboard'.tr,
+          result.error ?? 'Check your connection and try again.'.tr, retry: true);
     }
 
     final d = result.data!;
@@ -133,10 +134,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _buildEnterprises(d),
             const SizedBox(height: 24),
           ] else ...[
-            const SlLedger(children: [
+            SlLedger(children: [
               SlLedgerRow(
-                title: 'Money is hidden',
-                meta: "Only members who can see the farm's money see profit and debts.",
+                title: 'Money is hidden'.tr,
+                meta: "Only members who can see the farm's money see profit and debts.".tr,
               ),
             ]),
             const SizedBox(height: 24),
@@ -165,7 +166,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(body, textAlign: TextAlign.center, style: AppType.body.copyWith(color: c.textSecondary)),
             if (retry) ...[
               const SizedBox(height: 16),
-              OutlinedButton(onPressed: _load, child: const Text('Try again')),
+              OutlinedButton(onPressed: _load, child: Text('Try again'.tr)),
             ],
           ],
         ),
@@ -217,14 +218,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return SlKeyFigure(
       band: true,
-      label: 'PROFIT · LAST $_days DAYS',
+      label: 'PROFIT · LAST {days} DAYS'.trArgs({'days': _days}),
       currency: DashboardService.symbol(d.currency),
       value: DashboardService.amount(profit),
       deltaUp: change == 0 ? null : change > 0,
       delta: change == 0
-          ? 'The same'
-          : '${DashboardService.money(change.abs(), d.currency)} ${change > 0 ? 'more' : 'less'}',
-      deltaRest: 'than the $_days days before',
+          ? 'The same'.tr
+          : change > 0
+              ? '{amount} more'.trArgs({'amount': DashboardService.money(change.abs(), d.currency)})
+              : '{amount} less'.trArgs({'amount': DashboardService.money(change.abs(), d.currency)}),
+      deltaRest: 'than the {days} days before'.trArgs({'days': _days}),
     );
   }
 
@@ -233,36 +236,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final r = d.receivables!;
     final pay = d.payables!;
     final s = d.stockBought!;
-    String plural(dynamic n, String word) => '$n $word${n == 1 ? '' : 's'}';
-    String? oldest(dynamic days, dynamic who) => days == null ? null : 'oldest $who, $days days';
+    String? oldest(dynamic days, dynamic who) => days == null ? null : 'oldest {who}, {days} days'.trArgs({'who': who, 'days': days});
     final owedToSuppliers = (num.tryParse('${s['owed']}') ?? 0) > 0;
 
     return SlLedger(
-      title: 'Money owed',
-      trailing: const SlEyebrow('Today'),
+      title: 'Money owed'.tr,
+      trailing: SlEyebrow('Today'.tr),
       children: [
         SlLedgerRow(
-          title: 'Customers owe you',
-          meta: [plural(r['customers'], 'customer'), oldest(r['oldest_days'], r['oldest_customer'])]
+          title: 'Customers owe you'.tr,
+          meta: [(r['customers'] == 1 ? '{n} customer'.trArgs({'n': 1}) : '{n} customers'.trArgs({'n': r['customers']})), oldest(r['oldest_days'], r['oldest_customer'])]
               .whereType<String>()
               .join(' · '),
           figure: DashboardService.money(r['total'], d.currency),
         ),
         SlLedgerRow(
-          title: 'You owe suppliers',
-          meta: [plural(pay['suppliers'], 'supplier'), oldest(pay['oldest_days'], pay['oldest_supplier'])]
+          title: 'You owe suppliers'.tr,
+          meta: [(pay['suppliers'] == 1 ? '{n} supplier'.trArgs({'n': 1}) : '{n} suppliers'.trArgs({'n': pay['suppliers']})), oldest(pay['oldest_days'], pay['oldest_supplier'])]
               .whereType<String>()
               .join(' · '),
           figure: DashboardService.money(pay['total'], d.currency),
         ),
         SlLedgerRow(
-          title: 'Stock bought',
-          meta: '${plural(s['purchases'], 'purchase')} in the last $_days days · '
-              'paid ${DashboardService.money(s['paid'], d.currency)}',
+          title: 'Stock bought'.tr,
+          meta: () {
+            final a = {'n': s['purchases'], 'days': _days, 'amount': DashboardService.money(s['paid'], d.currency)};
+            return s['purchases'] == 1
+                ? '{n} purchase in the last {days} days · paid {amount}'.trArgs(a)
+                : '{n} purchases in the last {days} days · paid {amount}'.trArgs(a);
+          }(),
           figure: DashboardService.money(s['total'], d.currency),
           status: owedToSuppliers
               ? SlStatusTag('${DashboardService.money(s['owed'], d.currency)} owed', status: SlStatus.warn)
-              : const SlStatusTag('Paid', status: SlStatus.good),
+              : SlStatusTag('Paid'.tr, status: SlStatus.good),
         ),
       ],
     );
@@ -275,7 +281,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final peak = values.fold<num>(0, (a, v) => v.abs() > a ? v.abs() : a);
 
     return SlLedger(
-      title: 'Profit by month',
+      title: 'Profit by month'.tr,
       trailing: SlEyebrow(DashboardService.symbol(d.currency)),
       children: [
         Container(
@@ -326,22 +332,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     bool isLoss(Map e) => (num.tryParse('${e['profit']}') ?? 0) < 0;
 
     return SlLedger(
-      title: 'Profit by enterprise',
-      trailing: SlEyebrow('Last $_days days'),
+      title: 'Profit by enterprise'.tr,
+      trailing: SlEyebrow('Last {days} days'.trArgs({'days': _days})),
       children: [
-        if (parts.isEmpty) const SlLedgerRow(title: 'No animals or crops yet'),
+        if (parts.isEmpty) SlLedgerRow(title: 'No animals or crops yet'.tr),
         for (final e in parts)
           SlLedgerRow(
             title: e['name'] ?? '',
-            meta: 'Sales ${DashboardService.money(e['revenue'], d.currency)} · '
-                'Costs ${DashboardService.money(e['cost'], d.currency)}',
+            meta: 'Sales {sales} · Costs {costs}'.trArgs({
+              'sales': DashboardService.money(e['revenue'], d.currency),
+              'costs': DashboardService.money(e['cost'], d.currency),
+            }),
             figure: DashboardService.money(e['profit'], d.currency),
             loss: isLoss(e),
-            status: isLoss(e) ? const SlStatusTag('Loss so far', status: SlStatus.danger) : null,
+            status: isLoss(e) ? SlStatusTag('Loss so far'.tr, status: SlStatus.danger) : null,
           ),
         for (final e in total)
           SlLedgerRow(
-            title: 'Whole farm',
+            title: 'Whole farm'.tr,
             figure: DashboardService.money(e['profit'], d.currency),
             loss: isLoss(e),
             total: true,
@@ -355,10 +363,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     (IconData, SlStatus, String?) look(Map<String, dynamic> a) {
       final critical = a['severity'] == 'critical';
       return switch (a['type']) {
-        'heavy_rain' => (PhosphorIconsRegular.cloudRain, SlStatus.info, 'See forecast'),
-        'vaccination_due' => (PhosphorIconsRegular.syringe, critical ? SlStatus.danger : SlStatus.warn, 'Record vaccination'),
+        'heavy_rain' => (PhosphorIconsRegular.cloudRain, SlStatus.info, 'See forecast'.tr),
+        'vaccination_due' => (PhosphorIconsRegular.syringe, critical ? SlStatus.danger : SlStatus.warn, 'Record vaccination'.tr),
         'breeding_due' => (PhosphorIconsRegular.heart, critical ? SlStatus.danger : SlStatus.warn, null),
-        'crop_stress' => (PhosphorIconsRegular.plant, SlStatus.warn, 'See field'),
+        'crop_stress' => (PhosphorIconsRegular.plant, SlStatus.warn, 'See field'.tr),
         'low_stock' || 'negative_stock' => (PhosphorIconsRegular.package, critical ? SlStatus.danger : SlStatus.warn, null),
         'overdue_debt' => (PhosphorIconsRegular.coins, SlStatus.warn, null),
         _ => (PhosphorIconsRegular.bell, critical ? SlStatus.danger : SlStatus.warn, null),
@@ -366,12 +374,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return SlLedger(
-      title: 'Needs you',
-      trailing: SlEyebrow(d.alerts.isEmpty ? 'All clear' : '${d.alerts.length} alerts'),
+      title: 'Needs you'.tr,
+      trailing: SlEyebrow(d.alerts.isEmpty ? 'All clear'.tr : '${d.alerts.length} alerts'),
       children: [
         if (d.alerts.isEmpty)
-          const SlLedgerRow(
-              title: 'Nothing needs you today', meta: 'Alerts about weather, vaccinations and stock show here.'),
+          SlLedgerRow(
+              title: 'Nothing needs you today'.tr, meta: 'Alerts about weather, vaccinations and stock show here.'.tr),
         for (final a in d.alerts.take(5))
           () {
             final (icon, status, action) = look(a);
@@ -394,17 +402,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: Text("Today's records", style: AppType.titleM.copyWith(color: c.textPrimary)),
+          child: Text("Today's records".tr, style: AppType.titleM.copyWith(color: c.textPrimary)),
         ),
-        if (d.today.isEmpty) const SlLedger(children: [SlLedgerRow(title: 'No animals or crops yet')]),
+        if (d.today.isEmpty) SlLedger(children: [SlLedgerRow(title: 'No animals or crops yet'.tr)]),
         for (final e in d.today) ...[
           SlEnterpriseTile(
             icon: SlEnterpriseTile.iconFor(e['type']),
             title: e['name'] ?? '',
             meta: '${e['type']}'.replaceAll('_', ' '),
             status: e['recorded'] == true
-                ? const SlStatusTag('Done', status: SlStatus.good)
-                : const SlStatusTag('Not recorded', status: SlStatus.warn),
+                ? SlStatusTag('Done'.tr, status: SlStatus.good)
+                : SlStatusTag('Not recorded'.tr, status: SlStatus.warn),
           ),
           const SizedBox(height: 10),
         ],
@@ -415,10 +423,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ── Stock levels ────────────────────────────────────────────
   Widget _buildStock(AppColors c, DashboardData d) {
     return SlLedger(
-      title: 'Stock in the store',
+      title: 'Stock in the store'.tr,
       trailing: SlEyebrow('${d.stock.length} items'),
       children: [
-        if (d.stock.isEmpty) const SlLedgerRow(title: 'No stock recorded yet'),
+        if (d.stock.isEmpty) SlLedgerRow(title: 'No stock recorded yet'.tr),
         for (final s in d.stock)
           SlLedgerRow(
             title: DashboardService.name(s['item_name']),
@@ -430,8 +438,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             unit: _stockUnit(s),
             loss: s['status'] == 'negative',
             status: switch (s['status']) {
-              'negative' => const SlStatusTag('Below zero', status: SlStatus.danger),
-              'low' => const SlStatusTag('Running low', status: SlStatus.warn, icon: PhosphorIconsBold.warning),
+              'negative' => SlStatusTag('Below zero'.tr, status: SlStatus.danger),
+              'low' => SlStatusTag('Running low'.tr, status: SlStatus.warn, icon: PhosphorIconsBold.warning),
               _ => null,
             },
           ),

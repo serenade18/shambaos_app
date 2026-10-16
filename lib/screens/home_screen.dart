@@ -20,6 +20,7 @@ import 'animals/animal_screen.dart';
 import 'plants/plant_screen.dart';
 import 'markets/market_screen.dart';
 import 'dashboard/dashboard_screen.dart';
+import '../l10n/tr.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,70 +48,70 @@ class _HomeScreenState extends State<HomeScreen> {
   // Section hides only when BOTH conditions are satisfied
   bool get _allUpdatesComplete => _isProfileComplete && _isFarmSetup;
 
-  final List<Map<String, dynamic>> _quickMenuItems = [
+  List<Map<String, dynamic>> get _quickMenuItems => [
     {
-      'title': 'Dashboard',
+      'title': 'Dashboard'.tr,
       'route': const DashboardScreen(),
       'icon': 'images/assets/icons/dashboard.png',
     },
     {
-      'title': 'Animal Husbandry',
+      'title': 'Animal Husbandry'.tr,
       'route': const AnimalScreen(),
       'icon': 'images/assets/icons/livestock.png',
     },
     {
-      'title': 'Plant Husbandry',
+      'title': 'Plant Husbandry'.tr,
       'route': const PlantScreen(),
       'icon': 'images/assets/icons/leaf.png',
     },
     {
-      'title': 'Customers',
+      'title': 'Customers'.tr,
       'route': const CustomersScreen(),
       'icon': 'images/assets/icons/customer.png',
     },
     {
-      'title': 'Sales',
+      'title': 'Sales'.tr,
       'route': null,
       'icon': 'images/assets/icons/revenue.png',
     },
     {
-      'title': 'Inventory',
+      'title': 'Inventory'.tr,
       'route': null,
       'icon': 'images/assets/icons/inventory.png',
     },
     {
-      'title': 'Payments',
+      'title': 'Payments'.tr,
       'route': null,
       'icon': 'images/assets/icons/payment.png',
     },
     {
-      'title': 'Procurement',
+      'title': 'Procurement'.tr,
       'route': null,
       'icon': 'images/assets/icons/procurement.png',
     },
   ];
 
-  final List<Map<String, dynamic>> _posterItems = [
+  List<Map<String, dynamic>> get _posterItems => [
     {
-      'title': 'Choose your\nMaize Seeds',
-      'subtitle': 'Based on season and location',
-      'cta': 'View Seeds',
+      'title': 'Choose your\nMaize Seeds'.tr,
+      'subtitle': 'Based on season and location'.tr,
+      'cta': 'View Seeds'.tr,
       'bgColor': const Color(0xFFDCEEF8),
       'ctaColor': const Color(0xFF1565C0),
       'imagePath': null,
     },
     {
-      'title': 'Upgrade to\nPro Plan',
-      'subtitle': 'Elevate your productivity today',
-      'cta': 'Upgrade Now',
+      'title': 'Upgrade to\nPro Plan'.tr,
+      'subtitle': 'Elevate your productivity today'.tr,
+      'cta': 'Upgrade Now'.tr,
       'bgColor': const Color(0xFFE8F5E9),
       'ctaColor': AppColors.brand,
       'imagePath': null,
     },
     {
-      'title': 'Market\nPrices Live',
-      'subtitle': 'Real-time Nairobi commodity data',
-      'cta': 'View Prices',
+      'title': 'Market\nPrices Live'.tr,
+      'subtitle': 'Real-time Nairobi commodity data'.tr,
+      'cta': 'View Prices'.tr,
       'bgColor': const Color(0xFFFFF8E1),
       'ctaColor': const Color(0xFFE65100),
       'imagePath': null,
@@ -141,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = await ApiService.getUser();
     if (user != null) {
       setState(() {
-        _userName = user['name'] ?? user['username'] ?? user['email'] ?? 'User';
+        _userName = user['name'] ?? user['username'] ?? user['email'] ?? 'User'.tr;
         _userEmail = user['email'] ?? '';
       });
     }
@@ -185,17 +186,17 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              Expanded(child: Text('My fields', style: AppType.titleM.copyWith(color: colors.textPrimary))),
+              Expanded(child: Text('My fields'.tr, style: AppType.titleM.copyWith(color: colors.textPrimary))),
               if (_farm != null)
                 TextButton.icon(
                   onPressed: () => openFarmRecordMenu(context, fields ?? const []),
                   icon: Icon(PhosphorIconsBold.plus, size: 16, color: colors.brandText),
-                  label: const Text('Record'),
+                  label: Text('Record'.tr),
                 ),
               if (fields != null && fields.isNotEmpty)
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/fields'),
-                  child: const Text('See all'),
+                  child: Text('See all'.tr),
                 ),
             ],
           ),
@@ -205,10 +206,10 @@ class _HomeScreenState extends State<HomeScreen> {
           else if (fields.isEmpty)
             SlLedger(children: [
               SlLedgerRow(
-                title: _farm == null ? 'Set up your farm' : 'No fields yet',
+                title: _farm == null ? 'Set up your farm'.tr : 'No fields yet'.tr,
                 meta: _farm == null
-                    ? 'Add your farm to see your fields, weather and records here.'
-                    : 'Add the animals you keep and the crops you grow.',
+                    ? 'Add your farm to see your fields, weather and records here.'.tr
+                    : 'Add the animals you keep and the crops you grow.'.tr,
               ),
             ])
           else ...[
@@ -345,8 +346,8 @@ class _HomeScreenState extends State<HomeScreen> {
       pendingItems.add(
         _buildUpdateItem(
           icon: Icons.auto_awesome_outlined,
-          title: 'Complete your profile',
-          subtitle: 'Unlock a personalised experience',
+          title: 'Complete your profile'.tr,
+          subtitle: 'Unlock a personalised experience'.tr,
           onTap: _openEditProfile,
         ),
       );
@@ -367,8 +368,8 @@ class _HomeScreenState extends State<HomeScreen> {
       pendingItems.add(
         _buildUpdateItem(
           icon: Icons.agriculture_outlined,
-          title: 'Setup your farm',
-          subtitle: 'Add your farm details to get started',
+          title: 'Setup your farm'.tr,
+          subtitle: 'Add your farm details to get started'.tr,
           onTap: () {
             // TODO: Navigate to farm setup screen
           },
@@ -388,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 children: [
                   Text(
-                    'Important updates',
+                    'Important updates'.tr,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -589,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Invite Friends',
+                  'Invite Friends'.tr,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -598,7 +599,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Help your farmer friends by inviting\nthem to the app',
+                  'Help your farmer friends by inviting\nthem to the app'.tr,
                   style: TextStyle(
                     fontSize: 13,
                     color: context.appColors.textSecondary,
@@ -617,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   child: TextField(
                     decoration: InputDecoration(
-                      hintText: 'Enter phone number',
+                      hintText: 'Enter phone number'.tr,
                       hintStyle: TextStyle(
                         fontSize: 13,
                         color: context.appColors.textHint,

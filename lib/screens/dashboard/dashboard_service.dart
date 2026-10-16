@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 
 import '../../services/api_service.dart';
 import '../home_service.dart';
+import '../../l10n/tr.dart';
 
 /// The farm's dashboard, from GET /dashboard?farm_id=&from=&to=.
 class DashboardData {
@@ -59,7 +60,7 @@ class DashboardService {
       '/dashboard?farm_id=${farm['id']}&from=${_day.format(from)}&to=${_day.format(to)}',
     );
     if (response.error || response.data is! Map) {
-      return DashboardResult(error: response.message ?? 'Could not load the dashboard.');
+      return DashboardResult(error: response.message ?? 'Could not load the dashboard.'.tr);
     }
 
     final d = response.data as Map;
@@ -69,7 +70,7 @@ class DashboardService {
 
     return DashboardResult(
       data: DashboardData(
-        farmName: farm['name'] ?? 'Your farm',
+        farmName: farm['name'] ?? 'Your farm'.tr,
         currency: await ApiService.getOrgCurrency(),
         from: DateTime.parse(d['from']),
         to: DateTime.parse(d['to']),
@@ -89,7 +90,7 @@ class DashboardService {
   // ─────────────────────────────────────────────
 
   /// How a currency is written on screen: Kenyan shillings as "KSh".
-  static String symbol(String currency) => currency == 'KES' ? 'KSh' : currency;
+  static String symbol(String currency) => currency == 'KES' ? 'KSh'.tr : currency;
 
   /// A whole amount without its currency: "22,500", or "−1,200" for a loss.
   static String amount(dynamic value) {
@@ -109,7 +110,9 @@ class DashboardService {
 
   /// An item name arrives in each language: {en, sw, fr}.
   static String name(dynamic names) {
-    if (names is Map) return (names['en'] ?? names.values.first ?? '').toString();
+    if (names is Map) {
+      return (names[ApiService.locale] ?? names['en'] ?? names.values.first ?? '').toString();
+    }
     return '${names ?? ''}';
   }
 
@@ -121,34 +124,41 @@ class DashboardService {
   /// Alerts are a type code plus parameters; this words them as the portal does.
   static String alertText(Map<String, dynamic> alert, String currency) {
     final p = Map<String, dynamic>.from(alert['params'] ?? {});
-    final enterprise = p['enterprise'] ?? p['enterprise_name'] ?? 'an enterprise';
+    final enterprise = p['enterprise'] ?? p['enterprise_name'] ?? 'an enterprise'.tr;
     final date = _date(p['date'] ?? p['due_on']);
-    final product = p['product'] ?? p['vaccine'] ?? 'Vaccination';
+    final product = p['product'] ?? p['vaccine'] ?? 'Vaccination'.tr;
     final unit = p['unit'] ?? '';
 
     switch (alert['type']) {
       case 'low_stock':
-        return '${p['item']} low: ${p['qty']} $unit left';
+        return '{item} low: {qty} {unit} left'.trArgs({'item': p['item'], 'qty': p['qty'], 'unit': unit}).trim();
       case 'negative_stock':
-        return '${p['item']} is below zero: ${p['qty']} $unit';
+        return '{item} is below zero: {qty} {unit}'.trArgs({'item': p['item'], 'qty': p['qty'], 'unit': unit}).trim();
       case 'mortality_spike':
-        return 'Deaths up in $enterprise: ${p['deaths']} on $date';
+        return 'Deaths up in {enterprise}: {deaths} on {date}'
+            .trArgs({'enterprise': enterprise, 'deaths': p['deaths'], 'date': date});
       case 'vaccination_due':
         return p['animal_tag'] != null
-            ? '$product due for ${p['animal_tag']} in $enterprise by $date'
-            : '$product due for $enterprise by $date';
+            ? '{product} due for {tag} in {enterprise} by {date}'
+                .trArgs({'product': product, 'tag': p['animal_tag'], 'enterprise': enterprise, 'date': date})
+            : '{product} due for {enterprise} by {date}'.trArgs({'product': product, 'enterprise': enterprise, 'date': date});
       case 'breeding_due':
-        return 'Breeding step due for ${p['animal_tag'] ?? 'an animal'} on $date';
+        return 'Breeding step due for {tag} on {date}'
+            .trArgs({'tag': p['animal_tag'] ?? 'an animal'.tr, 'date': date});
       case 'heavy_rain':
         final rain = num.tryParse('${p['rain_mm'] ?? ''}')?.round();
-        return 'Heavy rain expected $date${rain != null ? ', about $rain mm' : ''}';
+        return rain != null
+            ? 'Heavy rain expected {date}, about {rain} mm'.trArgs({'date': date, 'rain': rain})
+            : 'Heavy rain expected {date}'.trArgs({'date': date});
       case 'overdue_debt':
-        return '${p['customer']} has owed you ${money(p['amount'], currency)} for ${p['days']} days';
+        return '{customer} has owed you {amount} for {days} days'
+            .trArgs({'customer': p['customer'], 'amount': money(p['amount'], currency), 'days': p['days']});
       case 'sync_conflict':
-        return 'Records to review in $enterprise';
+        return 'Records to review in {enterprise}'.trArgs({'enterprise': enterprise});
       case 'crop_stress':
         String f(dynamic v) => (num.tryParse('$v') ?? 0).toStringAsFixed(2);
-        return 'Crops look less green: ${f(p['previous'])} to ${f(p['ndvi'])} since ${_date(p['since'])}';
+        return 'Crops look less green: {before} to {now} since {date}'
+            .trArgs({'before': f(p['previous']), 'now': f(p['ndvi']), 'date': _date(p['since'])});
       default:
         return '${alert['type']}'.replaceAll('_', ' ');
     }

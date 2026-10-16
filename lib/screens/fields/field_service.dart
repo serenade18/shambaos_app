@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/weather_model.dart';
 import '../../services/api_service.dart';
 import '../home_service.dart';
+import '../../l10n/tr.dart';
 
 /// One field, herd or flock on the farm: an enterprise from GET /enterprises.
 class Field {
@@ -25,27 +26,29 @@ class Field {
     if (isCrop) {
       final a = acres;
       if (a == null) return '';
-      final n = NumberFormat('#,##0.##').format(a);
-      return '$n acre${a == 1 ? '' : 's'}';
+      final n = {'n': NumberFormat('#,##0.##').format(a)};
+      return a == 1 ? '{n} acre'.trArgs(n) : '{n} acres'.trArgs(n);
     }
-    final n = headCount ?? 0;
-    final unit = switch (type) {
-      'layers' || 'broilers' => 'bird',
-      'fish' => 'fish',
-      'dairy_cattle' || 'beef_cattle' => 'cow',
-      'dairy_goats' => 'goat',
-      'sheep' => 'sheep',
-      'pigs' => 'pig',
-      'rabbits' => 'rabbit',
-      _ => 'animal',
+    final count = headCount ?? 0;
+    final n = {'n': NumberFormat('#,##0').format(count)};
+    final one = count == 1;
+    return switch (type) {
+      'layers' || 'broilers' => one ? '{n} bird'.trArgs(n) : '{n} birds'.trArgs(n),
+      'fish' => '{n} fish'.trArgs(n),
+      'dairy_cattle' || 'beef_cattle' => one ? '{n} cow'.trArgs(n) : '{n} cows'.trArgs(n),
+      'dairy_goats' => one ? '{n} goat'.trArgs(n) : '{n} goats'.trArgs(n),
+      'sheep' => '{n} sheep'.trArgs(n),
+      'pigs' => one ? '{n} pig'.trArgs(n) : '{n} pigs'.trArgs(n),
+      'rabbits' => one ? '{n} rabbit'.trArgs(n) : '{n} rabbits'.trArgs(n),
+      _ => one ? '{n} animal'.trArgs(n) : '{n} animals'.trArgs(n),
     };
-    final plural = n == 1 || unit == 'fish' || unit == 'sheep' ? unit : '${unit}s';
-    return '${NumberFormat('#,##0').format(n)} $plural';
   }
 
   /// "Planted on 3 Oct 2026", "Started on 3 Oct 2026".
-  String get startedLine =>
-      '${isCrop ? 'Planted' : 'Started'} on ${DateFormat('d MMM yyyy').format(startedOn)}';
+  String get startedLine {
+    final date = {'date': DateFormat('d MMM yyyy').format(startedOn)};
+    return isCrop ? 'Planted on {date}'.trArgs(date) : 'Started on {date}'.trArgs(date);
+  }
 }
 
 /// A field's category on the home screen.
@@ -100,7 +103,7 @@ class FieldLoadError implements Exception {
 
 class FieldService {
   static ApiResponse _ok(ApiResponse r) {
-    if (r.error) throw FieldLoadError(r.message ?? 'Could not load this field. Check your connection.');
+    if (r.error) throw FieldLoadError(r.message ?? 'Could not load this field. Check your connection.'.tr);
     return r;
   }
 
@@ -121,12 +124,12 @@ class FieldService {
   static Future<List<WeatherModel>> forecast(String farmId) => HomeService.getForecast(farmId: farmId);
 
   /// The season's field jobs for a crop, ticked when an activity of that kind is recorded.
-  static const cropPlan = [
-    ('land_preparation', 'Prepare the land'),
-    ('planting', 'Plant the seed'),
-    ('weeding', 'Weed the field'),
-    ('fertilising', 'Top-dress with fertiliser'),
-    ('spraying', 'Spray against pests'),
+  static List<(String, String)> get cropPlan => [
+    ('land_preparation', 'Prepare the land'.tr),
+    ('planting', 'Plant the seed'.tr),
+    ('weeding', 'Weed the field'.tr),
+    ('fertilising', 'Top-dress with fertiliser'.tr),
+    ('spraying', 'Spray against pests'.tr),
   ];
 
   static Future<List<FieldTask>> tasks(Field f) async {
@@ -175,11 +178,11 @@ class FieldService {
       final ndvi = latest is Map && latest['ndvi'] is Map ? num.tryParse('${latest['ndvi']['mean']}') : null;
       final rain5 = days.take(5).fold<double>(0, (a, d) => a + d.precipitation);
       return [
-        FieldMetric('Plant health', ndvi == null ? '—' : '${(ndvi * 100).round()}%',
+        FieldMetric('Plant health'.tr, ndvi == null ? '—' : '${(ndvi * 100).round()}%',
             note: ndvi == null ? _healthWhy(health) : '${latest['health'] ?? ''}'.replaceAll('_', ' ')),
-        FieldMetric('Rain, 5 days', days.isEmpty ? '—' : '${rain5.round()} mm',
-            note: days.isEmpty ? 'No forecast yet' : 'Expected'),
-        FieldMetric('Rain today', days.isEmpty ? '—' : '${days.first.rainProbability}%', note: 'Chance'),
+        FieldMetric('Rain, 5 days'.tr, days.isEmpty ? '—' : '${rain5.round()} mm',
+            note: days.isEmpty ? 'No forecast yet'.tr : 'Expected'.tr),
+        FieldMetric('Rain today'.tr, days.isEmpty ? '—' : '${days.first.rainProbability}%', note: 'Chance'.tr),
       ];
     }
     final res = _ok(await ApiService.get('/enterprises/${f.id}'));
@@ -189,34 +192,34 @@ class FieldService {
         FieldMetric(
           _kpiLabel('${k['code']}'),
           k['money'] == true
-              ? 'KSh ${k['value']}'
+              ? 'KSh {value}'.trArgs({'value': k['value']})
               : k['unit'] == '%'
                   ? '${k['value']}%'
                   : '${k['value']}${'${k['unit'] ?? ''}'.isEmpty ? '' : ' ${k['unit']}'}',
-          note: 'From your records',
+          note: 'From your records'.tr,
         ),
     ];
   }
 
   static String _healthWhy(dynamic health) => switch (health is Map ? health['status'] : null) {
-        'no_boundary' => 'Draw the field on the map',
-        'pending' => 'First image coming',
-        _ => 'No satellite image yet',
+        'no_boundary' => 'Draw the field on the map'.tr,
+        'pending' => 'First image coming'.tr,
+        _ => 'No satellite image yet'.tr,
       };
 
   static String _kpiLabel(String code) => switch (code) {
-        'laying_rate' => 'Laying rate',
-        'feed_per_tray' => 'Feed per tray',
-        'cost_per_tray' => 'Cost per tray',
-        'mortality' => 'Deaths',
-        'alive' => 'Alive',
-        'age' => 'Age',
-        'feed_used' => 'Feed used',
-        'milk_per_day' => 'Milk a day',
-        'animals' => 'Animals',
-        'cost_per_litre' => 'Cost per litre',
-        'milk_30d' => 'Milk, 30 days',
-        'cost_to_date' => 'Cost so far',
+        'laying_rate' => 'Laying rate'.tr,
+        'feed_per_tray' => 'Feed per tray'.tr,
+        'cost_per_tray' => 'Cost per tray'.tr,
+        'mortality' => 'Deaths'.tr,
+        'alive' => 'Alive'.tr,
+        'age' => 'Age'.tr,
+        'feed_used' => 'Feed used'.tr,
+        'milk_per_day' => 'Milk a day'.tr,
+        'animals' => 'Animals'.tr,
+        'cost_per_litre' => 'Cost per litre'.tr,
+        'milk_30d' => 'Milk, 30 days'.tr,
+        'cost_to_date' => 'Cost so far'.tr,
         _ => code.replaceAll('_', ' ').replaceFirstMapped(RegExp(r'^.'), (m) => m[0]!.toUpperCase()),
       };
 }

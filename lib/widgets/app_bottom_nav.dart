@@ -3,6 +3,7 @@ import 'phosphor_icons.dart';
 
 import '../services/app_colors.dart';
 import '../services/app_type.dart';
+import '../l10n/tr.dart';
 
 /// Home, Fields, AI (field analysis, raised in the centre), Activity
 /// and Profile. The current place is marked with a maize bar on the top edge.
@@ -41,11 +42,11 @@ class AppBottomNav extends StatelessWidget {
         height: 68,
         child: Row(
           children: [
-            Expanded(child: _item(context, 0, PhosphorIconsRegular.house, PhosphorIconsFill.house, 'Home')),
-            Expanded(child: _item(context, 1, PhosphorIconsRegular.mapTrifold, PhosphorIconsFill.mapTrifold, 'Fields')),
+            Expanded(child: _item(context, 0, PhosphorIconsRegular.house, PhosphorIconsFill.house, 'Home'.tr)),
+            Expanded(child: _item(context, 1, PhosphorIconsRegular.mapTrifold, PhosphorIconsFill.mapTrifold, 'Fields'.tr)),
             Expanded(child: _assistant(context)),
-            Expanded(child: _item(context, 3, PhosphorIconsRegular.chartLine, PhosphorIconsFill.chartLine, 'Activity')),
-            Expanded(child: _item(context, 4, PhosphorIconsRegular.user, PhosphorIconsFill.user, 'Profile')),
+            Expanded(child: _item(context, 3, PhosphorIconsRegular.chartLine, PhosphorIconsFill.chartLine, 'Activity'.tr)),
+            Expanded(child: _item(context, 4, PhosphorIconsRegular.user, PhosphorIconsFill.user, 'Profile'.tr)),
           ],
         ),
       ),
@@ -58,7 +59,7 @@ class AppBottomNav extends StatelessWidget {
     return Semantics(
       button: true,
       selected: currentIndex == 2,
-      label: 'Analyse a field with AI',
+      label: 'Analyse a field with AI'.tr,
       excludeSemantics: true,
       child: Center(
         child: Transform.translate(

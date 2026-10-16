@@ -10,6 +10,7 @@ import '../../services/api_service.dart';
 import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
 import '../../widgets/phosphor_icons.dart';
+import '../../l10n/tr.dart';
 
 /// Chat with Tulip, the farm assistant. Replies stream in from POST /assistant/chat
 /// while they are written; Tulip knows the farm from its records. The conversation
@@ -25,11 +26,11 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
   static const _storageKey = 'tulip_ai_chat_history';
   static const _sendLast = 20; // messages Tulip reads, most recent first
 
-  static const _suggestions = [
-    'Why are my hens laying fewer eggs?',
-    'When should I top-dress my maize?',
-    'What should I do before the rains?',
-    'Mifugo yangu ina kupe. Nifanye nini?',
+  static List<String> get _suggestions => [
+    'Why are my hens laying fewer eggs?'.tr,
+    'When should I top-dress my maize?'.tr,
+    'What should I do before the rains?'.tr,
+    'Mifugo yangu ina kupe. Nifanye nini?'.tr,
   ];
 
   final _input = TextEditingController();
@@ -111,7 +112,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
     if (stream == null) {
       setState(() {
         _streaming = null;
-        _failed = error?.message ?? 'Tulip could not answer. Try again.';
+        _failed = error?.message ?? 'Tulip could not answer. Try again.'.tr;
       });
       return;
     }
@@ -126,7 +127,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
         setState(() {
           _streaming = null;
           if (reply.isEmpty) {
-            _failed = 'Tulip could not answer. Try again.';
+            _failed = 'Tulip could not answer. Try again.'.tr;
           } else {
             _messages.add(ChatMessage(text: reply, isUser: false, timestamp: DateTime.now()));
           }
@@ -138,7 +139,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
         if (!mounted) return;
         setState(() {
           _streaming = null;
-          _failed = 'The connection dropped. Try again.';
+          _failed = 'The connection dropped. Try again.'.tr;
         });
       },
       cancelOnError: true,
@@ -172,8 +173,8 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Tulip', style: AppType.titleM.copyWith(color: c.textPrimary)),
-                Text(_busy ? 'Writing…' : 'Your farm assistant',
+                Text('Tulip'.tr, style: AppType.titleM.copyWith(color: c.textPrimary)),
+                Text(_busy ? 'Writing…'.tr : 'Your farm assistant'.tr,
                     style: AppType.caption.copyWith(color: _busy ? c.brandText : c.textSecondary)),
               ],
             ),
@@ -182,7 +183,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
         actions: [
           if (_messages.isNotEmpty)
             IconButton(
-              tooltip: 'New chat',
+              tooltip: 'New chat'.tr,
               onPressed: _busy ? null : _newChat,
               icon: Icon(PhosphorIconsRegular.notePencil, color: c.textPrimary),
             ),
@@ -205,10 +206,10 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
       children: [
         Center(child: _avatar(c, 64)),
         const SizedBox(height: 16),
-        Text('Karibu! I\'m Tulip.', textAlign: TextAlign.center, style: AppType.titleL.copyWith(color: c.textPrimary)),
+        Text('Karibu! I\'m Tulip.'.tr, textAlign: TextAlign.center, style: AppType.titleL.copyWith(color: c.textPrimary)),
         const SizedBox(height: 6),
         Text(
-          'Ask me about your crops, animals, weather or the market. I know your farm from your records. Write in Swahili or English.',
+          'Ask me about your crops, animals, weather or the market. I know your farm from your records. Write in Swahili or English.'.tr,
           textAlign: TextAlign.center,
           style: AppType.body.copyWith(color: c.textSecondary),
         ),
@@ -302,7 +303,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
               border: Border.all(color: c.divider),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Semantics(label: 'Tulip is writing', child: _Dots(color: c.textHint)),
+            child: Semantics(label: 'Tulip is writing'.tr, child: _Dots(color: c.textHint)),
           ),
         ],
       ),
@@ -319,7 +320,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
           Icon(PhosphorIconsRegular.warningCircle, size: 20, color: c.dangerInk),
           const SizedBox(width: 10),
           Expanded(child: Text(_failed!, style: AppType.body.copyWith(color: c.dangerInk))),
-          TextButton(onPressed: _ask, child: const Text('Try again')),
+          TextButton(onPressed: _ask, child: Text('Try again'.tr)),
         ],
       ),
     );
@@ -343,7 +344,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
               textInputAction: TextInputAction.newline,
               style: AppType.bodyL.copyWith(fontSize: 16, color: c.textPrimary),
               decoration: InputDecoration(
-                hintText: 'Ask Tulip about your farm…',
+                hintText: 'Ask Tulip about your farm…'.tr,
                 counterText: '',
                 filled: true,
                 fillColor: c.surfaceMuted,
@@ -361,7 +362,7 @@ class _TulipChatScreenState extends State<TulipChatScreen> {
               final ready = _input.text.trim().isNotEmpty && !_busy;
               return Semantics(
                 button: true,
-                label: 'Send',
+                label: 'Send'.tr,
                 excludeSemantics: true,
                 child: Material(
                   color: ready ? c.shamba : c.surfaceMuted,

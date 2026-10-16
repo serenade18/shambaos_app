@@ -4,6 +4,7 @@ import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
 import '../../widgets/phosphor_icons.dart';
 import 'field_service.dart';
+import '../../l10n/tr.dart';
 
 /// The photo shown for a field, by what is kept or grown there.
 String fieldPhoto(String type) => switch (type) {
@@ -66,19 +67,19 @@ List<Widget> fieldChips(BuildContext context, Field f) {
   final c = context.appColors;
   return [
     f.isActive
-        ? FieldChip('Active', fg: c.goodInk, bg: c.goodTint)
-        : FieldChip('Closed', fg: c.textSecondary),
+        ? FieldChip('Active'.tr, fg: c.goodInk, bg: c.goodTint)
+        : FieldChip('Closed'.tr, fg: c.textSecondary),
     if (f.size.isNotEmpty) FieldChip(f.size, fg: c.rainInk, bg: c.rainTint),
     FieldChip(fieldKind(f.type)),
   ];
 }
 
 String fieldKind(String type) => switch (type) {
-      'dairy_cattle' => 'Dairy',
-      'beef_cattle' => 'Beef',
-      'dairy_goats' => 'Goats',
-      'layers' => 'Layers',
-      'broilers' => 'Broilers',
+      'dairy_cattle' => 'Dairy'.tr,
+      'beef_cattle' => 'Beef'.tr,
+      'dairy_goats' => 'Goats'.tr,
+      'layers' => 'Layers'.tr,
+      'broilers' => 'Broilers'.tr,
       _ => type.isEmpty ? '' : type[0].toUpperCase() + type.substring(1).replaceAll('_', ' '),
     };
 
@@ -149,7 +150,7 @@ class PhotoBackButton extends StatelessWidget {
     final c = context.appColors;
     return Semantics(
       button: true,
-      label: 'Back',
+      label: 'Back'.tr,
       child: Material(
         color: c.cardBackground,
         borderRadius: BorderRadius.circular(10),

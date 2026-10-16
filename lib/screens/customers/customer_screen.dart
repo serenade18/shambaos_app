@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/app_colors.dart';
 import 'customer_service.dart';
+import '../../l10n/tr.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -37,7 +38,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
         elevation: 0,
         leading: BackButton(color: context.appColors.textPrimary),
         title: Text(
-          'Customers',
+          'Customers'.tr,
           style: TextStyle(
             color: context.appColors.textPrimary,
             fontWeight: FontWeight.w600,
@@ -61,7 +62,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return Center(
                     child: Text(
-                      'No customers found',
+                      'No customers found'.tr,
                       style: TextStyle(color: context.appColors.textSecondary),
                     ),
                   );
@@ -99,7 +100,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
         ),
         child: TextField(
           decoration: InputDecoration(
-            hintText: 'Search customers...',
+            hintText: 'Search customers...'.tr,
             border: InputBorder.none,
             prefixIcon: Icon(Icons.search, color: context.appColors.brandText),
           ),
@@ -110,7 +111,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   // 📋 CUSTOMER TILE
   Widget _buildCustomerTile(Map<String, dynamic> customer) {
-    final name = customer['name'] ?? 'No Name';
+    final name = customer['name'] ?? 'No Name'.tr;
     final phone = customer['phone'] ?? '';
     final email = customer['email'] ?? '';
     final town = customer['town'] ?? '';

@@ -13,6 +13,8 @@ dependencies:
   intl_phone_field: ^3.2.0
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   flutter_intl_phone_field: ^0.0.7
   shared_preferences: ^2.5.5
@@ -20,10 +22,11 @@ dependencies:
   biometric_signature: ^10.2.0
   local_auth: ^2.3.0 
   flutter_secure_storage: ^8.1.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   sms_autofill: ^2.4.1
   camera: ^0.12.1
   image_picker: ^1.2.4
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:

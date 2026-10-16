@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'profile_service.dart';
 import '../../services/app_colors.dart';
+import '../../l10n/tr.dart';
 
 // ===============================
 // MODEL
@@ -59,11 +60,11 @@ class NotificationItem {
   });
 }
 
-final List<NotificationItem> notificationItems = [
+List<NotificationItem> get notificationItems => [
   NotificationItem(
     key: 'low_stock_alerts',
-    title: 'Low Stock Alerts',
-    subtitle: 'Get notified when inventory drops below the configured threshold.',
+    title: 'Low Stock Alerts'.tr,
+    subtitle: 'Get notified when inventory drops below the configured threshold.'.tr,
     icon: Icons.inventory_2_rounded,
     iconColor: Color(0xFFB45309),
     iconBackground: Color(0xFFFFF4E0),
@@ -71,32 +72,32 @@ final List<NotificationItem> notificationItems = [
   ),
   NotificationItem(
     key: 'leave_requests',
-    title: 'Leave Requests',
-    subtitle: 'Alerts when staff submit leave requests requiring approval.',
+    title: 'Leave Requests'.tr,
+    subtitle: 'Alerts when staff submit leave requests requiring approval.'.tr,
     icon: Icons.badge_rounded,
     iconColor: Color(0xFF1A56DB),
     iconBackground: Color(0xFFE8F0FE),
   ),
   NotificationItem(
     key: 'health_reminders',
-    title: 'Health & Vaccination',
-    subtitle: 'Scheduled health checks, vaccinations, and compliance reminders.',
+    title: 'Health & Vaccination'.tr,
+    subtitle: 'Scheduled health checks, vaccinations, and compliance reminders.'.tr,
     icon: Icons.favorite_rounded,
     iconColor: Color(0xFFDC2626),
     iconBackground: Color(0xFFFDEAEA),
   ),
   NotificationItem(
     key: 'system_updates',
-    title: 'System Updates',
-    subtitle: 'Platform updates, new features, and maintenance announcements.',
+    title: 'System Updates'.tr,
+    subtitle: 'Platform updates, new features, and maintenance announcements.'.tr,
     icon: Icons.notifications_rounded,
     iconColor: Color(0xFF7C3AED),
     iconBackground: Color(0xFFF0EEFF),
   ),
   NotificationItem(
     key: 'payment_reminders',
-    title: 'Payment Reminders',
-    subtitle: 'Pending payments, due invoices, and financial actions.',
+    title: 'Payment Reminders'.tr,
+    subtitle: 'Pending payments, due invoices, and financial actions.'.tr,
     icon: Icons.credit_card_rounded,
     iconColor: AppColors.brand,
     iconBackground: Color(0xFFE8F5E9),
@@ -137,10 +138,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
           _isLoading = false;
         });
       } else {
-        _handleError('Failed to load notifications');
+        _handleError('Failed to load notifications'.tr);
       }
     } catch (_) {
-      _handleError('Connection error');
+      _handleError('Connection error'.tr);
     }
   }
 
@@ -161,11 +162,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
         });
       } else {
         _applyLocal(key, !value);
-        _handleError('Failed to save. Please try again.');
+        _handleError('Failed to save. Please try again.'.tr);
       }
     } catch (_) {
       _applyLocal(key, !value);
-      _handleError('Connection error');
+      _handleError('Connection error'.tr);
     } finally {
       if (mounted) setState(() => _savingKey = null);
     }
@@ -263,20 +264,25 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             letterSpacing: -0.5,
                             height: 1.1,
                           ),
-                          children: [
-                            const TextSpan(text: 'Notifi'),
-                            TextSpan(
-                              text: 'cations',
-                              style: const TextStyle(color: AppColors.brand),
-                            ),
-                          ],
+                          // The second half of the word in the brand colour, in any language.
+                          children: () {
+                            final word = 'Notifications'.tr;
+                            final cut = (word.length * 6 / 13).round();
+                            return [
+                              TextSpan(text: word.substring(0, cut)),
+                              TextSpan(
+                                text: word.substring(cut),
+                                style: const TextStyle(color: AppColors.brand),
+                              ),
+                            ];
+                          }(),
                         ),
                       ),
 
                       const SizedBox(height: 10),
 
                       Text(
-                        'Control the types of alerts you receive across your workspace.',
+                        'Control the types of alerts you receive across your workspace.'.tr,
                         style: TextStyle(
                           fontSize: 14,
                           color: colors.textSecondary,
@@ -326,7 +332,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Mute all notifications',
+                                    'Mute all notifications'.tr,
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
@@ -335,7 +341,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Silence everything at once',
+                                    'Silence everything at once'.tr,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: colors.textSecondary,

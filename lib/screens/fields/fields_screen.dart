@@ -8,6 +8,7 @@ import '../../widgets/phosphor_icons.dart';
 import 'field_detail_screen.dart';
 import 'field_service.dart';
 import 'field_widgets.dart';
+import '../../l10n/tr.dart';
 
 /// The round category buttons above a list of fields. Tapping one filters the
 /// list; tapping it again shows everything.
@@ -18,11 +19,11 @@ class FieldCategories extends StatelessWidget {
 
   const FieldCategories({super.key, required this.selected, required this.onChanged, required this.present});
 
-  static const items = [
-    (FieldCategory.animals, PhosphorIconsRegular.cow, 'Animals'),
-    (FieldCategory.poultry, PhosphorIconsRegular.egg, 'Poultry'),
-    (FieldCategory.crops, PhosphorIconsRegular.grains, 'Crops'),
-    (FieldCategory.orchards, PhosphorIconsRegular.tree, 'Orchards'),
+  static List<(FieldCategory, IconData, String)> get items => [
+    (FieldCategory.animals, PhosphorIconsRegular.cow, 'Animals'.tr),
+    (FieldCategory.poultry, PhosphorIconsRegular.egg, 'Poultry'.tr),
+    (FieldCategory.crops, PhosphorIconsRegular.grains, 'Crops'.tr),
+    (FieldCategory.orchards, PhosphorIconsRegular.tree, 'Orchards'.tr),
   ];
 
   @override
@@ -33,7 +34,7 @@ class FieldCategories extends StatelessWidget {
       children: [
         for (final (cat, icon, label) in items)
           _circle(c, icon, label, selected == cat, present.contains(cat), () => onChanged(selected == cat ? null : cat)),
-        _circle(c, PhosphorIconsRegular.squaresFour, 'All', selected == null, true, () => onChanged(null)),
+        _circle(c, PhosphorIconsRegular.squaresFour, 'All'.tr, selected == null, true, () => onChanged(null)),
       ],
     );
   }
@@ -122,8 +123,8 @@ class _FieldsScreenState extends State<FieldsScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 48),
             children: [
-              Text('My fields', style: AppType.titleL.copyWith(color: c.textPrimary)),
-              Text('Your animals and crops', style: AppType.caption.copyWith(color: c.textSecondary)),
+              Text('My fields'.tr, style: AppType.titleL.copyWith(color: c.textPrimary)),
+              Text('Your animals and crops'.tr, style: AppType.caption.copyWith(color: c.textSecondary)),
               const SizedBox(height: 20),
               if (fields != null && fields.isNotEmpty) ...[
                 FieldCategories(
@@ -138,10 +139,10 @@ class _FieldsScreenState extends State<FieldsScreen> {
               else if (fields.isEmpty)
                 SlLedger(children: [
                   SlLedgerRow(
-                    title: _noFarm ? 'No farm yet' : 'No fields yet',
+                    title: _noFarm ? 'No farm yet'.tr : 'No fields yet'.tr,
                     meta: _noFarm
-                        ? 'Set up your farm to add your animals and crops.'
-                        : 'Add the animals you keep and the crops you grow to see them here.',
+                        ? 'Set up your farm to add your animals and crops.'.tr
+                        : 'Add the animals you keep and the crops you grow to see them here.'.tr,
                   ),
                 ])
               else

@@ -4,6 +4,7 @@ import 'phosphor_icons.dart';
 
 import '../services/app_colors.dart';
 import '../services/app_type.dart';
+import '../l10n/tr.dart';
 
 /// Shamba Ledger components (see shamba-ledger/components/*/README.md).
 
@@ -362,28 +363,28 @@ class SlSeason {
     String weekOf(DateTime start, DateTime end) {
       final week = today.difference(start).inDays ~/ 7 + 1;
       final weeks = (end.difference(start).inDays / 7).ceil();
-      return 'Week $week of $weeks';
+      return 'Week {week} of {weeks}'.trArgs({'week': week, 'weeks': weeks});
     }
 
     final y = today.year;
     if (m >= 3 && m <= 5) {
       final start = DateTime(y, 3, 1);
       final week = today.difference(start).inDays ~/ 7 + 1;
-      return SlSeason('MASIKA · LONG RAINS', weekOf(start, DateTime(y, 6, 1)),
-          week <= 4 ? 'Planting window open' : 'Weed and top-dress');
+      return SlSeason('MASIKA · LONG RAINS'.tr, weekOf(start, DateTime(y, 6, 1)),
+          week <= 4 ? 'Planting window open'.tr : 'Weed and top-dress'.tr);
     }
     if (m >= 10) {
       final start = DateTime(y, 10, 1);
       final week = today.difference(start).inDays ~/ 7 + 1;
-      return SlSeason('VULI · SHORT RAINS', weekOf(start, DateTime(y + 1, 1, 1)),
-          week <= 4 ? 'Planting window open' : 'Weed and top-dress');
+      return SlSeason('VULI · SHORT RAINS'.tr, weekOf(start, DateTime(y + 1, 1, 1)),
+          week <= 4 ? 'Planting window open'.tr : 'Weed and top-dress'.tr);
     }
     if (m <= 2) {
-      return SlSeason('KIANGAZI · HOT DRY SEASON', 'Long rains in ${DateTime(y, 3, 1).difference(today).inDays} days',
-          'Prepare land and buy seed');
+      return SlSeason('KIANGAZI · HOT DRY SEASON'.tr, 'Long rains in {p0} days'.trArgs({'p0': DateTime(y, 3, 1).difference(today).inDays}),
+          'Prepare land and buy seed'.tr);
     }
-    return SlSeason('KIPUPWE · COOL DRY SEASON', 'Short rains in ${DateTime(y, 10, 1).difference(today).inDays} days',
-        'Harvest and store the long-rains crop');
+    return SlSeason('KIPUPWE · COOL DRY SEASON'.tr, 'Short rains in {p0} days'.trArgs({'p0': DateTime(y, 10, 1).difference(today).inDays}),
+        'Harvest and store the long-rains crop'.tr);
   }
 }
 
@@ -433,7 +434,7 @@ class SlSeasonStrip extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Semantics(
-            label: 'Today, ${DateFormat('d MMMM').format(now)}',
+            label: 'Today, {date}'.trArgs({'date': DateFormat('d MMMM').format(now)}),
             child: LayoutBuilder(builder: (context, box) {
               final x = position * (box.maxWidth + gap);
               return SizedBox(
@@ -502,9 +503,9 @@ class SlSeasonStrip extends StatelessWidget {
             spacing: 14,
             runSpacing: 4,
             children: [
-              _key(c, c.seasonRain, 'Masika, Mar–May'),
-              _key(c, c.seasonRain, 'Vuli, Oct–Dec'),
-              _key(c, c.surfaceMuted, 'Dry', outlined: true),
+              _key(c, c.seasonRain, 'Masika, Mar–May'.tr),
+              _key(c, c.seasonRain, 'Vuli, Oct–Dec'.tr),
+              _key(c, c.surfaceMuted, 'Dry'.tr, outlined: true),
             ],
           ),
         ],

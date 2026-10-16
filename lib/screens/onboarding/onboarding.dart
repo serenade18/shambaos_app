@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/app_colors.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/tr.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -117,8 +118,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Headline
-                        const Text(
-                          'RUN YOUR FARM,\nLIKE A BUSINESS.',
+                        Text(
+                          'RUN YOUR FARM,\nLIKE A BUSINESS.'.tr,
                           style: TextStyle(
                             fontSize: 38,
                             fontWeight: FontWeight.w900,
@@ -132,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
                         // Subtitle
                         Text(
-                          'Monitor crop health, optimize resources, and\nincrease yield with data driven insights.',
+                          'Monitor crop health, optimize resources, and\nincrease yield with data driven insights.'.tr,
                           style: TextStyle(
                             fontSize: 15,
                             color: Colors.white.withOpacity(0.75),
@@ -202,10 +203,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
 
             // Label
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Text(
-                  'Get Started',
+                  'Get Started'.tr,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 17,

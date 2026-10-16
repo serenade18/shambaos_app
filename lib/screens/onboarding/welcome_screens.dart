@@ -2,6 +2,7 @@ import 'dart:async'; // Required for the automatic timer
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../auth/login_screen.dart';
+import '../../l10n/tr.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data model for each welcome page
@@ -20,18 +21,18 @@ class _WelcomePage {
   });
 }
 
-const List<_WelcomePage> _pages = [
+List<_WelcomePage> get _pages => [
   _WelcomePage(
     image: 'images/auth/farming.jpg',
-    tag: 'FARM INTELLIGENCE',
-    headline: 'Modern Farming.\nTraditional\nWisdom.',
-    subtitle: 'Put the power of data in your pocket. Track your soil health and weather to ensure a bumper harvest every season.',
+    tag: 'FARM INTELLIGENCE'.tr,
+    headline: 'Modern Farming.\nTraditional\nWisdom.'.tr,
+    subtitle: 'Put the power of data in your pocket. Track your soil health and weather to ensure a bumper harvest every season.'.tr,
   ),
   _WelcomePage(
     image: 'images/auth/beans.jpg',
-    tag: 'LIVESTOCK MANAGEMENT',
-    headline: 'Your Digital\nFarm Manager,\n24/7.',
-    subtitle: 'From poultry to dairy and fish—manage your entire inventory and production records without the paperwork.',
+    tag: 'LIVESTOCK MANAGEMENT'.tr,
+    headline: 'Your Digital\nFarm Manager,\n24/7.'.tr,
+    subtitle: 'From poultry to dairy and fish—manage your entire inventory and production records without the paperwork.'.tr,
   ),
   // _WelcomePage(
   //   image: 'images/auth/cow.jpg',
@@ -130,8 +131,8 @@ class _WelcomeScreensState extends State<WelcomeScreens> {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
                   ),
-                  child: const Text(
-                    'Skip',
+                  child: Text(
+                    'Skip'.tr,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 13,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/app_colors.dart';
 import 'tulip_chat_screen.dart';
+import '../../l10n/tr.dart';
 
 class TulipAiScreen extends StatefulWidget {
   const TulipAiScreen({super.key});
@@ -52,7 +53,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Chat with Tulip',
+          'Chat with Tulip'.tr,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
@@ -83,7 +84,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'YOUR FARM ASSISTANT',
+                      'YOUR FARM ASSISTANT'.tr,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -106,9 +107,9 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                         letterSpacing: -0.5,
                       ),
                       children: [
-                        TextSpan(text: 'Welcome to '),
+                        TextSpan(text: 'Welcome to '.tr),
                         TextSpan(
-                          text: 'Tulip AI',
+                          text: 'Tulip AI'.tr,
                           style: TextStyle(color: context.appColors.brandText),
                         ),
                       ],
@@ -116,7 +117,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Your intelligent farming companion,\nalways ready to help',
+                    'Your intelligent farming companion,\nalways ready to help'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -163,7 +164,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                       _badge(
                         icon: Icons.circle,
                         iconColor: context.appColors.brandText,
-                        label: 'Online now',
+                        label: 'Online now'.tr,
                       ),
                       const SizedBox(width: 10),
                       _badge(
@@ -175,7 +176,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                       _badge(
                         icon: Icons.bolt_rounded,
                         iconColor: context.appColors.brandText,
-                        label: 'Instant',
+                        label: 'Instant'.tr,
                       ),
                     ],
                   ),
@@ -203,7 +204,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                         ),
                         children: [
                           TextSpan(
-                            text: 'Tulip AI ',
+                            text: 'Tulip AI '.tr,
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: context.appColors.textPrimary,
@@ -211,7 +212,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                           ),
                           TextSpan(
                             text:
-                                'is your personal farming assistant. Get advice on crops, livestock, markets, and weather — all in one place.',
+                                'is your personal farming assistant. Get advice on crops, livestock, markets, and weather — all in one place.'.tr,
                           ),
                         ],
                       ),
@@ -244,8 +245,8 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                       size: 20,
                       color: Colors.white,
                     ),
-                    label: const Text(
-                      'Start Chatting',
+                    label: Text(
+                      'Start Chatting'.tr,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -265,7 +266,7 @@ class _TulipAiScreenState extends State<TulipAiScreen>
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Powered by ShambaOS · Available in Swahili & English',
+                  'Powered by ShambaOS · Available in Swahili & English'.tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 11, color: context.appColors.textHint),
                 ),
