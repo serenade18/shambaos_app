@@ -7,7 +7,9 @@ import '../models/weather_model.dart';
 import 'fields/field_service.dart';
 import 'fields/field_widgets.dart';
 import 'fields/fields_screen.dart';
+import '../widgets/phosphor_icons.dart';
 import 'home/home_hero.dart';
+import 'records/record_menu.dart';
 import 'profile/notification_screen.dart';
 import 'profile/profile_screen.dart';
 import 'profile/edit_profile_screen.dart';
@@ -184,6 +186,12 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               Expanded(child: Text('My fields', style: AppType.titleM.copyWith(color: colors.textPrimary))),
+              if (_farm != null)
+                TextButton.icon(
+                  onPressed: () => openFarmRecordMenu(context, fields ?? const []),
+                  icon: Icon(PhosphorIconsBold.plus, size: 16, color: colors.brandText),
+                  label: const Text('Record'),
+                ),
               if (fields != null && fields.isNotEmpty)
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/fields'),

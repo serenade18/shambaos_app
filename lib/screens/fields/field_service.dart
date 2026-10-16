@@ -66,8 +66,22 @@ class FieldTask {
   final DateTime? date; // when it was done, or when it is due
   final bool done;
   final String? status; // overdue | due | upcoming, for vaccinations
+  final String? vaccine; // the vaccine a step gives
+  final String? scheduleKey; // a herd's step: age:90, every:deworming
+  final int? scheduleDay; // a batch's step, by age in days
+  final String? animalId; // the one animal a herd step is for
 
-  const FieldTask({required this.title, this.code, this.date, required this.done, this.status});
+  const FieldTask({
+    required this.title,
+    this.code,
+    this.date,
+    required this.done,
+    this.status,
+    this.vaccine,
+    this.scheduleKey,
+    this.scheduleDay,
+    this.animalId,
+  });
 }
 
 /// A figure in the field's analysis.
@@ -128,25 +142,24 @@ class FieldService {
           FieldTask(title: title, code: code, date: done[code], done: done.containsKey(code)),
       ];
     }
-    final path = f.module == 'batches' ? '/batches/${f.id}/vaccinations' : '/herds/${f.id}/vaccinations';
+    final batch = f.module == 'batches';
+    final path = batch ? '/batches/${f.id}/vaccinations' : '/herds/${f.id}/vaccinations';
     final res = _ok(await ApiService.get(path));
     final steps = res.data is Map && res.data['steps'] is List ? res.data['steps'] as List : const [];
     return [
       for (final s in steps)
         FieldTask(
-          title: '${s['vaccine']}',
+          title: s['animal_tag'] == null ? '${s['vaccine']}' : '${s['vaccine']} · ${s['animal_tag']}',
           date: DateTime.tryParse('${s['done_on'] ?? s['due_on'] ?? ''}'),
           done: s['status'] == 'done',
           status: s['status'],
+          vaccine: '${s['vaccine']}',
+          scheduleKey: batch ? null : s['key'],
+          scheduleDay: batch && s['day'] is int ? s['day'] : null,
+          animalId: s['animal_id'],
         ),
     ];
   }
-
-  /// Records a crop job as done today.
-  static Future<ApiResponse> recordTask(Field f, FieldTask t) => ApiService.post('/seasons/${f.id}/activities', {
-        'date': DateFormat('yyyy-MM-dd').format(DateTime.now()),
-        'type': t.code,
-      });
 
   /// Three figures that say how the field is doing. Crops: satellite plant health and
   /// the rain coming. Animals: the herd or flock's own figures from its records.

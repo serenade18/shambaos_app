@@ -6,6 +6,9 @@ import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
 import '../../widgets/ledger.dart';
 import '../../widgets/phosphor_icons.dart';
+import '../records/record_form.dart';
+import '../records/record_forms.dart';
+import '../records/record_menu.dart';
 import 'field_service.dart';
 import 'field_widgets.dart';
 
@@ -24,7 +27,6 @@ class FieldDetailScreen extends StatefulWidget {
 class _FieldDetailScreenState extends State<FieldDetailScreen> {
   List<FieldMetric>? _metrics;
   List<FieldTask>? _tasks;
-  String? _saving; // the task being recorded
   String? _error; // why the analysis or plan could not load
 
   Field get f => widget.field;
@@ -51,42 +53,14 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     }
   }
 
+  /// A job in the plan opens its form, filled in: the crop work, or the vaccine due.
   Future<void> _record(FieldTask t) async {
-    final c = context.appColors;
-    final ok = await showModalBottomSheet<bool>(
-      context: context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(t.title, style: AppType.titleM.copyWith(color: c.textPrimary)),
-            const SizedBox(height: 6),
-            Text('Record this as done today on ${f.name}?', style: AppType.body.copyWith(color: c.textSecondary)),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 56,
-              child: ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Record as done')),
-            ),
-            const SizedBox(height: 8),
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ],
-        ),
-      ),
-    );
-    if (ok != true || !mounted) return;
-    setState(() => _saving = t.code);
-    final res = await FieldService.recordTask(f, t);
-    if (!mounted) return;
-    setState(() => _saving = null);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(res.error ? (res.message ?? 'Could not record it. Try again.') : '${t.title}: recorded'),
-    ));
-    if (!res.error) {
-      final tasks = await FieldService.tasks(f);
-      if (mounted) setState(() => _tasks = tasks);
-    }
+    final form = f.isCrop ? ActivityForm(field: f, type: t.code) : TreatmentForm(field: f, step: t);
+    if (await openRecord(context, form)) _load();
+  }
+
+  Future<void> _recordAny() async {
+    if (await openFieldRecordMenu(context, f)) _load();
   }
 
   @override
@@ -98,6 +72,15 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: c.cardBackground,
+        floatingActionButton: f.isActive
+            ? FloatingActionButton.extended(
+                onPressed: _recordAny,
+                backgroundColor: c.shamba,
+                foregroundColor: c.onShamba,
+                icon: const Icon(PhosphorIconsBold.plus),
+                label: const Text('Record'),
+              )
+            : null,
         body: RefreshIndicator(
           onRefresh: _load,
           color: c.shamba,
@@ -130,7 +113,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 24, 16, 48),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
                 sliver: SliverList.list(children: [
                   Row(
                     children: [
@@ -272,12 +255,10 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
         : t.done
             ? 'Done ${DateFormat('d MMM').format(t.date!)}'
             : 'Due ${DateFormat('EEE d MMM').format(t.date!)}';
-    final canRecord = f.isCrop && !t.done && t.code != null;
+    final canRecord = f.isActive && !t.done && (f.isCrop ? t.code != null : t.vaccine != null);
 
     Widget trailing;
-    if (_saving != null && _saving == t.code) {
-      trailing = SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: c.shamba));
-    } else if (f.isCrop) {
+    if (f.isCrop) {
       trailing = Icon(
         t.done ? PhosphorIconsFill.checkSquare : PhosphorIconsRegular.square,
         size: 26,

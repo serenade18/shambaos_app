@@ -11,11 +11,15 @@ class PhosphorIconsRegular {
   static const arrowDownRight = IconData(0xe042, fontFamily: _family);
   static const arrowLeft = IconData(0xe058, fontFamily: _family);
   static const arrowUpRight = IconData(0xe092, fontFamily: _family);
+  static const baby = IconData(0xe774, fontFamily: _family);
   static const barn = IconData(0xec72, fontFamily: _family);
+  static const basket = IconData(0xe964, fontFamily: _family);
   static const bell = IconData(0xe0ce, fontFamily: _family);
   static const bird = IconData(0xe72c, fontFamily: _family);
+  static const calendarBlank = IconData(0xe10a, fontFamily: _family);
   static const camera = IconData(0xe10e, fontFamily: _family);
   static const cameraSlash = IconData(0xe110, fontFamily: _family);
+  static const caretRight = IconData(0xe13a, fontFamily: _family);
   static const chartLine = IconData(0xe154, fontFamily: _family);
   static const chatCircleText = IconData(0xe16e, fontFamily: _family);
   static const cloud = IconData(0xe1aa, fontFamily: _family);
@@ -27,26 +31,36 @@ class PhosphorIconsRegular {
   static const egg = IconData(0xe812, fontFamily: _family);
   static const fish = IconData(0xe728, fontFamily: _family);
   static const grains = IconData(0xec68, fontFamily: _family);
+  static const handCoins = IconData(0xea8c, fontFamily: _family);
   static const heart = IconData(0xe2a8, fontFamily: _family);
   static const heartbeat = IconData(0xe2ac, fontFamily: _family);
   static const house = IconData(0xe2c2, fontFamily: _family);
   static const image = IconData(0xe2ca, fontFamily: _family);
   static const info = IconData(0xe2ce, fontFamily: _family);
+  static const magnifyingGlass = IconData(0xe30c, fontFamily: _family);
   static const mapPin = IconData(0xe316, fontFamily: _family);
   static const mapTrifold = IconData(0xe31a, fontFamily: _family);
   static const notePencil = IconData(0xe34c, fontFamily: _family);
+  static const notepad = IconData(0xe63e, fontFamily: _family);
   static const package = IconData(0xe390, fontFamily: _family);
   static const plant = IconData(0xebae, fontFamily: _family);
+  static const plus = IconData(0xe3d4, fontFamily: _family);
+  static const plusCircle = IconData(0xe3d6, fontFamily: _family);
+  static const scales = IconData(0xe750, fontFamily: _family);
   static const scissors = IconData(0xeae0, fontFamily: _family);
+  static const shoppingCart = IconData(0xe41e, fontFamily: _family);
   static const shovel = IconData(0xe9e6, fontFamily: _family);
+  static const signOut = IconData(0xe42a, fontFamily: _family);
   static const sprayBottle = IconData(0xe7e4, fontFamily: _family);
   static const square = IconData(0xe45e, fontFamily: _family);
   static const squaresFour = IconData(0xe464, fontFamily: _family);
+  static const storefront = IconData(0xe470, fontFamily: _family);
   static const syringe = IconData(0xe968, fontFamily: _family);
   static const thermometer = IconData(0xe5c6, fontFamily: _family);
   static const tree = IconData(0xe6da, fontFamily: _family);
   static const user = IconData(0xe4c2, fontFamily: _family);
   static const warningCircle = IconData(0xe4e2, fontFamily: _family);
+  static const x = IconData(0xe4f6, fontFamily: _family);
 }
 
 class PhosphorIconsBold {
@@ -56,6 +70,7 @@ class PhosphorIconsBold {
   static const clock = IconData(0xe19a, fontFamily: _family);
   static const cloudRain = IconData(0xe1b4, fontFamily: _family);
   static const minusCircle = IconData(0xe32c, fontFamily: _family);
+  static const plus = IconData(0xe3d4, fontFamily: _family);
   static const warning = IconData(0xe4e0, fontFamily: _family);
 }
 
