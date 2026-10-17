@@ -19,6 +19,18 @@ bool _input(Item i, Set<String> categories) => i.kind == 'input' && categories.c
 Map<String, String?> _lineErrors(RecordForm f, String item, String qty, String unit, [String? price]) =>
     {'item': f.err(item), 'qty': f.err(qty), 'unit': f.err(unit), if (price != null) 'price': f.err(price)};
 
+/// Fills a feed line with the feed of [day] (a day from GET /today), when the farm still keeps it.
+Future<void> feedFrom(ItemLine line, Map<String, dynamic>? day) async {
+  final id = day?['feed_item_id'];
+  if (id == null) return;
+  final item = (await RecordService.items()).where((i) => i.id == id).firstOrNull;
+  if (item == null) return;
+  line.choose(item);
+  final unit = '${day!['feed_unit'] ?? ''}';
+  if (item.units.contains(unit)) line.unit = unit;
+  line.qty.text = '${day['feed_qty'] ?? ''}';
+}
+
 /// The org's currency, for money boxes.
 mixin _Currency<T extends StatefulWidget> on State<T> {
   String currency = 'KES';
@@ -237,7 +249,8 @@ class _HarvestFormState extends State<HarvestForm> with RecordForm {
 /// The day's feed, deaths and (layers) eggs for a batch (BAT-01/02).
 class BatchDayForm extends StatefulWidget {
   final Field field;
-  const BatchDayForm({super.key, required this.field});
+  final Map<String, dynamic>? yesterday; // its last day, from Home's Today: the form starts from it
+  const BatchDayForm({super.key, required this.field, this.yesterday});
 
   @override
   State<BatchDayForm> createState() => _BatchDayFormState();
@@ -251,6 +264,18 @@ class _BatchDayFormState extends State<BatchDayForm> with RecordForm {
   final _note = TextEditingController();
 
   bool get _layers => widget.field.type == 'layers';
+
+  @override
+  void initState() {
+    super.initState();
+    final y = widget.yesterday;
+    if (y != null) {
+      if (_layers && y['produced'] != null) _eggs.text = '${y['produced']}';
+      feedFrom(_feed, y).then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -300,6 +325,7 @@ class _BatchDayFormState extends State<BatchDayForm> with RecordForm {
         if (_layers)
           RecordTally(
             label: 'Eggs collected'.tr,
+            note: widget.yesterday?['produced'] == null ? null : 'Yesterday {n} trays'.trArgs({'n': widget.yesterday!['produced']}),
             controller: _eggs,
             unit: 'trays'.tr,
             packs: [('+10 trays'.tr, 10)],
@@ -467,6 +493,113 @@ class _TreatmentFormState extends State<TreatmentForm> with RecordForm {
           ),
         RecordTextField(
             controller: _dose, label: 'Dose or reason (optional)'.tr, hint: '5 ml each, for worms'.tr, maxLength: 200, errorText: err('dose_note')),
+      ],
+    );
+  }
+}
+
+/// A herd's day, from Home's Today: the milk (dairy herds) and the feed, in one form
+/// that starts from its last day (POST /milk-records, then /feeding-records).
+class HerdDayForm extends StatefulWidget {
+  final Field field;
+  final Map<String, dynamic>? yesterday;
+  const HerdDayForm({super.key, required this.field, this.yesterday});
+
+  @override
+  State<HerdDayForm> createState() => _HerdDayFormState();
+}
+
+class _HerdDayFormState extends State<HerdDayForm> with RecordForm {
+  DateTime _date = DateTime.now();
+  final _litres = TextEditingController();
+  final _feed = ItemLine();
+  bool _milkSent = false; // the milk saved but the feed didn't: Save again sends only the feed
+
+  bool get _milked => isMilked(widget.field.type);
+
+  @override
+  void initState() {
+    super.initState();
+    final y = widget.yesterday;
+    if (y != null) {
+      if (_milked && y['produced'] != null) _litres.text = '${y['produced']}';
+      feedFrom(_feed, y).then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _litres.dispose();
+    _feed.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final milk = _milked && !_milkSent;
+    final litres = milk ? RecordService.number(_litres.text) : null;
+    if (milk && _litres.text.trim().isNotEmpty && litres == null) return fail('Enter the litres milked.'.tr, 'litres');
+    final feedQty = _feed.qtyValue;
+    if (_feed.qty.text.trim().isNotEmpty && feedQty == null) return fail('Enter how much feed.'.tr, 'qty');
+    if (feedQty != null && _feed.item == null) return fail('Choose the feed.'.tr, 'item_id');
+    if (litres == null && feedQty == null) return fail(milk ? 'Enter the milk or feed for the day.'.tr : 'Enter how much feed.'.tr);
+    save(() async {
+      ApiResponse? res;
+      if (litres != null) {
+        res = await RecordService.milk(widget.field, date: _date, litres: litres);
+        if (res.error) return res;
+        _milkSent = true;
+      }
+      if (feedQty != null) {
+        res = await RecordService.feeding(widget.field, date: _date, itemId: _feed.item!.id, qty: feedQty, unit: _feed.unit ?? '');
+      }
+      return res!;
+    }, 'Day recorded on {name}'.trArgs({'name': widget.field.name}));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final day = DateFormat('EEE d MMM', Localizations.localeOf(context).toString()).format(_date).toUpperCase();
+    final y = widget.yesterday;
+    return RecordPage(
+      title: 'Daily record'.tr,
+      eyebrow: '{title} · {day}'.trArgs({'title': 'Daily record'.tr.toUpperCase(), 'day': day}),
+      subtitle: widget.field.name,
+      saving: saving,
+      error: banner({'date', 'litres', 'item_id', 'qty', 'unit'}),
+      onSave: _save,
+      saveLabel: "Save today's record".tr,
+      children: [
+        RecordDateField(
+          value: _date,
+          errorText: err('date'),
+          onChanged: (d) => setState(() {
+            _date = d;
+            _milkSent = false;
+          }),
+        ),
+        if (_milked)
+          RecordTally(
+            label: 'Milk'.tr,
+            note: _milkSent ? 'Saved'.tr : (y?['produced'] == null ? null : 'Yesterday {n} litres'.trArgs({'n': y!['produced']})),
+            controller: _litres,
+            unit: 'litres'.tr,
+            whole: false,
+            packs: [('+5 litres'.tr, 5)],
+            errorText: err('litres'),
+            onChanged: () => setState(() {}),
+          ),
+        RecordCard(label: 'Feed given'.tr, children: [
+          ItemLineFields(
+            line: _feed,
+            where: (i) => _input(i, const {'feed'}),
+            suggest: const {'feed'},
+            itemLabel: 'Feed'.tr,
+            errors: _lineErrors(this, 'item_id', 'qty', 'unit'),
+            onChanged: () => setState(() {}),
+          ),
+        ]),
       ],
     );
   }

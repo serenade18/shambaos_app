@@ -4,8 +4,8 @@ import '../../l10n/tr.dart';
 
 /// What My farm and "What are you adding?" read and write: the farm, what it
 /// runs (GET /navigation), its plots, buildings and herds, and the start calls
-/// (POST /herds, /batches, /seasons, /plots, /structures, /animals, /suppliers,
-/// /invitations).
+/// (POST /herds, /batches, /seasons, /plots, /structures, /animals, /animals/bulk,
+/// /suppliers, /invitations).
 class FarmSetupService {
   /// The main farm and the types it keeps; null farm when there is none yet.
   static Future<({Map<String, dynamic>? farm, List<String> types, String? error})> load() async {
@@ -32,6 +32,11 @@ class FarmSetupService {
 
   static Future<ApiResponse> startHerd(Map<String, dynamic> body) => ApiService.post('/herds', body);
   static Future<ApiResponse> addAnimal(Map<String, dynamic> body) => ApiService.post('/animals', body);
+  static Future<ApiResponse> addAnimals(Map<String, dynamic> body) => ApiService.post('/animals/bulk', body);
+
+  /// The tags already in a herd, so new rows number on from them.
+  static Future<List<String>> tags(String herdId) async =>
+      [for (final a in await _rows('/animals?enterprise_id=$herdId')) '${a['tag'] ?? ''}'];
   static Future<ApiResponse> weigh(String animalId, Map<String, dynamic> body) => ApiService.post('/animals/$animalId/weights', body);
   static Future<ApiResponse> startBatch(Map<String, dynamic> body) => ApiService.post('/batches', body);
   static Future<ApiResponse> startSeason(Map<String, dynamic> body) => ApiService.post('/seasons', body);

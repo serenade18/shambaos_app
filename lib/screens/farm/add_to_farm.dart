@@ -11,6 +11,7 @@ import '../fields/field_widgets.dart';
 import '../records/record_form.dart';
 import '../../widgets/sl_form.dart';
 import 'farm_setup_service.dart';
+import 'herd_entry.dart';
 import '../../l10n/tr.dart';
 
 /// One thing a farm can run, as screen 27 groups them.
@@ -262,7 +263,7 @@ num? _num(TextEditingController c) => num.tryParse(c.text.replaceAll(',', '').tr
 // ═══════════════════════════════════════════════════════════
 
 /// What the design calls each kind's animals, for counts and hints.
-String _unit(String type, int n) => switch (type) {
+String animalUnit(String type, int n) => switch (type) {
       'dairy_cattle' => n == 1 ? 'cow'.tr : 'cows'.tr,
       'beef_cattle' => 'head'.tr,
       'dairy_goats' => n == 1 ? 'goat'.tr : 'goats'.tr,
@@ -270,6 +271,27 @@ String _unit(String type, int n) => switch (type) {
       'pigs' => n == 1 ? 'pig'.tr : 'pigs'.tr,
       'rabbits' => n == 1 ? 'rabbit'.tr : 'rabbits'.tr,
       _ => n == 1 ? 'animal'.tr : 'animals'.tr,
+    };
+
+/// The sexes of each kind of animal, as farmers say them.
+List<(String, String)> animalSexes(String type) => switch (type) {
+      'dairy_cattle' => [('female', 'Cow (female)'.tr), ('male', 'Bull (male)'.tr)],
+      'beef_cattle' => [('female', 'Heifer or cow'.tr), ('male', 'Bull or steer'.tr)],
+      'dairy_goats' || 'rabbits' => [('female', 'Doe (female)'.tr), ('male', 'Buck (male)'.tr)],
+      'sheep' => [('female', 'Ewe (female)'.tr), ('male', 'Ram (male)'.tr)],
+      'pigs' => [('female', 'Sow or gilt (female)'.tr), ('male', 'Boar (male)'.tr)],
+      _ => [('female', 'Female'.tr), ('male', 'Male'.tr)],
+    };
+
+/// The common breeds of each kind, for chips.
+List<String> animalBreeds(String type) => switch (type) {
+      'dairy_cattle' => ['Friesian', 'Ayrshire', 'Jersey', 'Guernsey'],
+      'beef_cattle' => ['Boran', 'Sahiwal', 'Angus', 'Hereford'],
+      'dairy_goats' => ['Toggenburg', 'Saanen', 'Alpine', 'Galla'],
+      'sheep' => ['Dorper', 'Red Maasai', 'Merino', 'Hampshire Down'],
+      'pigs' => ['Large White', 'Landrace', 'Duroc', 'Hampshire'],
+      'rabbits' => ['New Zealand White', 'California', 'Chinchilla', 'Flemish Giant'],
+      _ => [],
     };
 
 String _pretty(DateTime d) => DateFormat('EEE d MMM yyyy').format(d);
@@ -340,24 +362,9 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
     super.dispose();
   }
 
-  List<(String, String)> get _sexes => switch (_type) {
-        'dairy_cattle' => [('female', 'Cow (female)'.tr), ('male', 'Bull (male)'.tr)],
-        'beef_cattle' => [('female', 'Heifer or cow'.tr), ('male', 'Bull or steer'.tr)],
-        'dairy_goats' || 'rabbits' => [('female', 'Doe (female)'.tr), ('male', 'Buck (male)'.tr)],
-        'sheep' => [('female', 'Ewe (female)'.tr), ('male', 'Ram (male)'.tr)],
-        'pigs' => [('female', 'Sow or gilt (female)'.tr), ('male', 'Boar (male)'.tr)],
-        _ => [('female', 'Female'.tr), ('male', 'Male'.tr)],
-      };
+  List<(String, String)> get _sexes => animalSexes(_type);
 
-  List<String> get _breeds => switch (_type) {
-        'dairy_cattle' => ['Friesian', 'Ayrshire', 'Jersey', 'Guernsey'],
-        'beef_cattle' => ['Boran', 'Sahiwal', 'Angus', 'Hereford'],
-        'dairy_goats' => ['Toggenburg', 'Saanen', 'Alpine', 'Galla'],
-        'sheep' => ['Dorper', 'Red Maasai', 'Merino', 'Hampshire Down'],
-        'pigs' => ['Large White', 'Landrace', 'Duroc', 'Hampshire'],
-        'rabbits' => ['New Zealand White', 'California', 'Chinchilla', 'Flemish Giant'],
-        _ => [],
-      };
+  List<String> get _breeds => animalBreeds(_type);
 
   String get _title => switch (_type) {
         'dairy_cattle' => 'Add a dairy cow'.tr,
@@ -407,7 +414,7 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
     }
     if (herd == null) return _herd == null ? 'A new herd starts with this animal'.tr : '${widget.herdName ?? ''}';
     final n = int.tryParse('${herd['head_count'] ?? 0}') ?? 0;
-    return '{herd} · {n} {unit}'.trArgs({'herd': herd['name'], 'n': n, 'unit': _unit(_type, n)});
+    return '{herd} · {n} {unit}'.trArgs({'herd': herd['name'], 'n': n, 'unit': animalUnit(_type, n)});
   }
 
   /// Change: another herd of this kind, or a new one (screen 28).
@@ -424,6 +431,15 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
       return;
     }
     setState(() => _herd = picked);
+  }
+
+  /// Quick herd entry for this herd, in place of this form.
+  void _several() {
+    final herd = (_herds ?? const []).where((h) => '${h['id']}' == _herd).firstOrNull;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HerdEntryScreen(herdId: _herd!, herdName: '${herd?['name'] ?? widget.herdName ?? ''}', type: _type)),
+    );
   }
 
   Future<void> _save() async {
@@ -569,8 +585,10 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
         if (!_askBorn && _born == null)
           Align(alignment: Alignment.centerLeft, child: SlLink('Add date of birth'.tr, () => setState(() => _askBorn = true))),
         if (_note != null) SlInfoNote(_note!),
+        if (!_sequence && _herd != null)
+          Align(alignment: Alignment.centerLeft, child: SlLink('Adding several? Add them all on one screen'.tr, _several)),
         if (_sequence && widget.index < widget.total)
-          Text('Next: {unit} {i} of {n}'.trArgs({'unit': _unit(_type, 1), 'i': widget.index + 1, 'n': widget.total}),
+          Text('Next: {unit} {i} of {n}'.trArgs({'unit': animalUnit(_type, 1), 'i': widget.index + 1, 'n': widget.total}),
               style: AppType.caption.copyWith(color: c.textSecondary)),
       ],
     );
@@ -579,7 +597,7 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
 
 /// Screen 28, "Start a herd": which animals, the herd's name, when it started,
 /// where it is kept and how many there are now (POST /herds). The herd starts
-/// empty; then each animal is added by tag, one form per animal.
+/// empty; then its animals are added by tag, a row each (quick herd entry).
 class HerdForm extends StatefulWidget {
   final String farmId;
   final String initialType;
@@ -654,12 +672,7 @@ class _HerdFormState extends State<HerdForm> with RecordForm {
       next: (res) => Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => AnimalForm(
-              farmId: widget.farmId,
-              kind: FarmKind.of(_type)!,
-              herdId: '${res.data['id']}',
-              herdName: name,
-              total: count.round().clamp(1, 500)),
+          builder: (_) => HerdEntryScreen(herdId: '${res.data['id']}', herdName: name, type: _type, rows: count.round().clamp(1, 200)),
         ),
         result: done,
       ),
@@ -725,9 +738,9 @@ class _HerdFormState extends State<HerdForm> with RecordForm {
         SlField(
           label: 'How many you have now'.tr,
           required: true,
-          hint: 'Next you can add each {unit} with its tag.'.trArgs({'unit': _unit(_type, 1)}),
+          hint: 'Next you can add each {unit} with its tag.'.trArgs({'unit': animalUnit(_type, 1)}),
           error: err('count'),
-          child: SlTextBox(controller: _count, number: true, suffix: _unit(_type, count), error: err('count') != null),
+          child: SlTextBox(controller: _count, number: true, suffix: animalUnit(_type, count), error: err('count') != null),
         ),
       ],
     );

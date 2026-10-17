@@ -9,6 +9,7 @@ import 'fields/field_widgets.dart';
 import 'fields/fields_screen.dart';
 import '../widgets/phosphor_icons.dart';
 import 'home/home_hero.dart';
+import 'home/today_section.dart';
 import 'records/record_menu.dart';
 import 'alerts/alerts_screen.dart';
 import 'profile/profile_screen.dart';
@@ -40,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _updatesExpanded = true;
   Map<String, dynamic>? _farm;
   List<Field>? _fields;
+  List<TodayRow>? _todayRows; // the herds and batches, for Today
   WeatherModel? _today;
   double? _weekRain; // mm forecast over the next 7 days
   bool _weatherLoading = true;
@@ -167,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _weatherLoading = false);
       return;
     }
+    _loadToday();
     final days = await FieldService.forecast(farm['id']);
     if (!mounted) return;
     setState(() {
@@ -174,6 +177,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _weekRain = days.isEmpty ? null : days.take(7).fold<double>(0, (sum, d) => sum + d.precipitation);
       _weatherLoading = false;
     });
+  }
+
+  /// Today's herds and batches; kept as they were when it can't load.
+  Future<void> _loadToday() async {
+    final farm = _farm;
+    if (farm == null) return;
+    final rows = await TodayService.load('${farm['id']}');
+    if (!mounted || rows == null) return;
+    setState(() => _todayRows = rows);
   }
 
   Future<void> _onRefresh() async {
@@ -261,7 +273,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               if (_farm != null)
                 TextButton(
-                  onPressed: () => openFarmRecordMenu(context, fields ?? const []),
+                  onPressed: () => openFarmRecordMenu(context, fields ?? const []).then((saved) {
+                    if (saved) _loadToday();
+                  }),
                   style: TextButton.styleFrom(minimumSize: const Size(0, 32), padding: const EdgeInsets.symmetric(horizontal: 8)),
                   child: Text('Record'.tr, style: link),
                 ),
@@ -796,6 +810,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(builder: (_) => const AlertsScreen()),
                 ),
               ),
+              if (_todayRows?.isNotEmpty ?? false)
+                TodaySection(rows: _todayRows!, fields: _fields ?? const [], onSaved: _loadToday),
               _buildBusiness(colors),
               _buildMyFields(colors),
 

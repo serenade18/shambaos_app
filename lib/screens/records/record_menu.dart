@@ -7,6 +7,7 @@ import '../../widgets/ledger_parts.dart';
 import '../auth/auth_ui.dart';
 import '../fields/field_service.dart';
 import '../fields/field_widgets.dart';
+import '../farm/herd_entry.dart';
 import 'record_form.dart';
 import 'record_forms.dart';
 import 'record_service.dart';
@@ -43,10 +44,13 @@ List<_Option> _fieldOptions(Field f) {
     ];
   }
   return [
+    _Option(PhosphorIconsRegular.notepad, 'Daily record'.tr, isMilked(f.type) ? 'Milk and feed'.tr : 'Feed given'.tr, () => HerdDayForm(field: f)),
     if (isMilked(f.type)) _Option(PhosphorIconsRegular.drop, 'Milk'.tr, 'Litres milked'.tr, () => MilkForm(field: f)),
     _Option(PhosphorIconsRegular.grains, 'Feeding'.tr, 'Feed given to the herd'.tr, () => FeedForm(field: f)),
     _Option(PhosphorIconsRegular.syringe, 'Treatment or vaccine'.tr, 'For the herd or one animal'.tr, () => TreatmentForm(field: f), tone: SlTone.info),
     _Option(PhosphorIconsRegular.plusCircle, 'Add an animal'.tr, 'Bought or already on the farm'.tr, () => AddAnimalForm(field: f)),
+    _Option(PhosphorIconsRegular.squaresFour, 'Add several animals'.tr, 'A row each, tags number themselves'.tr,
+        () => HerdEntryScreen(herdId: f.id, herdName: f.name, type: f.type)),
     _Option(PhosphorIconsRegular.scales, 'Weigh an animal'.tr, 'Its weight today'.tr, () => AnimalWeightForm(field: f)),
     _Option(PhosphorIconsRegular.heart, 'Served'.tr, 'Natural or AI'.tr, () => ServiceForm(field: f)),
     _Option(PhosphorIconsRegular.magnifyingGlass, 'Pregnancy check'.tr, 'Pregnant or not'.tr, () => PregnancyCheckForm(field: f)),
