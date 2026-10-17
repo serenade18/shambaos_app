@@ -6,7 +6,7 @@ import '../../widgets/app_bottom_nav.dart';
 import '../../widgets/ledger.dart';
 import '../../widgets/ledger_parts.dart';
 import '../auth/auth_service.dart';
-import '../customers/customer_screen.dart';
+import '../farm/my_farm_screen.dart';
 import '../home_service.dart';
 import 'my_photo.dart';
 import 'web_page_screen.dart';
@@ -209,7 +209,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       };
 
   // The design's line icons (Lucide, ISC licence).
-  static const _users = '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>';
+  static const _farmIcon = '<path d="M14 9.536V7a4 4 0 0 1 4-4h1.5a.5.5 0 0 1 .5.5V5a4 4 0 0 1-4 4 4 4 0 0 0-4 4c0 2 1 3 1 5a5 5 0 0 1-1 3"/><path d="M4 9a5 5 0 0 1 8 4 5 5 0 0 1-8-4"/><path d="M5 21h14"/>';
   static const _bell = '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>';
   static const _globe = '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>';
   static const _fingerprint = '<path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/>';
@@ -240,9 +240,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SlGroupLabel('My account'.tr),
             SlLedger(children: [
               SlIconRow(
-                icon: _users,
-                title: 'Business centre'.tr,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomersScreen())),
+                icon: _farmIcon,
+                title: 'My farm'.tr,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyFarmScreen())),
               ),
               rule(),
               SlIconRow(icon: _wallet, title: 'Payment method'.tr, onTap: _showPaymentMethods),
