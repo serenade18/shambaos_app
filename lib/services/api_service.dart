@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -365,6 +366,22 @@ class ApiService {
     } catch (e) {
       return (null, ApiResponse(error: true, message: 'No connection. Check your internet and try again.'.tr, statusCode: 0));
     }
+  }
+
+  /// Fetches a file as bytes (your profile photo). Null when there is none or
+  /// it can't be reached. An expired session is refreshed once.
+  static Future<Uint8List?> getBytes(String endpoint) async {
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await http.get(Uri.parse('$baseUrl$endpoint'), headers: _headers());
+        if (response.statusCode == 200) return response.bodyBytes;
+        if (response.statusCode == 401 && attempt == 0 && await _refreshAccessToken()) continue;
+        return null;
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   static Future<ApiResponse> delete(

@@ -19,6 +19,9 @@ import '../widgets/ledger.dart';
 import 'animals/animal_screen.dart';
 import 'plants/plant_screen.dart';
 import 'markets/market_screen.dart';
+import 'sales/sales_screen.dart';
+import 'vets/vets_screen.dart';
+import 'auth/auth_ui.dart';
 import 'dashboard/dashboard_screen.dart';
 import '../l10n/tr.dart';
 import 'farm/farm_map_screen.dart';
@@ -180,6 +183,66 @@ class _HomeScreenState extends State<HomeScreen> {
   // ══════════════════════════════════════════════════════════
   // MY FIELDS
   // ══════════════════════════════════════════════════════════
+  // The design's line icons (Lucide, ISC licence).
+  static const _usersIcon = '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>';
+  static const _receiptIcon = '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>';
+  static const _vetIcon = '<path d="M11 2v2"/><path d="M5 2v2"/><path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"/><path d="M8 15a6 6 0 0 0 12 0v-3"/><circle cx="20" cy="10" r="2"/>';
+  static const _storeIcon = '<path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/><path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/><path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/>';
+
+  /// Customers, sales, vets and markets, a tap from Home (the design's "Your business").
+  Widget _buildBusiness(AppColors colors) {
+    Widget tile(String icon, String label, Widget Function() page) => Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: colors.cardBackground,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => page())),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 12, 4, 10),
+                  child: Column(children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(color: colors.brandSoft, shape: BoxShape.circle),
+                      child: Center(child: LineIcon(icon, size: 20, color: colors.brandText)),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontFamily: AppType.text, fontSize: 12, height: 16 / 12, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text('Your business'.tr,
+            style: TextStyle(fontFamily: AppType.text, fontSize: 19, height: 24 / 19, fontWeight: FontWeight.w500, color: colors.textPrimary)),
+        const SizedBox(height: 10),
+        Row(children: [
+          tile(_usersIcon, 'Customers'.tr, () => const CustomersScreen()),
+          const SizedBox(width: 8),
+          tile(_receiptIcon, 'Sales'.tr, () => const SalesScreen()),
+          const SizedBox(width: 8),
+          tile(_vetIcon, 'Vets'.tr, () => const VetsScreen()),
+          const SizedBox(width: 8),
+          tile(_storeIcon, 'Markets'.tr, () => const MarketScreen()),
+        ]),
+      ]),
+    );
+  }
+
   Widget _buildMyFields(AppColors colors) {
     final fields = _fields;
     final shown = fields?.take(3).toList();
@@ -733,6 +796,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(builder: (_) => const AlertsScreen()),
                 ),
               ),
+              _buildBusiness(colors),
               _buildMyFields(colors),
 
               // Hidden only when BOTH profile is complete AND farm is set up

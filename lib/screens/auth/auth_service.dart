@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
 import '../../services/biometric_service.dart';
 import '../../l10n/tr.dart';
+import '../profile/my_photo.dart';
 
 class AuthService {
   static const String _appVersion = '1.0.0';
@@ -171,6 +172,7 @@ class AuthService {
   // server and its token stays in secure storage, behind the fingerprint.
   // ─────────────────────────────────────────────
   static Future<void> logout() async {
+    MyPhoto.clear();
     final user = await ApiService.getUser();
     final userId = user?['id']?.toString();
     final keepForBiometrics = userId != null && await BiometricService.isEnabledForUser(userId);

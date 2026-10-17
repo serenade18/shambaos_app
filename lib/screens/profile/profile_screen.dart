@@ -8,6 +8,7 @@ import '../../widgets/ledger_parts.dart';
 import '../auth/auth_service.dart';
 import '../customers/customer_screen.dart';
 import '../home_service.dart';
+import 'my_photo.dart';
 import 'web_page_screen.dart';
 import '../onboarding/welcome_screens.dart';
 import '../../main.dart';
@@ -306,14 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return SlCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(children: [
-        Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(color: c.brandSoft, shape: BoxShape.circle),
-          alignment: Alignment.center,
-          child: Text(_getInitials(_userName),
-              style: TextStyle(fontFamily: AppType.text, fontSize: 19, fontWeight: FontWeight.w700, color: c.brandText)),
-        ),
+        MyAvatar(initials: _getInitials(_userName), size: 56),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
