@@ -32,6 +32,7 @@ class FarmSetupService {
 
   static Future<ApiResponse> startHerd(Map<String, dynamic> body) => ApiService.post('/herds', body);
   static Future<ApiResponse> addAnimal(Map<String, dynamic> body) => ApiService.post('/animals', body);
+  static Future<ApiResponse> weigh(String animalId, Map<String, dynamic> body) => ApiService.post('/animals/$animalId/weights', body);
   static Future<ApiResponse> startBatch(Map<String, dynamic> body) => ApiService.post('/batches', body);
   static Future<ApiResponse> startSeason(Map<String, dynamic> body) => ApiService.post('/seasons', body);
   static Future<ApiResponse> addPlot(Map<String, dynamic> body) => ApiService.post('/plots', body);

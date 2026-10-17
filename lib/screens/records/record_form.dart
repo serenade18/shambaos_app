@@ -26,8 +26,9 @@ mixin RecordForm<T extends StatefulWidget> on State<T> {
         fieldErrors = field == null ? {} : {field: message};
       });
 
-  /// Sends the record. On success the page closes with [done], which the caller shows.
-  Future<void> save(Future<ApiResponse> Function() send, String done) async {
+  /// Sends the record. On success the page closes with [done], which the caller shows,
+  /// or, with [next], hands over to what comes next (the next animal of a new herd).
+  Future<void> save(Future<ApiResponse> Function() send, String done, {void Function(ApiResponse res)? next}) async {
     FocusScope.of(context).unfocus();
     setState(() {
       saving = true;
@@ -37,7 +38,12 @@ mixin RecordForm<T extends StatefulWidget> on State<T> {
     final res = await send();
     if (!mounted) return;
     if (!res.error) {
-      Navigator.pop(context, done);
+      if (next != null) {
+        setState(() => saving = false);
+        next(res);
+      } else {
+        Navigator.pop(context, done);
+      }
       return;
     }
     final fields = <String, String>{};
@@ -73,7 +79,7 @@ String get _checkFields => 'Check the fields marked below.'.tr;
 Future<bool> openRecord(BuildContext context, Widget form) async {
   final done = await Navigator.push<String>(context, MaterialPageRoute(builder: (_) => form));
   if (done == null || !context.mounted) return false;
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(done)));
+  if (done.isNotEmpty) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(done)));
   return true;
 }
 
