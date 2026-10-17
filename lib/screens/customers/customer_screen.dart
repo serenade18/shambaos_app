@@ -7,6 +7,7 @@ import '../../widgets/ledger_parts.dart';
 import '../../widgets/phosphor_icons.dart';
 import '../auth/auth_ui.dart';
 import '../dashboard/dashboard_service.dart';
+import '../farm/add_to_farm.dart';
 import '../records/record_form.dart';
 import 'customer_service.dart';
 import '../../l10n/tr.dart';
@@ -56,7 +57,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
   }
 
   Future<void> _add() async {
-    if (await openRecord(context, const AddCustomerScreen())) _load();
+    if (await openRecord(context, const CustomerForm())) _load();
   }
 
   static num _owed(Map<String, dynamic> c) => num.tryParse('${c['balance'] ?? 0}') ?? 0;
@@ -248,69 +249,5 @@ class _CustomersScreenState extends State<CustomersScreen> {
     final text = days == 1 ? '1 day'.tr : '{n} days'.trArgs({'n': days});
     // A sale left unpaid over a week is late.
     return SlTag(text, tone: days > 7 ? SlTone.warn : SlTone.neutral, icon: days > 7 ? SlTag.clock : null);
-  }
-}
-
-/// Adding someone the farm sells to, as the design's "Add a customer": their
-/// name, a phone number if they have one, and how what they owe is worked out.
-class AddCustomerScreen extends StatefulWidget {
-  const AddCustomerScreen({super.key});
-
-  @override
-  State<AddCustomerScreen> createState() => _AddCustomerScreenState();
-}
-
-class _AddCustomerScreenState extends State<AddCustomerScreen> with RecordForm {
-  final _name = TextEditingController();
-  final _phone = TextEditingController();
-
-  static const _info = '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>';
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _phone.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    final name = _name.text.trim();
-    if (name.isEmpty) return fail('Enter a name.'.tr, 'name');
-    save(() => CustomerService.createCustomer(name: name, phone: _phone.text.trim()), 'Customer added'.tr);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    return RecordPage(
-      title: 'Sales'.tr,
-      subtitle: 'Add a customer'.tr,
-      saving: saving,
-      error: banner({'name', 'phone'}),
-      saveLabel: 'Save customer'.tr,
-      onSave: _save,
-      children: [
-        RecordTextField(controller: _name, label: 'Name'.tr, caps: TextCapitalization.words, errorText: err('name')),
-        RecordTextField(
-          controller: _phone,
-          label: 'Phone number (optional)'.tr,
-          hint: '0712 345 678',
-          keyboard: TextInputType.phone,
-          errorText: err('phone'),
-        ),
-        Container(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-          decoration: BoxDecoration(color: c.rainTint, borderRadius: BorderRadius.circular(24)),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            LineIcon(_info, size: 20, color: c.rainInk),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text('What they owe you is worked out from sales they have not paid for yet.'.tr,
-                  style: AppType.caption.copyWith(color: c.textPrimary)),
-            ),
-          ]),
-        ),
-      ],
-    );
   }
 }

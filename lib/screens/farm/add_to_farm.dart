@@ -6,7 +6,7 @@ import '../../services/app_type.dart';
 import '../../widgets/ledger_parts.dart';
 import '../../widgets/phosphor_icons.dart';
 import '../auth/auth_ui.dart';
-import '../customers/customer_screen.dart';
+import '../customers/customer_service.dart';
 import '../fields/field_widgets.dart';
 import '../records/record_form.dart';
 import '../../widgets/sl_form.dart';
@@ -159,7 +159,7 @@ class _AddToFarmScreenState extends State<AddToFarmScreen> {
                     label: 'Building or pond'.tr,
                     icon: LineIcon(_buildingIcon, size: 22, color: c.brandText),
                     onTap: () => _open(StructureForm(farmId: _farmId))),
-                _Pick(label: 'Customer'.tr, icon: LineIcon(_storeIcon, size: 22, color: c.brandText), onTap: () => _open(const AddCustomerScreen())),
+                _Pick(label: 'Customer'.tr, icon: LineIcon(_storeIcon, size: 22, color: c.brandText), onTap: () => _open(const CustomerForm())),
                 _Pick(label: 'Supplier'.tr, icon: LineIcon(_truckIcon, size: 22, color: c.brandText), onTap: () => _open(const SupplierForm())),
                 _Pick(label: 'Team member'.tr, icon: LineIcon(_teamIcon, size: 22, color: c.brandText), onTap: () => _open(const TeamForm())),
               ]),
@@ -256,104 +256,6 @@ class _RoundButton extends StatelessWidget {
 
 String _day(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 num? _num(TextEditingController c) => num.tryParse(c.text.replaceAll(',', '').trim());
-
-/// The kind being added, with its icon (the design's type-head).
-class _KindHead extends StatelessWidget {
-  final FarmKind kind;
-  final String note;
-  const _KindHead(this.kind, this.note);
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    return SlCard(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(color: c.brandSoft, shape: BoxShape.circle),
-          child: Center(child: Image.asset(fieldIcon(kind.code, crop: kind.crop), width: 28, height: 28, excludeFromSemantics: true)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(kind.label,
-                style: TextStyle(fontFamily: AppType.text, fontSize: 15, height: 20 / 15, fontWeight: FontWeight.w700, color: c.textPrimary)),
-            Text(note, style: AppType.caption.copyWith(color: c.textSecondary)),
-          ]),
-        ),
-      ]),
-    );
-  }
-}
-
-/// A tinted note in a form.
-class _Note extends StatelessWidget {
-  final String text;
-  const _Note(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.appColors;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(color: c.rainTint, borderRadius: BorderRadius.circular(24)),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(PhosphorIconsRegular.info, size: 20, color: c.rainInk),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text, style: AppType.caption.copyWith(color: c.textPrimary))),
-      ]),
-    );
-  }
-}
-
-/// A quiet link under a field: "Add a plot".
-class _Link extends StatelessWidget {
-  final String text;
-  final VoidCallback onTap;
-  const _Link(this.text, this.onTap);
-
-  @override
-  Widget build(BuildContext context) => Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton(
-          onPressed: onTap,
-          style: TextButton.styleFrom(minimumSize: const Size(0, 32), padding: const EdgeInsets.symmetric(horizontal: 4)),
-          child: Text(text,
-              style: TextStyle(fontFamily: AppType.text, fontSize: 14, fontWeight: FontWeight.w700, color: context.appColors.brandText)),
-        ),
-      );
-}
-
-/// Buildings (or ponds) to keep something in, with "Add a building" to make one.
-class _KeptIn extends StatelessWidget {
-  final List<Map<String, dynamic>>? options;
-  final String? value;
-  final ValueChanged<String?> onChanged;
-  final String addLabel;
-  final VoidCallback onAdd;
-  final String? errorText;
-  const _KeptIn({required this.options, required this.value, required this.onChanged, required this.addLabel, required this.onAdd, this.errorText});
-
-  @override
-  Widget build(BuildContext context) {
-    final list = options;
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      if (list == null)
-        const LinearProgressIndicator(minHeight: 2)
-      else if (list.isNotEmpty)
-        RecordChoices<String?>(
-          label: '${'Kept in'.tr} ${'(optional)'.tr}',
-          options: [(null, 'Not set'.tr), for (final s in list) ('${s['id']}', '${s['name']}')],
-          value: value,
-          onChanged: onChanged,
-          errorText: errorText,
-        ),
-      _Link(addLabel, onAdd),
-    ]);
-  }
-}
 
 // ═══════════════════════════════════════════════════════════
 // ANIMALS (screens 28–34)
@@ -833,10 +735,63 @@ class _HerdFormState extends State<HerdForm> with RecordForm {
 }
 
 // ═══════════════════════════════════════════════════════════
-// BIRDS AND FISH
+// SHARED PICKERS
 // ═══════════════════════════════════════════════════════════
 
-/// The design's "New layers batch", "New broiler batch" and "Stock a pond"
+const _plotPath = '<path d="m12 8 6-3-6-3v10"/><path d="m8 11.99-5.5 3.14a1 1 0 0 0 0 1.74l8.5 4.86a2 2 0 0 0 2 0l8.5-4.86a1 1 0 0 0 0-1.74L16 12"/><path d="m6.49 12.85 11.02 6.3"/><path d="M17.51 12.85 6.5 19.15"/>';
+
+String _acres(dynamic v) {
+  final n = num.tryParse('${v ?? ''}');
+  if (n == null) return '${v ?? ''}';
+  return n == n.roundToDouble() ? n.round().toString() : n.toString().replaceAll(RegExp(r'0+$'), '');
+}
+
+String _acresText(dynamic v) {
+  final a = _acres(v);
+  return a == '1' ? '1 acre'.tr : '{n} acres'.trArgs({'n': a});
+}
+
+/// The farm's buildings or ponds as a select box with "Add a …": [kinds] picks
+/// which (ponds for fish, the rest for animals and birds).
+mixin _Places<T extends StatefulWidget> on State<T> {
+  List<Map<String, dynamic>>? places;
+  String? place;
+
+  String get placesFarm;
+  bool placeFits(Map<String, dynamic> s);
+
+  Future<void> loadPlaces({String? pick}) async {
+    final s = await FarmSetupService.structures(placesFarm);
+    if (!mounted) return;
+    setState(() {
+      places = s.where(placeFits).toList();
+      if (pick != null) place = pick;
+    });
+  }
+
+  Future<void> choosePlace(String title, {bool optional = true}) async {
+    final list = places ?? const [];
+    final picked = await slPick<String>(context,
+        title: title, value: place ?? '', options: [if (optional) ('', 'Not set'.tr), for (final b in list) ('${b['id']}', '${b['name']}')]);
+    if (picked != null) setState(() => place = picked.isEmpty ? null : picked);
+  }
+
+  Future<void> addPlace(String type) async {
+    final before = {for (final b in places ?? const []) '${b['id']}'};
+    if (await openRecord(context, StructureForm(farmId: placesFarm, initialType: type))) {
+      final all = await FarmSetupService.structures(placesFarm);
+      await loadPlaces(pick: all.map((b) => '${b['id']}').where((id) => !before.contains(id)).firstOrNull);
+    }
+  }
+
+  String? get placeName => (places ?? const []).where((b) => '${b['id']}' == place).map((b) => '${b['name']}').firstOrNull;
+}
+
+// ═══════════════════════════════════════════════════════════
+// BIRDS AND FISH (screens 35–37)
+// ═══════════════════════════════════════════════════════════
+
+/// Screens 35–37, "New layers batch", "New broiler batch" and "Stock a pond"
 /// (POST /batches).
 class BatchForm extends StatefulWidget {
   final String farmId;
@@ -847,7 +802,7 @@ class BatchForm extends StatefulWidget {
   State<BatchForm> createState() => _BatchFormState();
 }
 
-class _BatchFormState extends State<BatchForm> with RecordForm {
+class _BatchFormState extends State<BatchForm> with RecordForm, _Places {
   final _name = TextEditingController();
   final _count = TextEditingController();
   final _weeks = TextEditingController();
@@ -855,17 +810,25 @@ class _BatchFormState extends State<BatchForm> with RecordForm {
   final _cost = TextEditingController();
   DateTime _date = DateTime.now();
   String _age = 'day_old'; // day_old | point_of_lay | other
-  List<Map<String, dynamic>>? _places;
-  String? _place;
+  bool _older = false; // broilers: "they came older"
+  String? _breed;
 
   bool get _fish => widget.kind.code == 'fish';
   bool get _layers => widget.kind.code == 'layers';
 
   @override
+  String get placesFarm => widget.farmId;
+  @override
+  bool placeFits(Map<String, dynamic> s) => _fish ? s['type'] == 'pond' : s['type'] != 'pond';
+
+  @override
   void initState() {
     super.initState();
-    _name.text = '{kind}, {date}'.trArgs({'kind': widget.kind.label, 'date': DateFormat('MMM yyyy').format(DateTime.now())});
-    _loadPlaces();
+    _name.text = _fish
+        ? 'Pond, {date}'.trArgs({'date': DateFormat('MMM yyyy').format(DateTime.now())})
+        : '{kind}, {date}'.trArgs({'kind': widget.kind.label, 'date': DateFormat('MMM yyyy').format(DateTime.now())});
+    if (_fish) _breed = 'Tilapia';
+    loadPlaces();
   }
 
   @override
@@ -876,26 +839,25 @@ class _BatchFormState extends State<BatchForm> with RecordForm {
     super.dispose();
   }
 
-  Future<void> _loadPlaces() async {
-    final s = await FarmSetupService.structures(widget.farmId);
-    if (mounted) setState(() => _places = s.where((b) => _fish ? b['type'] == 'pond' : b['type'] != 'pond').toList());
-  }
-
-  Future<void> _addPlace() async {
-    final form = StructureForm(farmId: widget.farmId, initialType: _fish ? 'pond' : 'poultry_house');
-    if (await openRecord(context, form)) _loadPlaces();
-  }
-
-  int get _ageDays => switch (_age) {
-        'point_of_lay' => 18 * 7,
-        'other' => ((_num(_weeks) ?? 0) * 7).round(),
-        _ => 0,
+  List<String> get _breeds => switch (widget.kind.code) {
+        'layers' => ['Kenbro', 'Kuroiler', 'Isa Brown', 'Hy-Line'],
+        'broilers' => ['Cobb 500', 'Ross 308', 'Arbor Acres'],
+        'fish' => ['Tilapia', 'Catfish'],
+        _ => [],
       };
+
+  int get _ageDays {
+    final weeks = ((_num(_weeks) ?? 0) * 7).round();
+    if (_fish) return weeks;
+    if (!_layers) return _older ? weeks : 0;
+    return switch (_age) { 'point_of_lay' => 18 * 7, 'other' => weeks, _ => 0 };
+  }
 
   Future<void> _save() async {
     final count = _num(_count);
     if (_name.text.trim().isEmpty) return fail('Give the batch a name.'.tr, 'name');
     if (count == null || count < 1) return fail(_fish ? 'Enter how many fish.'.tr : 'Enter how many birds.'.tr, 'count');
+    if (_fish && place == null) return fail('Choose the pond, or add one.'.tr, 'structure_id');
     await save(
         () => FarmSetupService.startBatch({
               'farm_id': widget.farmId,
@@ -903,59 +865,136 @@ class _BatchFormState extends State<BatchForm> with RecordForm {
               'name': _name.text.trim(),
               'count': count.round(),
               'date': _day(_date),
-              'age_days': _fish ? ((_num(_weeks) ?? 0) * 7).round() : _ageDays,
+              'age_days': _ageDays,
+              'breed': _breed ?? '',
               'source': _source.text.trim(),
               'cost': _cost.text.trim().isEmpty ? null : _num(_cost)?.toString(),
-              'structure_id': _place,
+              'structure_id': place,
             }),
         '{name} started'.trArgs({'name': _name.text.trim()}));
   }
 
   @override
   Widget build(BuildContext context) {
-    final unit = _fish ? 'fish'.tr : 'birds'.tr;
-    return RecordPage(
-      title: _fish ? 'FISH'.tr : 'BIRDS'.tr,
-      eyebrow: _fish ? 'FISH'.tr : 'BIRDS'.tr,
-      subtitle: _fish ? 'Stock a pond'.tr : (_layers ? 'New layers batch'.tr : 'New broiler batch'.tr),
+    final count = _num(_count)?.round() ?? 2;
+    final pond = _fish;
+    return SlFormPage(
+      eyebrow: pond ? 'FISH'.tr : 'BIRDS'.tr,
+      title: pond ? 'Stock a pond'.tr : (_layers ? 'New layers batch'.tr : 'New broiler batch'.tr),
       saving: saving,
-      error: banner({'name', 'count', 'date', 'age_days', 'source', 'cost', 'structure_id'}),
-      saveLabel: _fish ? 'Stock pond'.tr : 'Start batch'.tr,
+      error: banner({'name', 'count', 'date', 'age_days', 'source', 'cost', 'structure_id', 'breed'}),
+      saveLabel: pond ? 'Stock pond'.tr : 'Start batch'.tr,
       onSave: _save,
       children: [
-        _KindHead(widget.kind, _fish ? 'Counted by pond'.tr : (_layers ? 'Kept for eggs'.tr : 'Kept for meat'.tr)),
-        RecordTextField(controller: _name, label: _fish ? 'Name'.tr : 'Batch name'.tr, errorText: err('name')),
-        RecordNumberField(
-            controller: _count, label: _fish ? 'Fingerlings stocked'.tr : 'Number of birds'.tr, suffix: unit, whole: true, errorText: err('count')),
-        if (_fish)
-          RecordNumberField(controller: _weeks, label: '${'Age of the fingerlings'.tr} ${'(optional)'.tr}', suffix: 'weeks'.tr, whole: true)
-        else ...[
-          RecordChoices<String>(
-            label: 'Age when they came'.tr,
-            options: [('day_old', 'Day-old chicks'.tr), if (_layers) ('point_of_lay', 'Point of lay'.tr), ('other', 'Other age'.tr)],
-            value: _age,
-            errorText: err('age_days'),
-            onChanged: (v) => setState(() => _age = v),
-          ),
-          if (_age == 'other') RecordNumberField(controller: _weeks, label: 'Age in weeks'.tr, suffix: 'weeks'.tr, whole: true),
-          Text('Vaccination reminders follow this age.'.tr, style: AppType.caption.copyWith(color: context.appColors.textSecondary)),
-        ],
-        RecordDateField(label: _fish ? 'Stocked on'.tr : 'Started on'.tr, value: _date, errorText: err('date'), onChanged: (d) => setState(() => _date = d)),
-        _KeptIn(
-          options: _places,
-          value: _place,
-          onChanged: (v) => setState(() => _place = v),
-          addLabel: _fish ? 'Add a pond'.tr : 'Add a poultry house'.tr,
-          onAdd: _addPlace,
-          errorText: err('structure_id'),
+        SlTypeHead(
+          icon: Image.asset(fieldIcon(widget.kind.code), width: 28, height: 28, excludeFromSemantics: true),
+          title: widget.kind.label,
+          meta: pond ? 'Counted by pond'.tr : (_layers ? 'Kept for eggs'.tr : 'Kept for meat'.tr),
+          onChange: () => Navigator.maybePop(context),
         ),
-        RecordTextField(controller: _source, label: '${'Where they came from'.tr} ${'(optional)'.tr}', errorText: err('source')),
-        RecordNumberField(
-          controller: _cost,
-          label: '${_fish ? 'Cost'.tr : 'Cost of the chicks'.tr} ${'(optional)'.tr}',
-          suffix: 'KSh'.tr,
-          hint: "Counted as the batch's first cost.".tr,
-          errorText: err('cost'),
+        if (pond)
+          SlField(
+            label: 'Fish'.tr,
+            required: true,
+            child: SlChoices<String>(options: [for (final b in _breeds) (b, b)], value: _breed, onChanged: (v) => setState(() => _breed = v)),
+          )
+        else ...[
+          SlField(
+            label: 'Batch name'.tr,
+            required: true,
+            error: err('name'),
+            child: SlTextBox(controller: _name, caps: TextCapitalization.sentences, error: err('name') != null),
+          ),
+          SlField(
+            label: 'Breed'.tr,
+            optional: true,
+            child: SlChoices<String>(options: [for (final b in _breeds) (b, b)], value: _breed, onChanged: (v) => setState(() => _breed = v)),
+          ),
+        ],
+        if (pond)
+          SlField(
+            label: 'Pond'.tr,
+            required: true,
+            error: err('structure_id'),
+            below: SlLink('Add a pond'.tr, () => addPlace('pond')),
+            child: SlSelectBox(
+              icon: SlSelectBox.building,
+              text: placeName ?? ((places?.isEmpty ?? false) ? 'No ponds yet'.tr : 'Choose the pond'.tr),
+              muted: placeName == null,
+              error: err('structure_id') != null,
+              onTap: () => (places?.isEmpty ?? true) ? addPlace('pond') : choosePlace('Pond'.tr, optional: false),
+            ),
+          ),
+        SlField(
+          label: pond ? 'Fingerlings stocked'.tr : (_layers ? 'Number of birds'.tr : 'Number of chicks'.tr),
+          required: true,
+          error: err('count'),
+          child: SlTextBox(
+            controller: _count,
+            number: true,
+            suffix: pond ? 'fish'.tr : (_layers ? 'birds'.tr : (count == 1 ? 'chick'.tr : 'chicks'.tr)),
+            error: err('count') != null,
+          ),
+        ),
+        if (pond)
+          SlField(label: 'Age of the fingerlings'.tr, optional: true, child: SlTextBox(controller: _weeks, number: true, suffix: 'weeks'.tr))
+        else if (_layers) ...[
+          SlField(
+            label: 'Age when they came'.tr,
+            required: true,
+            hint: 'Vaccination reminders follow this age.'.tr,
+            error: err('age_days'),
+            child: SlChoices<String>(
+              options: [('day_old', 'Day-old chicks'.tr), ('point_of_lay', 'Point of lay'.tr), ('other', 'Other age'.tr)],
+              value: _age,
+              onChanged: (v) => setState(() => _age = v),
+            ),
+          ),
+          if (_age == 'other') SlField(label: 'Age in weeks'.tr, child: SlTextBox(controller: _weeks, number: true, suffix: 'weeks'.tr)),
+        ],
+        SlField(
+          label: pond ? 'Stocked on'.tr : (_layers ? 'Started on'.tr : 'Arrived on'.tr),
+          required: true,
+          hint: !pond && !_layers && !_older ? 'Taken as day-old. Change it if they came older.'.tr : null,
+          error: err('date'),
+          below: !pond && !_layers && !_older ? SlLink('They came older'.tr, () => setState(() => _older = true)) : null,
+          child: SlSelectBox(
+            icon: SlSelectBox.calendar,
+            text: _pretty(_date),
+            onTap: () async {
+              final d = await _pickDate(context, _date);
+              if (d != null) setState(() => _date = d);
+            },
+          ),
+        ),
+        if (!pond && !_layers && _older)
+          SlField(label: 'Age when they came'.tr, child: SlTextBox(controller: _weeks, number: true, suffix: 'weeks'.tr)),
+        if (!pond)
+          SlField(
+            label: 'Kept in'.tr,
+            optional: true,
+            error: err('structure_id'),
+            below: SlLink('Add a poultry house'.tr, () => addPlace('poultry_house')),
+            child: SlSelectBox(
+              icon: SlSelectBox.building,
+              text: placeName ?? 'Not set'.tr,
+              muted: placeName == null,
+              onTap: () => (places?.isEmpty ?? true) ? addPlace('poultry_house') : choosePlace('Kept in'.tr),
+            ),
+          ),
+        if (!_layers)
+          SlField(
+            label: pond ? 'Where they came from'.tr : 'Hatchery'.tr,
+            optional: true,
+            error: err('source'),
+            child: SlTextBox(controller: _source, caps: TextCapitalization.words),
+          ),
+        SlField(
+          label: pond ? 'Cost'.tr : 'Cost of the chicks'.tr,
+          optional: true,
+          hint: _layers ? "Counted as the batch's first cost.".tr : null,
+          error: err('cost'),
+          child: SlTextBox(controller: _cost, prefix: 'KSh'.tr, number: true, error: err('cost') != null),
         ),
       ],
     );
@@ -963,11 +1002,12 @@ class _BatchFormState extends State<BatchForm> with RecordForm {
 }
 
 // ═══════════════════════════════════════════════════════════
-// CROPS AND FRUIT TREES
+// CROPS AND FRUIT TREES (screens 38–46)
 // ═══════════════════════════════════════════════════════════
 
-/// The design's "New maize season" and "Add bananas": a crop on (part of) a
-/// plot (POST /seasons). An orchard is started the same way, with its trees.
+/// Screens 38–46: "New maize season" and the other crops, "Add bananas" and
+/// "Add avocados" (POST /seasons). An orchard is started the same way, with its
+/// trees and what it was planted from.
 class CropForm extends StatefulWidget {
   final String farmId;
   final FarmKind kind;
@@ -984,16 +1024,16 @@ class _CropFormState extends State<CropForm> with RecordForm {
   List<Map<String, dynamic>>? _plots;
   String? _plot;
   String? _variety;
+  String? _from;
   DateTime _date = DateTime.now();
 
+  String get _code => widget.kind.code;
   bool get _orchard => widget.kind.orchard;
 
   @override
   void initState() {
     super.initState();
-    _name.text = _orchard
-        ? '{kind} orchard'.trArgs({'kind': widget.kind.label})
-        : '{kind}, {date}'.trArgs({'kind': widget.kind.label, 'date': DateFormat('MMM yyyy').format(DateTime.now())});
+    _name.text = _defaultName;
     _loadPlots();
   }
 
@@ -1003,6 +1043,22 @@ class _CropFormState extends State<CropForm> with RecordForm {
       c.dispose();
     }
     super.dispose();
+  }
+
+  /// "Maize, short rains 2026", "Tomatoes, Oct 2026", "Wheat 2026".
+  String get _defaultName {
+    final now = DateTime.now();
+    final label = _code == 'kales' ? 'Sukuma'.tr : widget.kind.label;
+    if (_orchard) return '{kind} orchard'.trArgs({'kind': label});
+    if (_code == 'maize' || _code == 'beans') {
+      final long = now.month >= 3 && now.month <= 8;
+      return long
+          ? '{kind}, long rains {year}'.trArgs({'kind': label, 'year': now.year})
+          : '{kind}, short rains {year}'.trArgs({'kind': label, 'year': now.year});
+    }
+    if (_code == 'wheat') return '{kind} {year}'.trArgs({'kind': label, 'year': now.year});
+    if (_code == 'rice') return '{kind}, main crop {year}'.trArgs({'kind': label, 'year': now.year});
+    return '{kind}, {date}'.trArgs({'kind': label, 'date': DateFormat('MMM yyyy').format(now)});
   }
 
   Future<void> _loadPlots({String? pick}) async {
@@ -1018,22 +1074,63 @@ class _CropFormState extends State<CropForm> with RecordForm {
     final before = {for (final p in _plots ?? const []) '${p['id']}'};
     if (await openRecord(context, PlotForm(farmId: widget.farmId))) {
       final p = await FarmSetupService.plots(widget.farmId);
-      final added = p.where((x) => !before.contains('${x['id']}')).map((x) => '${x['id']}').firstOrNull;
-      await _loadPlots(pick: added);
+      await _loadPlots(pick: p.map((x) => '${x['id']}').where((id) => !before.contains(id)).firstOrNull);
     }
   }
 
-  List<String> get _varieties => switch (widget.kind.code) {
+  Future<void> _choosePlot() async {
+    final plots = _plots ?? const [];
+    if (plots.isEmpty) return _addPlot();
+    final picked = await slPick<String>(context,
+        title: 'Plot'.tr, value: _plot, options: [for (final p in plots) ('${p['id']}', '${p['name']} · ${_acresText(p['area_acres'])}')]);
+    if (picked != null) setState(() => _plot = picked);
+  }
+
+  List<String> get _varieties => switch (_code) {
         'maize' => ['H614D', 'DH04', 'SC Duma 43', 'WH505'],
-        'beans' => ['Rosecoco', 'Mwitemania', 'KAT B1'],
-        'rice' => ['Basmati 370', 'IR 2793'],
-        'wheat' => ['Kenya Fahari', 'Robin'],
-        'tomatoes' => ['Anna F1', 'Rio Grande', 'Kilele F1'],
-        'kales' => ['Thousand-headed', 'Collards'],
-        'spinach' => ['Fordhook Giant'],
+        'beans' => ['Rosecoco', 'Mwitemania', 'KK8', 'Nyota'],
+        'rice' => ['Basmati 370', 'IR 2793', 'Komboka'],
+        'wheat' => ['Kenya Robin', 'Eagle 10', 'Kingbird'],
+        'tomatoes' => ['Anna F1', 'Kilele F1', 'Rio Grande', 'Cal J'],
+        'kales' => ['Thousand-headed', 'Southern Georgia', 'Mfalme F1'],
+        'spinach' => ['Fordhook Giant', 'Malabar'],
         'bananas' => ['Williams', 'Grand Nain', 'FHIA-17', 'Uganda Green'],
-        'avocados' => ['Hass', 'Fuerte'],
+        'avocados' => ['Hass', 'Fuerte', 'Pinkerton'],
         _ => [],
+      };
+
+  List<(String, String)> get _froms => switch (_code) {
+        'bananas' => [('tissue_culture', 'Tissue culture'.tr), ('suckers', 'Suckers'.tr)],
+        'avocados' => [('grafted', 'Grafted seedlings'.tr), ('seed', 'Seed'.tr)],
+        _ => [],
+      };
+
+  String get _dateLabel => switch (_code) {
+        'rice' || 'tomatoes' || 'kales' => 'Transplanted on'.tr,
+        'wheat' || 'spinach' => 'Sown on'.tr,
+        _ => 'Planted on'.tr,
+      };
+
+  String? get _note => switch (_code) {
+        'maize' => "Shamba OS lists the season's field jobs from the planting date.".tr,
+        'rice' => 'Use the day the seedlings went into the paddy, not the nursery day.'.tr,
+        'tomatoes' => 'Use the day the seedlings went from the nursery into the ground.'.tr,
+        'kales' => 'Kales are picked many times. Record each picking as a harvest.'.tr,
+        'avocados' => 'Grafted trees usually start bearing in 3 to 4 years.'.tr,
+        _ => null,
+      };
+
+  String get _title => switch (_code) {
+        'maize' => 'New maize season'.tr,
+        'beans' => 'New beans season'.tr,
+        'rice' => 'New rice season'.tr,
+        'wheat' => 'New wheat season'.tr,
+        'tomatoes' => 'New tomatoes season'.tr,
+        'kales' => 'New sukuma (kales) season'.tr,
+        'spinach' => 'New spinach season'.tr,
+        'bananas' => 'Add bananas'.tr,
+        'avocados' => 'Add avocados'.tr,
+        _ => widget.kind.label,
       };
 
   Future<void> _save() async {
@@ -1042,17 +1139,18 @@ class _CropFormState extends State<CropForm> with RecordForm {
     if (area == null || area <= 0) return fail('Enter the area planted.'.tr, 'area_acres');
     final plants = _num(_plants);
     if (_orchard && (plants == null || plants < 1)) {
-      return fail(widget.kind.code == 'bananas' ? 'Enter how many stools.'.tr : 'Enter how many trees.'.tr, 'plant_count');
+      return fail(_code == 'bananas' ? 'Enter how many stools.'.tr : 'Enter how many trees.'.tr, 'plant_count');
     }
     if (_name.text.trim().isEmpty) return fail('Give the season a name.'.tr, 'name');
     await save(
         () => FarmSetupService.startSeason({
               'farm_id': widget.farmId,
-              'type': widget.kind.code,
+              'type': _code,
               'plot_id': _plot,
               'area_acres': area.toString(),
               'variety': _variety ?? '',
               'plant_count': plants?.round(),
+              'planted_from': _from ?? '',
               'date': _day(_date),
               'name': _name.text.trim(),
             }),
@@ -1062,73 +1160,98 @@ class _CropFormState extends State<CropForm> with RecordForm {
   @override
   Widget build(BuildContext context) {
     final plots = _plots;
-    final c = context.appColors;
-    return RecordPage(
-      title: _orchard ? 'FRUIT TREES'.tr : 'CROPS'.tr,
+    final plot = (plots ?? const []).where((p) => '${p['id']}' == _plot).firstOrNull;
+    return SlFormPage(
       eyebrow: _orchard ? 'FRUIT TREES'.tr : 'CROPS'.tr,
-      subtitle: _orchard
-          ? 'Add {kind}'.trArgs({'kind': widget.kind.label.toLowerCase()})
-          : 'New {kind} season'.trArgs({'kind': widget.kind.label.toLowerCase()}),
+      title: _title,
       saving: saving,
-      error: banner({'plot_id', 'area_acres', 'plant_count', 'variety', 'date', 'name'}),
+      error: banner({'plot_id', 'area_acres', 'plant_count', 'variety', 'planted_from', 'date', 'name'}),
       saveLabel: _orchard ? 'Save orchard'.tr : 'Start season'.tr,
       onSave: plots == null ? null : _save,
       children: [
-        _KindHead(widget.kind, _orchard ? 'Fruit trees on one plot'.tr : 'One season on one plot'.tr),
-        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          if (plots == null)
-            const LinearProgressIndicator(minHeight: 2)
-          else if (plots.isEmpty)
-            Text('No plots yet. Add the land this grows on.'.tr, style: AppType.caption.copyWith(color: c.textSecondary))
-          else
-            RecordChoices<String?>(
-              label: 'Plot'.tr,
-              options: [
-                for (final p in plots)
-                  ('${p['id']}', '{name} · {acres} acres'.trArgs({'name': p['name'], 'acres': num.tryParse('${p['area_acres']}')?.toString().replaceAll(RegExp(r'\.0$'), '') ?? p['area_acres']}))
-              ],
-              value: _plot,
-              errorText: err('plot_id'),
-              onChanged: (v) => setState(() => _plot = v),
-            ),
-          _Link('Add a plot'.tr, _addPlot),
-        ]),
-        RecordNumberField(controller: _area, label: _orchard ? 'Area'.tr : 'Area planted'.tr, suffix: 'acres'.tr, errorText: err('area_acres')),
+        SlTypeHead(
+          icon: Image.asset(fieldIcon(_code, crop: true), width: 28, height: 28, excludeFromSemantics: true),
+          title: widget.kind.label,
+          meta: _orchard ? 'Fruit trees on one plot'.tr : 'One season on one plot'.tr,
+          onChange: () => Navigator.maybePop(context),
+        ),
+        SlField(
+          label: 'Plot'.tr,
+          required: true,
+          error: err('plot_id'),
+          below: SlLink('Add a plot'.tr, _addPlot),
+          child: SlSelectBox(
+            icon: _plotPath,
+            text: plot == null
+                ? (plots == null ? 'Loading your plots…'.tr : 'No plots yet. Add one.'.tr)
+                : '${plot['name']} · ${_acresText(plot['area_acres'])}',
+            muted: plot == null,
+            error: err('plot_id') != null,
+            onTap: _choosePlot,
+          ),
+        ),
+        SlField(
+          label: _orchard ? 'Area'.tr : 'Area planted'.tr,
+          required: true,
+          hint: plot == null ? null : 'Up to {area} on this plot.'.trArgs({'area': _acresText(plot['area_acres'])}),
+          error: err('area_acres'),
+          child: SlTextBox(controller: _area, number: true, suffix: 'acres'.tr, error: err('area_acres') != null),
+        ),
         if (_orchard)
-          RecordNumberField(
-            controller: _plants,
-            label: widget.kind.code == 'bananas' ? 'Number of stools'.tr : 'Number of trees'.tr,
-            suffix: widget.kind.code == 'bananas' ? 'stools'.tr : 'trees'.tr,
-            whole: true,
-            hint: widget.kind.code == 'bananas' ? 'A stool is the mother plant with its suckers.'.tr : null,
-            errorText: err('plant_count'),
+          SlField(
+            label: _code == 'bananas' ? 'Number of stools'.tr : 'Number of trees'.tr,
+            required: true,
+            hint: _code == 'bananas' ? 'A stool is the mother plant with its suckers.'.tr : 'Count the trees you planted, even young ones.'.tr,
+            error: err('plant_count'),
+            child: SlTextBox(
+                controller: _plants, number: true, suffix: _code == 'bananas' ? 'stools'.tr : 'trees'.tr, error: err('plant_count') != null),
           ),
         if (_varieties.isNotEmpty)
-          RecordChoices<String?>(
-            label: '${'Variety'.tr} ${'(optional)'.tr}',
-            options: [for (final v in _varieties) (v, v), (null, 'Other'.tr)],
-            value: _variety,
-            onChanged: (v) => setState(() => _variety = v),
+          SlField(
+            label: 'Variety'.tr,
+            optional: true,
+            child: SlChoices<String>(
+                options: [for (final v in _varieties) (v, v)], value: _variety, onChanged: (v) => setState(() => _variety = v == _variety ? null : v)),
           ),
-        RecordDateField(
-          label: 'Planted on'.tr,
-          value: _date,
-          first: DateTime(DateTime.now().year - 40),
-          errorText: err('date'),
-          onChanged: (d) => setState(() => _date = d),
+        if (_froms.isNotEmpty)
+          SlField(
+            label: 'Planted from'.tr,
+            optional: true,
+            error: err('planted_from'),
+            child: SlChoices<String>(options: _froms, value: _from, onChanged: (v) => setState(() => _from = v == _from ? null : v)),
+          ),
+        SlField(
+          label: _dateLabel,
+          required: true,
+          hint: _orchard ? 'The month is enough for older trees.'.tr : null,
+          error: err('date'),
+          child: SlSelectBox(
+            icon: SlSelectBox.calendar,
+            text: _orchard ? DateFormat('MMM yyyy').format(_date) : _pretty(_date),
+            onTap: () async {
+              final d = await _pickDate(context, _date, yearsBack: 40);
+              if (d != null) setState(() => _date = d);
+            },
+          ),
         ),
-        RecordTextField(controller: _name, label: _orchard ? 'Name'.tr : 'Season name'.tr, errorText: err('name')),
-        if (!_orchard) _Note("Shamba OS lists the season's field jobs from the planting date.".tr),
+        if (!_orchard)
+          SlField(
+            label: 'Season name'.tr,
+            required: true,
+            error: err('name'),
+            child: SlTextBox(controller: _name, caps: TextCapitalization.sentences, error: err('name') != null),
+          ),
+        if (_note != null) SlInfoNote(_note!),
       ],
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════
-// LAND, BUILDINGS AND PEOPLE
+// LAND, BUILDINGS AND PEOPLE (screens 47–51)
 // ═══════════════════════════════════════════════════════════
 
-/// The design's "Add a plot" (POST /plots).
+/// Screen 47, "Add a plot" (POST /plots).
 class PlotForm extends StatefulWidget {
   final String farmId;
   const PlotForm({super.key, required this.farmId});
@@ -1168,39 +1291,51 @@ class _PlotFormState extends State<PlotForm> with RecordForm {
 
   @override
   Widget build(BuildContext context) {
-    return RecordPage(
-      title: 'LAND'.tr,
+    return SlFormPage(
       eyebrow: 'LAND'.tr,
-      subtitle: 'Add a plot'.tr,
+      title: 'Add a plot'.tr,
       saving: saving,
       error: banner({'name', 'area_acres', 'tenure', 'lease_cost'}),
       saveLabel: 'Save plot'.tr,
       onSave: _save,
       children: [
-        RecordTextField(controller: _name, label: 'Plot name'.tr, hint: 'What you call it, like Near the river.'.tr, errorText: err('name')),
-        RecordNumberField(
-            controller: _area, label: 'Size'.tr, suffix: 'acres'.tr, hint: '1 acre is about 63 by 63 metres.'.tr, errorText: err('area_acres')),
-        RecordChoices<String>(
+        SlField(
+          label: 'Plot name'.tr,
+          required: true,
+          hint: 'What you call it, like Near the river.'.tr,
+          error: err('name'),
+          child: SlTextBox(controller: _name, caps: TextCapitalization.sentences, error: err('name') != null),
+        ),
+        SlField(
+          label: 'Size'.tr,
+          required: true,
+          hint: '1 acre is about 63 by 63 metres.'.tr,
+          error: err('area_acres'),
+          child: SlTextBox(controller: _area, number: true, suffix: 'acres'.tr, error: err('area_acres') != null),
+        ),
+        SlField(
           label: 'Who owns the land'.tr,
-          options: [('owned', 'Owned'.tr), ('leased', 'Leased'.tr), ('family', 'Family land'.tr)],
-          value: _tenure,
-          errorText: err('tenure'),
-          onChanged: (v) => setState(() => _tenure = v),
+          error: err('tenure'),
+          child: SlChoices<String>(
+            options: [('owned', 'Owned'.tr), ('leased', 'Leased'.tr), ('family', 'Family land'.tr)],
+            value: _tenure,
+            onChanged: (v) => setState(() => _tenure = v),
+          ),
         ),
         if (_tenure == 'leased')
-          RecordNumberField(
-            controller: _lease,
-            label: '${'Lease cost'.tr} ${'(optional)'.tr}',
-            suffix: 'KSh'.tr,
+          SlField(
+            label: 'Lease cost'.tr,
+            optional: true,
             hint: "What you pay for this land. Counted in the crop's costs.".tr,
-            errorText: err('lease_cost'),
+            error: err('lease_cost'),
+            child: SlTextBox(controller: _lease, prefix: 'KSh'.tr, number: true, error: err('lease_cost') != null),
           ),
       ],
     );
   }
 }
 
-/// The design's "Add a building or pond" (POST /structures).
+/// Screen 48, "Add a building or pond" (POST /structures).
 class StructureForm extends StatefulWidget {
   final String farmId;
   final String initialType;
@@ -1236,37 +1371,110 @@ class _StructureFormState extends State<StructureForm> with RecordForm {
 
   @override
   Widget build(BuildContext context) {
-    return RecordPage(
-      title: 'BUILDINGS'.tr,
+    return SlFormPage(
       eyebrow: 'BUILDINGS'.tr,
-      subtitle: 'Add a building or pond'.tr,
+      title: 'Add a building or pond'.tr,
       saving: saving,
       error: banner({'name', 'type', 'capacity'}),
       saveLabel: _type == 'pond' ? 'Save pond'.tr : 'Save building'.tr,
       onSave: _save,
       children: [
-        RecordChoices<String>(
+        SlField(
           label: 'What is it'.tr,
-          options: [('shed', 'Shed'.tr), ('poultry_house', 'Poultry house'.tr), ('pen', 'Pen'.tr), ('pond', 'Pond'.tr), ('store', 'Store'.tr)],
-          value: _type,
-          errorText: err('type'),
-          onChanged: (v) => setState(() => _type = v),
+          required: true,
+          error: err('type'),
+          child: SlChoices<String>(
+            options: [('shed', 'Shed'.tr), ('poultry_house', 'Poultry house'.tr), ('pen', 'Pen'.tr), ('pond', 'Pond'.tr), ('store', 'Store'.tr)],
+            value: _type,
+            onChanged: (v) => setState(() => _type = v),
+          ),
         ),
-        RecordTextField(controller: _name, label: 'Name'.tr, errorText: err('name')),
+        SlField(
+          label: 'Name'.tr,
+          required: true,
+          error: err('name'),
+          child: SlTextBox(controller: _name, caps: TextCapitalization.sentences, error: err('name') != null),
+        ),
         if (_type != 'store')
-          RecordNumberField(
-            controller: _capacity,
-            label: '${'How many it holds'.tr} ${'(optional)'.tr}',
-            suffix: _type == 'pond' ? 'fish'.tr : (_type == 'poultry_house' ? 'birds'.tr : 'animals'.tr),
-            whole: true,
-            errorText: err('capacity'),
+          SlField(
+            label: 'How many it holds'.tr,
+            optional: true,
+            error: err('capacity'),
+            child: SlTextBox(
+              controller: _capacity,
+              number: true,
+              suffix: _type == 'pond' ? 'fish'.tr : (_type == 'poultry_house' ? 'birds'.tr : 'animals'.tr),
+              error: err('capacity') != null,
+            ),
           ),
       ],
     );
   }
 }
 
-/// The design's "Add a supplier" (POST /suppliers).
+/// A phone number as the API takes it from the "+254" box: "722 118 409" → "+254722118409".
+String _phone(TextEditingController c) {
+  var digits = c.text.replaceAll(RegExp(r'\D'), '');
+  if (digits.isEmpty) return '';
+  if (digits.startsWith('254')) digits = digits.substring(3);
+  if (digits.startsWith('0')) digits = digits.substring(1);
+  return '+254$digits';
+}
+
+/// Screen 49, "Add a customer" (POST /customers).
+class CustomerForm extends StatefulWidget {
+  const CustomerForm({super.key});
+
+  @override
+  State<CustomerForm> createState() => _CustomerFormState();
+}
+
+class _CustomerFormState extends State<CustomerForm> with RecordForm {
+  final _name = TextEditingController();
+  final _phoneBox = TextEditingController();
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _phoneBox.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _name.text.trim();
+    if (name.isEmpty) return fail('Enter a name.'.tr, 'name');
+    await save(() => CustomerService.createCustomer(name: name, phone: _phone(_phoneBox)), 'Customer added'.tr);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlFormPage(
+      eyebrow: 'SALES'.tr,
+      title: 'Add a customer'.tr,
+      saving: saving,
+      error: banner({'name', 'phone'}),
+      saveLabel: 'Save customer'.tr,
+      onSave: _save,
+      children: [
+        SlField(
+          label: 'Name'.tr,
+          required: true,
+          error: err('name'),
+          child: SlTextBox(controller: _name, caps: TextCapitalization.words, error: err('name') != null),
+        ),
+        SlField(
+          label: 'Phone number'.tr,
+          optional: true,
+          error: err('phone'),
+          child: SlTextBox(controller: _phoneBox, prefix: '+254', mono: true, number: true, error: err('phone') != null),
+        ),
+        SlInfoNote('What they owe you is worked out from sales they have not paid for yet.'.tr),
+      ],
+    );
+  }
+}
+
+/// Screen 50, "Add a supplier" (POST /suppliers), with what the farm buys from them.
 class SupplierForm extends StatefulWidget {
   const SupplierForm({super.key});
 
@@ -1276,41 +1484,61 @@ class SupplierForm extends StatefulWidget {
 
 class _SupplierFormState extends State<SupplierForm> with RecordForm {
   final _name = TextEditingController();
-  final _phone = TextEditingController();
+  final _phoneBox = TextEditingController();
+  final _buys = <String>{};
 
   @override
   void dispose() {
     _name.dispose();
-    _phone.dispose();
+    _phoneBox.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     if (_name.text.trim().isEmpty) return fail('Enter a name.'.tr, 'name');
-    await save(() => FarmSetupService.addSupplier({'name': _name.text.trim(), 'phone': _phone.text.trim()}), 'Supplier added'.tr);
+    await save(
+        () => FarmSetupService.addSupplier({'name': _name.text.trim(), 'phone': _phone(_phoneBox), 'supplies': _buys.toList()}),
+        'Supplier added'.tr);
   }
 
   @override
   Widget build(BuildContext context) {
-    return RecordPage(
-      title: 'PURCHASES'.tr,
+    final supplies = [('feed', 'Feed'.tr), ('chicks', 'Chicks'.tr), ('medicine', 'Medicine'.tr), ('seed', 'Seed'.tr), ('fertiliser', 'Fertiliser'.tr)];
+    return SlFormPage(
       eyebrow: 'PURCHASES'.tr,
-      subtitle: 'Add a supplier'.tr,
+      title: 'Add a supplier'.tr,
       saving: saving,
-      error: banner({'name', 'phone'}),
+      error: banner({'name', 'phone', 'supplies'}),
       saveLabel: 'Save supplier'.tr,
       onSave: _save,
       children: [
-        RecordTextField(controller: _name, label: 'Name'.tr, caps: TextCapitalization.words, errorText: err('name')),
-        RecordTextField(
-            controller: _phone, label: 'Phone number (optional)'.tr, hint: '0712 345 678', keyboard: TextInputType.phone, errorText: err('phone')),
-        _Note('What you owe them is worked out from purchases you have not paid for yet.'.tr),
+        SlField(
+          label: 'Name'.tr,
+          required: true,
+          error: err('name'),
+          child: SlTextBox(controller: _name, caps: TextCapitalization.words, error: err('name') != null),
+        ),
+        SlField(
+          label: 'Phone number'.tr,
+          optional: true,
+          error: err('phone'),
+          child: SlTextBox(controller: _phoneBox, prefix: '+254', mono: true, number: true, error: err('phone') != null),
+        ),
+        SlField(
+          label: 'What you buy from them'.tr,
+          optional: true,
+          child: Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final (code, label) in supplies)
+              SlChip(label, selected: _buys.contains(code), onTap: () => setState(() => _buys.contains(code) ? _buys.remove(code) : _buys.add(code))),
+          ]),
+        ),
+        SlInfoNote('What you owe them is worked out from purchases you have not paid for yet.'.tr),
       ],
     );
   }
 }
 
-/// The design's "Invite to your farm" (POST /invitations).
+/// Screen 51, "Invite to your farm" (POST /invitations).
 class TeamForm extends StatefulWidget {
   const TeamForm({super.key});
 
@@ -1319,60 +1547,83 @@ class TeamForm extends StatefulWidget {
 }
 
 class _TeamFormState extends State<TeamForm> with RecordForm {
-  final _phone = TextEditingController();
+  final _phoneBox = TextEditingController();
   String _role = 'field_worker';
+
+  static const _manager = '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>';
+  static const _worker = '<path d="m10 11 11 .9a1 1 0 0 1 .8 1.1l-.665 4.158a1 1 0 0 1-.988.842H20"/><path d="M16 18h-5"/><path d="M18 5a1 1 0 0 0-1 1v5.573"/><path d="M3 4h8.129a1 1 0 0 1 .99.863L13 11.246"/><path d="M4 11V4"/><path d="M7 15h.01"/><path d="M8 10.1V4"/><circle cx="18" cy="18" r="2"/><circle cx="7" cy="15" r="5"/>';
 
   @override
   void dispose() {
-    _phone.dispose();
+    _phoneBox.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
-    if (_phone.text.trim().isEmpty) return fail('Enter their phone number.'.tr, 'phone');
-    await save(() => FarmSetupService.invite({'phone': _phone.text.trim(), 'role': _role}), 'Invitation sent'.tr);
+    final phone = _phone(_phoneBox);
+    if (phone.isEmpty) return fail('Enter their phone number.'.tr, 'phone');
+    await save(() => FarmSetupService.invite({'phone': phone, 'role': _role}), 'Invitation sent'.tr);
   }
 
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
-    Widget role(String value, String title, String meta) => SlCard(
-          onTap: () => setState(() => _role = value),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title,
-                    style: TextStyle(fontFamily: AppType.text, fontSize: 15, height: 20 / 15, fontWeight: FontWeight.w700, color: c.textPrimary)),
-                Text(meta, style: AppType.caption.copyWith(color: c.textSecondary)),
-              ]),
+    Widget role(String value, String icon, String title, String meta) {
+      final picked = _role == value;
+      return SlIconRow(
+        icon: icon,
+        title: title,
+        meta: meta,
+        onTap: () => setState(() => _role = value),
+        end: Semantics(
+          selected: picked,
+          child: Container(
+            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: picked ? c.brandSoft : c.cardBackground,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: picked ? c.brandText : c.border, width: 1.5),
             ),
-            const SizedBox(width: 12),
-            LineIcon(_role == value ? '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>' : '<circle cx="12" cy="12" r="10"/>',
-                size: 24, color: _role == value ? c.brandText : c.textHint),
-          ]),
-        );
-    return RecordPage(
-      title: 'TEAM'.tr,
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              if (picked) ...[LineIcon('<path d="M20 6 9 17l-5-5"/>', size: 16, color: c.brandText), const SizedBox(width: 4)],
+              Text(picked ? 'Picked'.tr : 'Pick'.tr,
+                  style: TextStyle(fontFamily: AppType.text, fontSize: 13, fontWeight: FontWeight.w700, color: picked ? c.brandText : c.textPrimary)),
+            ]),
+          ),
+        ),
+      );
+    }
+
+    return SlFormPage(
       eyebrow: 'TEAM'.tr,
-      subtitle: 'Invite to your farm'.tr,
+      title: 'Invite to your farm'.tr,
       saving: saving,
       error: banner({'phone', 'role'}),
       saveLabel: 'Send invitation'.tr,
       onSave: _save,
       children: [
-        RecordTextField(
-          controller: _phone,
+        SlField(
           label: 'Their phone number'.tr,
-          hint: '0712 345 678',
-          keyboard: TextInputType.phone,
-          errorText: err('phone'),
+          required: true,
+          hint: 'They join the next time they sign in with this number.'.tr,
+          error: err('phone'),
+          child: SlTextBox(controller: _phoneBox, prefix: '+254', mono: true, number: true, error: err('phone') != null),
         ),
-        Text('They join the next time they sign in with this number.'.tr, style: AppType.caption.copyWith(color: c.textSecondary)),
-        Text('What they can do'.tr, style: AppType.caption.copyWith(color: c.textSecondary, fontWeight: FontWeight.w700)),
-        role('manager', 'Manager'.tr, 'Records, stock, sales, purchases, money and the team'.tr),
-        role('field_worker', 'Field worker'.tr, 'Daily records and seeing stock. No money.'.tr),
-        _Note("The invitation ends after a while if they don't sign in. You can send it again.".tr),
+        SlField(
+          label: 'What they can do'.tr,
+          required: true,
+          error: err('role'),
+          child: SlCard(
+            padding: EdgeInsets.zero,
+            child: Column(children: [
+              role('manager', _manager, 'Manager'.tr, 'Records, stock, sales, purchases, money and the team'.tr),
+              Divider(height: 1, thickness: 1, color: c.divider),
+              role('field_worker', _worker, 'Field worker'.tr, 'Daily records and seeing stock. No money.'.tr),
+            ]),
+          ),
+        ),
+        SlInfoNote("The invitation ends after a while if they don't sign in. You can send it again.".tr),
       ],
     );
   }
