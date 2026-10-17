@@ -221,13 +221,13 @@ class SlIconRow extends StatelessWidget {
       SlTone.info => (c.rainTint, c.rainInk),
       SlTone.good || SlTone.neutral => (c.brandSoft, c.brandText),
     };
-    final trailing = end ?? (onTap != null ? LineIcon(_chevron, size: 20, color: c.textSecondary) : null);
+    final trailing = end ?? (onTap != null ? LineIcon(_chevron, size: 22, color: c.textSecondary) : null);
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 64),
+          constraints: const BoxConstraints(minHeight: 60),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(children: [
             Container(

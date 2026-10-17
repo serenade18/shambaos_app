@@ -873,4 +873,21 @@ const sw = <String, String>{
   'Your name': 'Jina lako',
   '{n} alerts are hidden by your notification choices.': 'Tahadhari {n} zimefichwa na chaguo zako za arifa.',
   '1 alert is hidden by your notification choices.': 'Tahadhari 1 imefichwa na chaguo zako za arifa.',
+
+  // Profile, as the canvas
+  'App updates': 'Masasisho ya programu',
+  'Could not open this page. Check your connection and try again.': 'Imeshindwa kufungua ukurasa huu. Angalia mtandao wako ujaribu tena.',
+  'How customers can pay you when you record a sale.': 'Jinsi wateja wanavyoweza kukulipa unaporekodi mauzo.',
+  'Leave requests': 'Maombi ya likizo',
+  'M-Pesa prompt': 'Ombi la M-Pesa',
+  'Money owed to you and bills due': 'Pesa unazodai na bili zinazodaiwa',
+  'New features and maintenance': 'Vipengele vipya na matengenezo',
+  'Payment method': 'Njia ya malipo',
+  'Privacy policy': 'Sera ya faragha',
+  'Terms of service': 'Masharti ya huduma',
+  'The customer gets a prompt on their phone to pay': 'Mteja anapata ombi kwenye simu yake ili alipe',
+  'They pay later; it shows in what customers owe you': 'Watalipa baadaye; inaonekana kwenye deni la wateja',
+  'When staff ask for days off': 'Wafanyakazi wanapoomba siku za kupumzika',
+  'You type the code from their M-Pesa message': 'Unaandika msimbo kutoka kwa ujumbe wao wa M-Pesa',
+  'Farm administrator': 'Msimamizi wa shamba',
 };
