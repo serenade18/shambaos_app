@@ -8,6 +8,7 @@ import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
 import '../../widgets/ledger_parts.dart';
 import '../auth/auth_ui.dart';
+import '../profile/my_photo.dart';
 import '../../l10n/tr.dart';
 
 /// The top of Home, as the design draws it (sl-hero): the farm photograph
@@ -113,14 +114,7 @@ class HomeHero extends StatelessWidget {
           label: 'Profile'.tr,
           child: GestureDetector(
             onTap: onAvatarTap,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: c.brandSoft),
-              alignment: Alignment.center,
-              child: Text(initials,
-                  style: TextStyle(fontFamily: AppType.text, fontSize: 15, height: 20 / 15, fontWeight: FontWeight.w700, color: c.brandText)),
-            ),
+            child: MyAvatar(initials: initials),
           ),
         ),
         const SizedBox(width: 10),
