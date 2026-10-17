@@ -9,6 +9,7 @@ import '../auth/auth_ui.dart';
 import '../customers/customer_screen.dart';
 import '../fields/field_widgets.dart';
 import '../records/record_form.dart';
+import '../../widgets/sl_form.dart';
 import 'farm_setup_service.dart';
 import '../../l10n/tr.dart';
 
@@ -87,14 +88,8 @@ class _AddToFarmScreenState extends State<AddToFarmScreen> {
     return _open(CropForm(farmId: _farmId, kind: k));
   }
 
-  /// A new herd, then its first animal, as the design's Start herd leads to Add a cow.
-  Future<void> _newHerd() async {
-    String? type;
-    await _open(HerdForm(farmId: _farmId, onStarted: (t) => type = t), then: () async {
-      final k = type == null ? null : FarmKind.of(type!);
-      if (k != null && mounted) await _open(AnimalForm(farmId: _farmId, kind: k));
-    });
-  }
+  /// Screen 28; it goes on to add the herd's animals one by one.
+  Future<void> _newHerd() => _open(HerdForm(farmId: _farmId));
 
   @override
   Widget build(BuildContext context) {
@@ -361,16 +356,41 @@ class _KeptIn extends StatelessWidget {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ANIMALS
+// ANIMALS (screens 28–34)
 // ═══════════════════════════════════════════════════════════
 
-/// The design's "Add a dairy cow" (and goat, sheep, pig...): one animal by tag
-/// into its herd (POST /animals). With no herd of its kind yet, one is started
-/// for it first (POST /herds).
+/// What the design calls each kind's animals, for counts and hints.
+String _unit(String type, int n) => switch (type) {
+      'dairy_cattle' => n == 1 ? 'cow'.tr : 'cows'.tr,
+      'beef_cattle' => 'head'.tr,
+      'dairy_goats' => n == 1 ? 'goat'.tr : 'goats'.tr,
+      'sheep' => 'sheep'.tr,
+      'pigs' => n == 1 ? 'pig'.tr : 'pigs'.tr,
+      'rabbits' => n == 1 ? 'rabbit'.tr : 'rabbits'.tr,
+      _ => n == 1 ? 'animal'.tr : 'animals'.tr,
+    };
+
+String _pretty(DateTime d) => DateFormat('EEE d MMM yyyy').format(d);
+
+Future<DateTime?> _pickDate(BuildContext context, DateTime initial, {int yearsBack = 30}) {
+  final now = DateTime.now();
+  return showDatePicker(context: context, initialDate: initial, firstDate: DateTime(now.year - yearsBack), lastDate: now);
+}
+
+/// Screens 29–34, "Add a dairy cow" and its kin: one animal by tag into its herd
+/// (POST /animals; a beef animal's weight with POST /animals/{id}/weights). With no
+/// herd of its kind yet, one is started first (POST /herds). After "Start a herd",
+/// it is shown once per animal: [index] of [total].
 class AnimalForm extends StatefulWidget {
   final String farmId;
   final FarmKind kind;
-  const AnimalForm({super.key, required this.farmId, required this.kind});
+  final String? herdId; // the herd just started
+  final String? herdName;
+  final int index;
+  final int total;
+  final String? lastTag; // the animal saved just before this one
+  const AnimalForm(
+      {super.key, required this.farmId, required this.kind, this.herdId, this.herdName, this.index = 1, this.total = 1, this.lastTag});
 
   @override
   State<AnimalForm> createState() => _AnimalFormState();
@@ -380,37 +400,47 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
   final _tag = TextEditingController();
   final _name = TextEditingController();
   final _cost = TextEditingController();
+  final _weight = TextEditingController();
   List<Map<String, dynamic>>? _herds;
   String? _herd;
   String _sex = 'female';
   String? _breed;
   String _source = 'bought';
   DateTime? _born;
+  bool _askBorn = false;
 
   String get _type => widget.kind.code;
+  bool get _sequence => widget.total > 1;
 
   @override
   void initState() {
     super.initState();
-    FarmSetupService.herds(widget.farmId, _type).then((h) {
-      if (!mounted) return;
-      setState(() {
-        _herds = h;
-        _herd = h.isEmpty ? null : '${h.first['id']}';
-      });
+    _sex = _type == 'beef_cattle' ? 'male' : 'female';
+    // The design shows the date for dairy cows, goats and pigs; a link for the rest.
+    _askBorn = const {'dairy_cattle', 'dairy_goats', 'pigs'}.contains(_type);
+    _loadHerds();
+  }
+
+  Future<void> _loadHerds() async {
+    final h = await FarmSetupService.herds(widget.farmId, _type);
+    if (!mounted) return;
+    setState(() {
+      _herds = h;
+      _herd = widget.herdId ?? _herd ?? (h.isEmpty ? null : '${h.first['id']}');
     });
   }
 
   @override
   void dispose() {
-    _tag.dispose();
-    _name.dispose();
-    _cost.dispose();
+    for (final c in [_tag, _name, _cost, _weight]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   List<(String, String)> get _sexes => switch (_type) {
-        'dairy_cattle' || 'beef_cattle' => [('female', 'Cow (female)'.tr), ('male', 'Bull (male)'.tr)],
+        'dairy_cattle' => [('female', 'Cow (female)'.tr), ('male', 'Bull (male)'.tr)],
+        'beef_cattle' => [('female', 'Heifer or cow'.tr), ('male', 'Bull or steer'.tr)],
         'dairy_goats' || 'rabbits' => [('female', 'Doe (female)'.tr), ('male', 'Buck (male)'.tr)],
         'sheep' => [('female', 'Ewe (female)'.tr), ('male', 'Ram (male)'.tr)],
         'pigs' => [('female', 'Sow or gilt (female)'.tr), ('male', 'Boar (male)'.tr)],
@@ -418,12 +448,12 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
       };
 
   List<String> get _breeds => switch (_type) {
-        'dairy_cattle' => ['Friesian', 'Ayrshire', 'Jersey', 'Guernsey', 'Cross'.tr],
-        'beef_cattle' => ['Boran', 'Sahiwal', 'Zebu', 'Cross'.tr],
-        'dairy_goats' => ['Toggenburg', 'Saanen', 'Alpine', 'Cross'.tr],
-        'sheep' => ['Dorper', 'Red Maasai', 'Merino', 'Cross'.tr],
-        'pigs' => ['Large White', 'Landrace', 'Duroc', 'Hampshire', 'Cross'.tr],
-        'rabbits' => ['New Zealand White', 'California White', 'Flemish Giant', 'Cross'.tr],
+        'dairy_cattle' => ['Friesian', 'Ayrshire', 'Jersey', 'Guernsey'],
+        'beef_cattle' => ['Boran', 'Sahiwal', 'Angus', 'Hereford'],
+        'dairy_goats' => ['Toggenburg', 'Saanen', 'Alpine', 'Galla'],
+        'sheep' => ['Dorper', 'Red Maasai', 'Merino', 'Hampshire Down'],
+        'pigs' => ['Large White', 'Landrace', 'Duroc', 'Hampshire'],
+        'rabbits' => ['New Zealand White', 'California', 'Chinchilla', 'Flemish Giant'],
         _ => [],
       };
 
@@ -437,10 +467,24 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
         _ => 'Add an animal'.tr,
       };
 
+  String get _tagHint => switch (_type) {
+        'sheep' => 'On the ear tag, or a number you paint on.'.tr,
+        'rabbits' => 'On the ear tattoo or cage card.'.tr,
+        _ => 'On the ear tag, or a number you give it.'.tr,
+      };
+
+  String? get _note => switch (_type) {
+        'dairy_goats' => 'For a kid born to one of your does, use Record a birth on the mother. It links them.'.tr,
+        'pigs' => 'Piglets are not added here. Record a litter on the sow and they are raised as one group.'.tr,
+        'rabbits' => 'Kits are not added here. Record a litter on the doe and they are raised as one group.'.tr,
+        _ => null,
+      };
+
   String _age(DateTime born) {
     final now = DateTime.now();
+    final days = now.difference(born).inDays;
+    if (days < 56) return days < 14 ? '{n} days old'.trArgs({'n': days}) : '{n} weeks old'.trArgs({'n': days ~/ 7});
     var months = (now.year - born.year) * 12 + now.month - born.month - (now.day < born.day ? 1 : 0);
-    if (months < 1) return 'Under a month old'.tr;
     if (months < 12) return months == 1 ? '1 month old'.tr : '{n} months old'.trArgs({'n': months});
     final years = months ~/ 12;
     months %= 12;
@@ -450,10 +494,42 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
     return '{years} {months} old'.trArgs({'years': y, 'months': m});
   }
 
+  /// "Dairy herd · 5 cows", or "Dairy herd · 2 of 5" while filling a new herd.
+  String get _meta {
+    final herds = _herds;
+    if (herds == null) return 'Loading your herds…'.tr;
+    final herd = herds.where((h) => '${h['id']}' == _herd).firstOrNull;
+    if (_sequence) {
+      final line = '{herd} · {i} of {n}'.trArgs({'herd': widget.herdName ?? herd?['name'] ?? '', 'i': widget.index, 'n': widget.total});
+      return widget.lastTag == null ? line : '$line · ${'{tag} saved'.trArgs({'tag': widget.lastTag!})}';
+    }
+    if (herd == null) return _herd == null ? 'A new herd starts with this animal'.tr : '${widget.herdName ?? ''}';
+    final n = int.tryParse('${herd['head_count'] ?? 0}') ?? 0;
+    return '{herd} · {n} {unit}'.trArgs({'herd': herd['name'], 'n': n, 'unit': _unit(_type, n)});
+  }
+
+  /// Change: another herd of this kind, or a new one (screen 28).
+  Future<void> _change() async {
+    final herds = _herds ?? const [];
+    final picked = await slPick<String>(context,
+        title: 'Which herd?'.tr,
+        value: _herd,
+        options: [for (final h in herds) ('${h['id']}', '${h['name']}'), ('new', 'Start a new herd'.tr)]);
+    if (picked == null || !mounted) return;
+    if (picked == 'new') {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => HerdForm(farmId: widget.farmId, initialType: _type)));
+      return;
+    }
+    setState(() => _herd = picked);
+  }
+
   Future<void> _save() async {
     final tag = _tag.text.trim();
     if (tag.isEmpty) return fail("Enter the animal's tag.".tr, 'tag');
-    final cost = _cost.text.trim().isEmpty ? null : _num(_cost);
+    final cost = _source == 'bought' && _cost.text.trim().isNotEmpty ? _num(_cost) : null;
+    final kg = _type == 'beef_cattle' && _source == 'bought' && _weight.text.trim().isNotEmpty ? _num(_weight) : null;
+    final done = '{tag} added'.trArgs({'tag': tag});
     await save(() async {
       var herd = _herd;
       if (herd == null) {
@@ -467,7 +543,7 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
         herd = '${started.data['id']}';
         _herd = herd;
       }
-      return FarmSetupService.addAnimal({
+      final res = await FarmSetupService.addAnimal({
         'enterprise_id': herd,
         'tag': tag,
         'name': _name.text.trim(),
@@ -477,74 +553,135 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
         'birth_date': _born == null ? null : _day(_born!),
         'cost': cost?.toString(),
       });
-    }, '{tag} added'.trArgs({'tag': tag}));
+      // Its weight when bought is its first weighing (a failed weighing doesn't undo the animal).
+      if (!res.error && kg != null && res.data is Map) {
+        await FarmSetupService.weigh('${res.data['id']}', {'date': _day(DateTime.now()), 'kg': kg.toString()});
+      }
+      return res;
+    }, done, next: (_) {
+      if (_sequence && widget.index < widget.total) {
+        // The next animal's form says this one was saved; a snack bar would cover its button.
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AnimalForm(
+                farmId: widget.farmId,
+                kind: widget.kind,
+                herdId: _herd,
+                herdName: widget.herdName,
+                index: widget.index + 1,
+                total: widget.total,
+                lastTag: tag),
+          ),
+          result: done,
+        );
+      } else {
+        Navigator.pop(context, done);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final herds = _herds;
-    final herdNote = herds == null
-        ? 'Loading your herds…'.tr
-        : herds.isEmpty
-            ? 'A new herd starts with this animal'.tr
-            : '{herd} · {n} now'.trArgs({'herd': '${herds.firstWhere((h) => '${h['id']}' == _herd, orElse: () => herds.first)['name']}', 'n': herds.firstWhere((h) => '${h['id']}' == _herd, orElse: () => herds.first)['head_count'] ?? 0});
-    return RecordPage(
-      title: 'ADD AN ANIMAL'.tr,
+    final c = context.appColors;
+    return SlFormPage(
       eyebrow: 'ADD AN ANIMAL'.tr,
-      subtitle: _title,
+      title: _title,
       saving: saving,
-      error: banner({'tag', 'name', 'sex', 'breed', 'birth_date', 'cost'}),
+      error: banner({'tag', 'name', 'sex', 'breed', 'birth_date', 'cost', 'kg'}),
       saveLabel: 'Save animal'.tr,
-      onSave: herds == null ? null : _save,
+      onSave: _herds == null ? null : _save,
       children: [
-        _KindHead(widget.kind, herdNote),
-        if (herds != null && herds.length > 1)
-          RecordChoices<String?>(
-            label: 'Herd'.tr,
-            options: [for (final h in herds) ('${h['id']}', '${h['name']}')],
-            value: _herd,
-            onChanged: (v) => setState(() => _herd = v),
-          ),
-        RecordTextField(
-            controller: _tag, label: 'Tag or number'.tr, hint: 'KE-0142', errorText: err('tag'), caps: TextCapitalization.characters),
-        RecordTextField(controller: _name, label: '${'Name'.tr} ${'(optional)'.tr}', caps: TextCapitalization.words, errorText: err('name')),
-        RecordChoices<String>(label: 'Sex'.tr, options: _sexes, value: _sex, onChanged: (v) => setState(() => _sex = v), errorText: err('sex')),
-        if (_breeds.isNotEmpty)
-          RecordChoices<String?>(
-            label: '${'Breed'.tr} ${'(optional)'.tr}',
-            options: [for (final b in _breeds) (b, b), (null, 'Other'.tr)],
-            value: _breed,
-            onChanged: (v) => setState(() => _breed = v),
-          ),
-        RecordChoices<String>(
-          label: 'Where it came from'.tr,
-          options: [('bought', 'Bought'.tr), ('born', 'Born on the farm'.tr)],
-          value: _source,
-          onChanged: (v) => setState(() => _source = v),
+        SlTypeHead(
+          icon: Image.asset(fieldIcon(_type), width: 28, height: 28, excludeFromSemantics: true),
+          title: widget.kind.label,
+          meta: _meta,
+          onChange: _herds == null || _sequence ? null : _change,
         ),
-        if (_born == null)
-          _Link('Add date of birth'.tr, () => setState(() => _born = DateTime.now().subtract(const Duration(days: 365))))
-        else
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            RecordDateField(label: 'Date of birth'.tr, value: _born!, errorText: err('birth_date'), onChanged: (d) => setState(() => _born = d)),
-            const SizedBox(height: 4),
-            Text(_age(_born!), style: AppType.caption.copyWith(color: context.appColors.textSecondary)),
-          ]),
+        SlField(
+          label: 'Tag or number'.tr,
+          required: true,
+          hint: _tagHint,
+          error: err('tag'),
+          child: SlTextBox(controller: _tag, mono: true, placeholder: 'KE-0142', caps: TextCapitalization.characters, error: err('tag') != null),
+        ),
+        SlField(
+          label: 'Name'.tr,
+          optional: true,
+          error: err('name'),
+          child: SlTextBox(controller: _name, placeholder: 'Njeri', caps: TextCapitalization.words),
+        ),
+        SlField(
+          label: 'Sex'.tr,
+          required: true,
+          error: err('sex'),
+          child: SlChoices<String>(options: _sexes, value: _sex, onChanged: (v) => setState(() => _sex = v)),
+        ),
+        if (_breeds.isNotEmpty)
+          SlField(
+            label: 'Breed'.tr,
+            optional: true,
+            child: SlChoices<String>(
+              options: [for (final b in _breeds) (b, b), ('Cross', 'Cross'.tr), ('', 'Other'.tr)],
+              value: _breed,
+              onChanged: (v) => setState(() => _breed = v),
+            ),
+          ),
+        SlField(
+          label: 'Where it came from'.tr,
+          child: SlChoices<String>(
+            options: [('bought', 'Bought'.tr), ('born', 'Born on the farm'.tr)],
+            value: _source,
+            onChanged: (v) => setState(() => _source = v),
+          ),
+        ),
+        if (_askBorn || _born != null)
+          SlField(
+            label: 'Date of birth'.tr,
+            hint: _born == null ? null : _age(_born!),
+            error: err('birth_date'),
+            child: SlSelectBox(
+              icon: SlSelectBox.calendar,
+              text: _born == null ? 'Choose a date'.tr : _pretty(_born!),
+              muted: _born == null,
+              onTap: () async {
+                final d = await _pickDate(context, _born ?? DateTime.now().subtract(const Duration(days: 365)));
+                if (d != null) setState(() => _born = d);
+              },
+            ),
+          ),
         if (_source == 'bought')
-          RecordNumberField(controller: _cost, label: '${'Price paid'.tr} ${'(optional)'.tr}', suffix: 'KSh'.tr, errorText: err('cost')),
-        if (_type == 'pigs' || _type == 'rabbits')
-          _Note('Young ones are not added here. Record a litter on the mother and they are raised as one group.'.tr),
+          SlField(
+            label: 'Price paid'.tr,
+            optional: true,
+            error: err('cost'),
+            child: SlTextBox(controller: _cost, prefix: 'KSh'.tr, number: true, error: err('cost') != null),
+          ),
+        if (_type == 'beef_cattle' && _source == 'bought')
+          SlField(
+            label: 'Weight when bought'.tr,
+            optional: true,
+            hint: 'Saved as its first weighing, to track gain.'.tr,
+            child: SlTextBox(controller: _weight, suffix: 'kg', number: true),
+          ),
+        if (!_askBorn && _born == null)
+          Align(alignment: Alignment.centerLeft, child: SlLink('Add date of birth'.tr, () => setState(() => _askBorn = true))),
+        if (_note != null) SlInfoNote(_note!),
+        if (_sequence && widget.index < widget.total)
+          Text('Next: {unit} {i} of {n}'.trArgs({'unit': _unit(_type, 1), 'i': widget.index + 1, 'n': widget.total}),
+              style: AppType.caption.copyWith(color: c.textSecondary)),
       ],
     );
   }
 }
 
-/// The design's "Start a herd": which animals, the herd's name, when it started and
-/// where it is kept (POST /herds). Its animals are added next, one by one.
+/// Screen 28, "Start a herd": which animals, the herd's name, when it started,
+/// where it is kept and how many there are now (POST /herds). The herd starts
+/// empty; then each animal is added by tag, one form per animal.
 class HerdForm extends StatefulWidget {
   final String farmId;
-  final ValueChanged<String> onStarted; // the herd's type, for adding its first animal
-  const HerdForm({super.key, required this.farmId, required this.onStarted});
+  final String initialType;
+  const HerdForm({super.key, required this.farmId, this.initialType = 'dairy_cattle'});
 
   @override
   State<HerdForm> createState() => _HerdFormState();
@@ -552,7 +689,8 @@ class HerdForm extends StatefulWidget {
 
 class _HerdFormState extends State<HerdForm> with RecordForm {
   final _name = TextEditingController();
-  String _type = 'dairy_cattle';
+  final _count = TextEditingController();
+  late String _type = widget.initialType;
   DateTime _date = DateTime.now();
   List<Map<String, dynamic>>? _buildings;
   String? _building;
@@ -562,79 +700,133 @@ class _HerdFormState extends State<HerdForm> with RecordForm {
   void initState() {
     super.initState();
     _name.text = _defaultName;
+    _name.addListener(() {
+      if (_name.text != _defaultName) _named = true;
+    });
     _loadBuildings();
   }
 
   @override
   void dispose() {
     _name.dispose();
+    _count.dispose();
     super.dispose();
   }
 
   String get _defaultName => FarmKind.of(_type)!.herdName;
 
-  Future<void> _loadBuildings() async {
+  Future<void> _loadBuildings({String? pick}) async {
     final s = await FarmSetupService.structures(widget.farmId);
-    if (mounted) setState(() => _buildings = s.where((b) => b['type'] != 'pond').toList());
+    if (!mounted) return;
+    setState(() {
+      _buildings = s.where((b) => b['type'] != 'pond').toList();
+      if (pick != null) _building = pick;
+    });
+  }
+
+  Future<void> _chooseBuilding() async {
+    final list = _buildings ?? const [];
+    if (list.isEmpty) return _addBuilding();
+    final picked = await slPick<String>(context,
+        title: 'Kept in'.tr, value: _building ?? '', options: [('', 'Not set'.tr), for (final b in list) ('${b['id']}', '${b['name']}')]);
+    if (picked != null) setState(() => _building = picked.isEmpty ? null : picked);
   }
 
   Future<void> _addBuilding() async {
-    if (await openRecord(context, StructureForm(farmId: widget.farmId, initialType: 'shed'))) _loadBuildings();
+    final before = {for (final b in _buildings ?? const []) '${b['id']}'};
+    if (await openRecord(context, StructureForm(farmId: widget.farmId, initialType: 'shed'))) {
+      final all = await FarmSetupService.structures(widget.farmId);
+      await _loadBuildings(pick: all.map((b) => '${b['id']}').where((id) => !before.contains(id)).firstOrNull);
+    }
   }
 
   Future<void> _save() async {
     final name = _name.text.trim();
+    final count = _num(_count);
     if (name.isEmpty) return fail('Give the herd a name.'.tr, 'name');
-    await save(() async {
-      final res = await FarmSetupService.startHerd({
-        'farm_id': widget.farmId,
-        'type': _type,
-        'name': name,
-        'date': _day(_date),
-        'structure_id': _building,
-      });
-      if (!res.error) widget.onStarted(_type);
-      return res;
-    }, '{name} started. Now add its animals.'.trArgs({'name': name}));
+    if (count == null || count < 1) return fail('Enter how many you have now.'.tr, 'count');
+    final done = '{name} started. Now add its animals.'.trArgs({'name': name});
+    await save(
+      () => FarmSetupService.startHerd({'farm_id': widget.farmId, 'type': _type, 'name': name, 'date': _day(_date), 'structure_id': _building}),
+      done,
+      next: (res) => Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AnimalForm(
+              farmId: widget.farmId,
+              kind: FarmKind.of(_type)!,
+              herdId: '${res.data['id']}',
+              herdName: name,
+              total: count.round().clamp(1, 500)),
+        ),
+        result: done,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return RecordPage(
-      title: 'ANIMALS'.tr,
+    final count = _num(_count)?.round() ?? 2;
+    final building = (_buildings ?? const []).where((b) => '${b['id']}' == _building).firstOrNull;
+    return SlFormPage(
       eyebrow: 'ANIMALS'.tr,
-      subtitle: 'Start a herd'.tr,
+      title: 'Start a herd'.tr,
       saving: saving,
-      error: banner({'type', 'name', 'date', 'structure_id'}),
+      error: banner({'type', 'name', 'date', 'structure_id', 'count'}),
       saveLabel: 'Start herd'.tr,
       onSave: _save,
       children: [
-        RecordChoices<String>(
+        SlField(
           label: 'Animals'.tr,
-          options: [for (final k in FarmKind.all.where((k) => k.herd)) (k.code, k.label)],
-          value: _type,
-          errorText: err('type'),
-          onChanged: (v) => setState(() {
-            _type = v;
-            if (!_named) _name.text = _defaultName;
-          }),
+          required: true,
+          error: err('type'),
+          child: SlChoices<String>(
+            options: [for (final k in FarmKind.all.where((k) => k.herd)) (k.code, k.label)],
+            value: _type,
+            onChanged: (v) => setState(() {
+              _type = v;
+              if (!_named) _name.text = _defaultName;
+            }),
+          ),
         ),
-        TextField(
-          controller: _name,
-          textCapitalization: TextCapitalization.sentences,
-          onChanged: (_) => _named = true,
-          decoration: InputDecoration(labelText: 'Herd name'.tr, errorText: err('name')),
+        SlField(
+          label: 'Herd name'.tr,
+          required: true,
+          error: err('name'),
+          child: SlTextBox(controller: _name, caps: TextCapitalization.sentences, error: err('name') != null),
         ),
-        RecordDateField(label: 'Started on'.tr, value: _date, errorText: err('date'), onChanged: (d) => setState(() => _date = d)),
-        _KeptIn(
-          options: _buildings,
-          value: _building,
-          onChanged: (v) => setState(() => _building = v),
-          addLabel: 'Add a building'.tr,
-          onAdd: _addBuilding,
-          errorText: err('structure_id'),
+        SlField(
+          label: 'Started on'.tr,
+          required: true,
+          error: err('date'),
+          child: SlSelectBox(
+            icon: SlSelectBox.calendar,
+            text: _pretty(_date),
+            onTap: () async {
+              final d = await _pickDate(context, _date);
+              if (d != null) setState(() => _date = d);
+            },
+          ),
         ),
-        _Note('Next you add each animal with its tag.'.tr),
+        SlField(
+          label: 'Kept in'.tr,
+          optional: true,
+          error: err('structure_id'),
+          below: SlLink('Add a building'.tr, _addBuilding),
+          child: SlSelectBox(
+            icon: SlSelectBox.building,
+            text: building == null ? 'Not set'.tr : '${building['name']}',
+            muted: building == null,
+            onTap: _chooseBuilding,
+          ),
+        ),
+        SlField(
+          label: 'How many you have now'.tr,
+          required: true,
+          hint: 'Next you can add each {unit} with its tag.'.trArgs({'unit': _unit(_type, 1)}),
+          error: err('count'),
+          child: SlTextBox(controller: _count, number: true, suffix: _unit(_type, count), error: err('count') != null),
+        ),
       ],
     );
   }

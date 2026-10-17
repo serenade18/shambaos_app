@@ -65,9 +65,13 @@ class SlChip extends StatelessWidget {
           child: Container(
             constraints: const BoxConstraints(minHeight: 36),
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            alignment: Alignment.center,
-            child: Text(label,
+            // Sized to its label, so a chip in a Wrap doesn't fill the line.
+            child: Center(
+              widthFactor: 1,
+              heightFactor: 1,
+              child: Text(label,
                 style: TextStyle(fontFamily: AppType.text, fontSize: 13, height: 18 / 13, fontWeight: FontWeight.w700, color: selected ? c.brandText : c.textPrimary)),
+            ),
           ),
         ),
       ),
