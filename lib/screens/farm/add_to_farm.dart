@@ -104,7 +104,8 @@ class _AddToFarmScreenState extends State<AddToFarmScreen> {
                 child: Text(title,
                     style: TextStyle(fontFamily: AppType.text, fontSize: 17, height: 22 / 17, fontWeight: FontWeight.w500, color: c.textPrimary)),
               ),
-              if (note != null) Text(note, style: AppType.caption.copyWith(color: c.textSecondary)),
+              if (note != null)
+                Flexible(child: Text(note, textAlign: TextAlign.end, style: AppType.caption.copyWith(color: c.textSecondary))),
             ]),
           ),
           GridView.count(

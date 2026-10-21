@@ -26,6 +26,8 @@ import 'auth/auth_ui.dart';
 import 'dashboard/dashboard_screen.dart';
 import '../l10n/tr.dart';
 import 'farm/farm_map_screen.dart';
+import 'farm/add_to_farm.dart';
+import 'farm/setup_farm_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -306,6 +308,8 @@ class _HomeScreenState extends State<HomeScreen> {
           else if (fields.isEmpty)
             SlLedger(children: [
               SlLedgerRow(
+                onTap: _farm == null ? _setUpFarm : _addToFarm,
+                status: Icon(PhosphorIconsRegular.caretRight, size: 18, color: colors.textSecondary),
                 title: _farm == null ? 'Set up your farm'.tr : 'No fields yet'.tr,
                 meta: _farm == null
                     ? 'Add your farm to see your fields, weather and records here.'.tr
@@ -322,6 +326,18 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  /// "What are you adding?" for the farm.
+  Future<void> _addToFarm() async {
+    final farm = _farm;
+    if (farm == null) return;
+    final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => AddToFarmScreen(farm: farm)));
+    if (added == true) _loadFarmStatus();
+  }
+
+  /// A new farm: its name and county, the map, then what it runs. Home reloads
+  /// through FarmMapScreen.boundarySaved.
+  Future<void> _setUpFarm() => setUpFarm(context);
 
   /// The farm map.
   Future<void> _openFarmMap() async {
@@ -471,9 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: Icons.agriculture_outlined,
           title: 'Setup your farm'.tr,
           subtitle: 'Add your farm details to get started'.tr,
-          onTap: () {
-            // TODO: Navigate to farm setup screen
-          },
+          onTap: _setUpFarm,
         ),
       );
     }

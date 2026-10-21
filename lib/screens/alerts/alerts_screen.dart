@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../farm/setup_farm_screen.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/api_service.dart';
@@ -132,7 +134,9 @@ class _AlertsScreenState extends State<AlertsScreen> {
               if (_loading && all == null)
                 Padding(padding: const EdgeInsets.only(top: 48), child: Center(child: CircularProgressIndicator(color: c.shamba)))
               else if (_noFarm)
-                SlLedger(children: [SlLedgerRow(title: 'No farm yet'.tr, meta: 'Set up your farm to see its alerts here.'.tr)])
+                SlLedger(children: [SlLedgerRow(title: 'No farm yet'.tr, meta: 'Set up your farm to see its alerts here.'.tr, status: Icon(PhosphorIconsRegular.caretRight, size: 18, color: context.appColors.textSecondary), onTap: () => setUpFarm(context).then((made) {
+                    if (made) _load();
+                  }))])
               else if (all == null)
                 SlLedger(children: [
                   SlLedgerRow(

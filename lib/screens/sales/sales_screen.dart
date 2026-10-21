@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../farm/setup_farm_screen.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/api_service.dart';
@@ -182,7 +184,9 @@ class _SalesScreenState extends State<SalesScreen> {
   List<Widget> _body(AppColors c) {
     final p = _period;
     if (_noFarm) {
-      return [SlLedger(children: [SlLedgerRow(title: 'No farm yet'.tr, meta: 'Set up your farm to record and see its sales.'.tr)])];
+      return [SlLedger(children: [SlLedgerRow(title: 'No farm yet'.tr, meta: 'Set up your farm to record and see its sales.'.tr, status: Icon(PhosphorIconsRegular.caretRight, size: 18, color: context.appColors.textSecondary), onTap: () => setUpFarm(context).then((made) {
+                    if (made) _load();
+                  }))])];
     }
     if (p == null && _loading) {
       return [Padding(padding: const EdgeInsets.only(top: 64), child: Center(child: CircularProgressIndicator(color: c.shamba)))];

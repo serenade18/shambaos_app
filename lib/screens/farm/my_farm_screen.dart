@@ -10,6 +10,7 @@ import '../fields/field_widgets.dart';
 import 'add_to_farm.dart';
 import 'farm_map_screen.dart';
 import 'farm_setup_service.dart';
+import 'setup_farm_screen.dart';
 import '../../l10n/tr.dart';
 
 /// My farm, from Profile: the farm, its boundary (the farm map), what it runs,
@@ -118,14 +119,16 @@ class _MyFarmScreenState extends State<MyFarmScreen> {
                 const SizedBox(height: 16),
                 if (_loading && farm == null)
                   Padding(padding: const EdgeInsets.only(top: 64), child: Center(child: CircularProgressIndicator(color: c.shamba)))
-                else if (farm == null)
+                else if (farm == null && _error != null)
                   SlLedger(children: [
                     SlLedgerRow(
-                      title: _error == null ? 'No farm yet'.tr : 'Could not load your farm'.tr,
-                      meta: _error ?? 'Set up your farm from Home first.'.tr,
-                      status: _error == null ? null : TextButton(onPressed: _load, child: Text('Try again'.tr)),
+                      title: 'Could not load your farm'.tr,
+                      meta: _error,
+                      status: TextButton(onPressed: _load, child: Text('Try again'.tr)),
                     ),
                   ])
+                else if (farm == null)
+                  _noFarm(c)
                 else ...[
                   _farmCard(c, farm),
                   SlGroupLabel('Land'.tr),
@@ -167,6 +170,31 @@ class _MyFarmScreenState extends State<MyFarmScreen> {
           ),
       ]),
     );
+  }
+
+  /// No farm yet: set one up from here, as from Home.
+  Widget _noFarm(AppColors c) => SlCard(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(color: c.brandSoft, shape: BoxShape.circle),
+            child: Center(child: LineIcon(_farmIcon, size: 26, color: c.brandText)),
+          ),
+          const SizedBox(height: 12),
+          Text('Set up your farm'.tr,
+              style: TextStyle(fontFamily: AppType.text, fontSize: 19, height: 24 / 19, fontWeight: FontWeight.w500, color: c.textPrimary)),
+          const SizedBox(height: 4),
+          Text("Its name and county, then map it and choose what you're running.".tr,
+              style: AppType.caption.copyWith(color: c.textSecondary)),
+          const SizedBox(height: 16),
+          LedgerButton(label: 'Set up your farm'.tr, onPressed: _setUp),
+        ]),
+      );
+
+  Future<void> _setUp() async {
+    if (await setUpFarm(context)) _load();
   }
 
   Widget _farmCard(AppColors c, Map<String, dynamic> farm) {
