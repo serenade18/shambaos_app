@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../farm/setup_farm_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/api_service.dart';
@@ -140,7 +142,9 @@ class _VetsScreenState extends State<VetsScreen> {
               ]),
               const SizedBox(height: 16),
               if (_noFarm)
-                SlLedger(children: [SlLedgerRow(title: 'No farm yet'.tr, meta: 'Set up your farm to find vets near it.'.tr)])
+                SlLedger(children: [SlLedgerRow(title: 'No farm yet'.tr, meta: 'Set up your farm to find vets near it.'.tr, status: Icon(PhosphorIconsRegular.caretRight, size: 18, color: context.appColors.textSecondary), onTap: () => setUpFarm(context).then((made) {
+                    if (made) _load();
+                  }))])
               else if (vets == null && _loading)
                 Padding(padding: const EdgeInsets.only(top: 64), child: Center(child: CircularProgressIndicator(color: c.shamba)))
               else if (vets == null)

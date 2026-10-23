@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../farm/setup_farm_screen.dart';
+import '../../widgets/phosphor_icons.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/app_colors.dart';
@@ -109,6 +112,12 @@ class _FieldsScreenState extends State<FieldsScreen> {
               else if (fields.isEmpty)
                 SlLedger(children: [
                   SlLedgerRow(
+                    onTap: _noFarm
+                        ? () => setUpFarm(context).then((made) {
+                              if (made) _load();
+                            })
+                        : null,
+                    status: _noFarm ? Icon(PhosphorIconsRegular.caretRight, size: 18, color: c.textSecondary) : null,
                     title: _noFarm ? 'No farm yet'.tr : 'No fields yet'.tr,
                     meta: _noFarm
                         ? 'Set up your farm to add your animals and crops.'.tr

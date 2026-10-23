@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../farm/setup_farm_screen.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/phosphor_icons.dart';
 
@@ -126,7 +128,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (result.noFarm) {
       return [
         SlLedger(children: [
-          SlLedgerRow(title: 'No farm yet'.tr, meta: 'Set up your farm to see its profit, alerts and stock here.'.tr),
+          SlLedgerRow(title: 'No farm yet'.tr, meta: 'Set up your farm to see its profit, alerts and stock here.'.tr, status: Icon(PhosphorIconsRegular.caretRight, size: 18, color: context.appColors.textSecondary), onTap: () => setUpFarm(context).then((made) {
+                    if (made) _load();
+                  })),
         ]),
       ];
     }
