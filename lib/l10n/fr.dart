@@ -1276,4 +1276,5 @@ const fr = <String, String>{
   'Choose at least one to continue': 'Choisissez-en au moins un pour continuer',
   'Hide {types}? Past records stay in your reports.': 'Masquer {types} ? Les enregistrements passés restent dans vos rapports.',
   'Hide': 'Masquer',
+  'AI': 'IA',
 };

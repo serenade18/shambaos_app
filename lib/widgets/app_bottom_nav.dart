@@ -5,9 +5,9 @@ import '../services/app_colors.dart';
 import '../services/app_type.dart';
 import '../l10n/tr.dart';
 
-/// Home, Fields, AI (field analysis, raised in the centre), Activity and
-/// Profile, as the Shamba Ledger nav: a white bar with rounded top corners, the
-/// current place marked with a maize bar on its top edge.
+/// Home, Fields, AI (field analysis), Activity and Profile, as the Shamba
+/// Ledger nav: a white bar with rounded top corners, the current place with a
+/// maize icon and the rest faint.
 class AppBottomNav extends StatelessWidget {
   final int currentIndex; // 0 Home, 1 Fields, 2 AI, 3 Activity, 4 Profile
   final Function(int)? onTap;
@@ -35,124 +35,54 @@ class AppBottomNav extends StatelessWidget {
   static const _chart = '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m19 9-5 5-4-4-3 3"/>';
   static const _user = '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
 
-  /// The bar is 72 high; the scan button rises 28 above it. That strip is
-  /// see-through and lets taps through, so screens using the bar set
-  /// Scaffold.extendBody and scroll under it.
+  /// The bar is 72 high. Screens using it set Scaffold.extendBody and scroll
+  /// under it.
   static const barHeight = 72.0;
-  static const _rise = 28.0;
 
   /// Space to leave under a scroll view that runs beneath the bar, so its last
-  /// item can scroll clear of the bar and the raised scan button. Read from a
-  /// context outside the Scaffold, where the padding is the phone's own.
-  static double scrollPadding(BuildContext context) => barHeight + _rise + MediaQuery.paddingOf(context).bottom + 16;
+  /// item can scroll clear of it. Read from a context outside the Scaffold,
+  /// where the padding is the phone's own.
+  static double scrollPadding(BuildContext context) => barHeight + MediaQuery.paddingOf(context).bottom + 16;
+
+  static const _icons = [_house, _map, _scan, _chart, _user];
+  static List<String> get _labels => ['Home'.tr, 'Fields'.tr, 'AI'.tr, 'Activity'.tr, 'Profile'.tr];
 
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
-    return SizedBox(
-      height: _rise + barHeight + bottomPadding,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: barHeight + bottomPadding,
-            child: Container(
-              padding: EdgeInsets.only(bottom: bottomPadding),
-              decoration: BoxDecoration(
-                color: c.cardBackground,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
-              ),
-              child: Row(
-                children: [
-                  Expanded(child: _item(context, 0, _house, 'Home'.tr)),
-                  Expanded(child: _item(context, 1, _map, 'Fields'.tr)),
-                  const SizedBox(width: 64),
-                  Expanded(child: _item(context, 3, _chart, 'Activity'.tr)),
-                  Expanded(child: _item(context, 4, _user, 'Profile'.tr)),
-                ],
-              ),
-            ),
-          ),
-          Positioned(top: 0, left: 0, right: 0, child: Center(child: _scanButton(context))),
-        ],
+    return Container(
+      height: barHeight + bottomPadding,
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      decoration: BoxDecoration(
+        color: c.cardBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
       ),
+      child: Row(children: [for (var i = 0; i < _icons.length; i++) Expanded(child: _item(context, i))]),
     );
   }
 
-  /// Field analysis with AI: a raised dark button in the centre.
-  Widget _scanButton(BuildContext context) {
-    final c = context.appColors;
-    return Semantics(
-      button: true,
-      selected: currentIndex == 2,
-      label: 'Analyse a field with AI'.tr,
-      excludeSemantics: true,
-      child: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: c.textPrimary,
-          shape: BoxShape.circle,
-          boxShadow: const [BoxShadow(color: Color(0x4717211A), blurRadius: 24, offset: Offset(0, 10))],
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: () => _go(context, 2),
-            child: Center(child: LineIcon(_scan, size: 28, strokeWidth: 2.4, color: c.scaffoldBackground)),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _item(BuildContext context, int index, String icon, String label) {
+  Widget _item(BuildContext context, int index) {
     final c = context.appColors;
     final selected = currentIndex == index;
+    final label = _labels[index];
     final color = selected ? c.textPrimary : c.textHint;
 
     return Semantics(
       selected: selected,
       button: true,
-      label: label,
+      label: index == 2 ? 'Analyse a field with AI'.tr : label,
       excludeSemantics: true,
       child: InkWell(
         onTap: () => _go(context, index),
-        child: Stack(
-          alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // The current place: a maize bar across the middle of the top edge.
-            if (selected)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: FractionallySizedBox(
-                  widthFactor: 0.4,
-                  child: Container(
-                    height: 3,
-                    decoration: BoxDecoration(
-                      color: c.maize,
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(3)),
-                    ),
-                  ),
-                ),
-              ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LineIcon(icon, size: 24, color: color),
-                const SizedBox(height: 3),
-                Text(label, style: AppType.caption.copyWith(fontSize: 12, height: 14 / 12, fontWeight: FontWeight.w700, color: color)),
-              ],
-            ),
+            LineIcon(_icons[index], size: 24, color: selected ? c.maize : color),
+            const SizedBox(height: 3),
+            Text(label, style: AppType.caption.copyWith(fontSize: 12, height: 14 / 12, fontWeight: FontWeight.w700, color: color)),
           ],
         ),
       ),

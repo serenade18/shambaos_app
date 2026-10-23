@@ -1276,4 +1276,5 @@ const sw = <String, String>{
   'Choose at least one to continue': 'Chagua angalau kimoja ili kuendelea',
   'Hide {types}? Past records stay in your reports.': 'Ficha {types}? Rekodi za zamani zinabaki kwenye ripoti zako.',
   'Hide': 'Ficha',
+  'AI': 'AI',
 };
