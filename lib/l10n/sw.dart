@@ -1271,4 +1271,9 @@ const sw = <String, String>{
   'Walk or draw its boundary, or do it later. Then choose what you\'re running.': 'Tembea au chora mpaka wake, au fanya baadaye. Kisha chagua unachofuga na kulima.',
   'Weather and alerts use the county until the farm is mapped.': 'Hali ya hewa na arifa hutumia kaunti hadi shamba liwekwe kwenye ramani.',
   'What you and your workers call it.': 'Jina mnalolitumia wewe na wafanyakazi wako.',
+  'What\'s on your farm?': 'Shambani kwako kuna nini?',
+  'Choose everything you keep or grow. You can change this later.': 'Chagua kila kitu unachofuga au kulima. Unaweza kubadilisha baadaye.',
+  'Choose at least one to continue': 'Chagua angalau kimoja ili kuendelea',
+  'Hide {types}? Past records stay in your reports.': 'Ficha {types}? Rekodi za zamani zinabaki kwenye ripoti zako.',
+  'Hide': 'Ficha',
 };

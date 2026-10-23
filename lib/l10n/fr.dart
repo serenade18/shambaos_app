@@ -1271,4 +1271,9 @@ const fr = <String, String>{
   'Walk or draw its boundary, or do it later. Then choose what you\'re running.': 'Parcourez ou dessinez sa limite, ou faites-le plus tard. Puis choisissez ce que vous exploitez.',
   'Weather and alerts use the county until the farm is mapped.': 'La météo et les alertes utilisent le comté jusqu\'à ce que la ferme soit cartographiée.',
   'What you and your workers call it.': 'Le nom que vous et vos ouvriers lui donnez.',
+  'What\'s on your farm?': 'Qu\'y a-t-il sur votre ferme ?',
+  'Choose everything you keep or grow. You can change this later.': 'Choisissez tout ce que vous élevez ou cultivez. Vous pourrez le modifier plus tard.',
+  'Choose at least one to continue': 'Choisissez-en au moins un pour continuer',
+  'Hide {types}? Past records stay in your reports.': 'Masquer {types} ? Les enregistrements passés restent dans vos rapports.',
+  'Hide': 'Masquer',
 };

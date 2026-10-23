@@ -17,6 +17,17 @@ class FarmSetupService {
     return (farm: farm, types: types, error: nav.error ? (nav.message ?? 'Check your connection and try again.'.tr) : null);
   }
 
+  /// The types one farm keeps (GET /navigation); null when it can't be read.
+  static Future<List<String>?> types(String farmId) async {
+    final nav = await ApiService.get('/navigation?farm_id=$farmId');
+    if (nav.error || nav.data is! Map) return null;
+    return [for (final t in (nav.data['types'] as List? ?? [])) '$t'];
+  }
+
+  /// Change what the farm keeps (POST /farms/{id}/types). New types start an
+  /// enterprise; removed ones are hidden with their records kept.
+  static Future<ApiResponse> setTypes(String farmId, List<String> picks) => ApiService.post('/farms/$farmId/types', {'picks': picks});
+
   static Future<List<Map<String, dynamic>>> _rows(String endpoint) async {
     final res = await ApiService.get(endpoint);
     if (res.error || res.data is! Map) return [];

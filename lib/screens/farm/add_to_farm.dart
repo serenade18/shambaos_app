@@ -61,8 +61,10 @@ const _truckIcon = '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0
 const _teamIcon = '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>';
 const _plusIcon = '<path d="M5 12h14"/><path d="M12 5v14"/>';
 
-/// Screen 27, "What are you adding?": everything a farm can add, by kind. Each
-/// tile opens its form; closes with true when something was added.
+/// Screen 27, "What's on your farm?": the portal's type tiles. Each kind toggles,
+/// starting from what the farm keeps, and Save sets the farm's types; land,
+/// buildings and people still open their forms. Closes with true when
+/// something changed.
 class AddToFarmScreen extends StatefulWidget {
   final Map<String, dynamic> farm;
   const AddToFarmScreen({super.key, required this.farm});
@@ -73,8 +75,25 @@ class AddToFarmScreen extends StatefulWidget {
 
 class _AddToFarmScreenState extends State<AddToFarmScreen> {
   bool _added = false;
+  List<String> _kept = []; // what the farm keeps, as last saved
+  final Set<String> _picks = {};
+  bool _saving = false;
 
   String get _farmId => '${widget.farm['id']}';
+
+  bool get _changed => _picks.length != _kept.length || !_kept.every(_picks.contains);
+
+  @override
+  void initState() {
+    super.initState();
+    FarmSetupService.types(_farmId).then((types) {
+      if (!mounted || types == null) return;
+      setState(() {
+        _kept = types;
+        _picks.addAll(types);
+      });
+    });
+  }
 
   Future<void> _open(Widget form, {Future<void> Function()? then}) async {
     if (await openRecord(context, form)) {
@@ -83,14 +102,41 @@ class _AddToFarmScreenState extends State<AddToFarmScreen> {
     }
   }
 
-  Future<void> _kind(FarmKind k) async {
-    if (k.herd) return _open(AnimalForm(farmId: _farmId, kind: k));
-    if (k.batch) return _open(BatchForm(farmId: _farmId, kind: k));
-    return _open(CropForm(farmId: _farmId, kind: k));
-  }
+  void _toggle(FarmKind k) => setState(() => _picks.contains(k.code) ? _picks.remove(k.code) : _picks.add(k.code));
 
   /// Screen 28; it goes on to add the herd's animals one by one.
   Future<void> _newHerd() => _open(HerdForm(farmId: _farmId));
+
+  /// Saves the picks; a type taken off is hidden, so ask first.
+  Future<void> _save() async {
+    final removed = [for (final code in _kept) if (!_picks.contains(code)) FarmKind.of(code)?.label ?? code];
+    if (removed.isNotEmpty) {
+      final hide = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: Ledger.sheet,
+          title: Text('Hide {types}? Past records stay in your reports.'.trArgs({'types': removed.join(', ')}),
+              style: Ledger.title.copyWith(fontSize: 19, height: 24 / 19)),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Cancel'.tr, style: Ledger.link)),
+            TextButton(onPressed: () => Navigator.pop(context, true), child: Text('Hide'.tr, style: Ledger.link)),
+          ],
+        ),
+      );
+      if (hide != true || !mounted) return;
+    }
+    setState(() => _saving = true);
+    // Keep the catalogue's order, as the tiles show it.
+    final picks = [for (final k in FarmKind.all) if (_picks.contains(k.code)) k.code];
+    final res = await FarmSetupService.setTypes(_farmId, picks);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (res.error) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res.message ?? 'Check your connection and try again.'.tr)));
+      return;
+    }
+    Navigator.pop(context, true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +168,8 @@ class _AddToFarmScreenState extends State<AddToFarmScreen> {
           label: k.label,
           icon: Image.asset(fieldIcon(k.code, crop: k.crop), width: 26, height: 26, excludeFromSemantics: true),
           tone: k.code == 'fish' ? SlTone.info : (k.batch || k.code == 'bananas' ? SlTone.warn : SlTone.neutral),
-          onTap: () => _kind(k),
+          selected: _picks.contains(k.code),
+          onTap: () => _toggle(k),
         );
 
     return PopScope(
@@ -143,19 +190,27 @@ class _AddToFarmScreenState extends State<AddToFarmScreen> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('ADD TO {farm}'.trArgs({'farm': '${widget.farm['name'] ?? ''}'.toUpperCase()}),
                         maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.eyebrow.copyWith(color: c.textSecondary)),
-                    Text('What are you adding?'.tr,
+                    Text('What\'s on your farm?'.tr,
                         style: TextStyle(fontFamily: AppType.text, fontSize: 24, height: 30 / 24, fontWeight: FontWeight.w500, color: c.textPrimary)),
                   ]),
                 ),
               ]),
-              group('Animals'.tr, 'Each one by tag'.tr, [
-                for (final k in kinds.where((k) => k.herd)) kindTile(k),
-                _Pick(label: 'New herd'.tr, icon: LineIcon(_plusIcon, size: 22, color: c.brandText), onTap: _newHerd),
-              ]),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(2, 12, 2, 0),
+                child: Text('Choose everything you keep or grow. You can change this later.'.tr, style: AppType.caption.copyWith(color: c.textSecondary)),
+              ),
+              group('Animals'.tr, 'Each one by tag'.tr, [for (final k in kinds.where((k) => k.herd)) kindTile(k)]),
               group('Birds and fish'.tr, 'Counted as a batch'.tr, [for (final k in kinds.where((k) => k.batch)) kindTile(k)]),
               group('Crops'.tr, 'One season on a plot'.tr, [for (final k in kinds.where((k) => k.group == 'crops')) kindTile(k)]),
               group('Fruit trees'.tr, 'Planted once, picked for years'.tr, [for (final k in kinds.where((k) => k.orchard)) kindTile(k)]),
+              const SizedBox(height: 20),
+              LedgerButton(
+                label: _picks.isEmpty ? 'Choose at least one to continue'.tr : 'Save changes'.tr,
+                busy: _saving,
+                onPressed: _picks.isEmpty || !_changed ? null : _save,
+              ),
               group('Land, buildings and people'.tr, null, [
+                _Pick(label: 'New herd'.tr, icon: LineIcon(_plusIcon, size: 22, color: c.brandText), onTap: _newHerd),
                 _Pick(label: 'Plot'.tr, icon: LineIcon(_plotIcon, size: 22, color: c.brandText), onTap: () => _open(PlotForm(farmId: _farmId))),
                 _Pick(
                     label: 'Building or pond'.tr,
@@ -174,12 +229,14 @@ class _AddToFarmScreenState extends State<AddToFarmScreen> {
 }
 
 /// A tile on screen 27 (the design's pick): an icon in a round well and its name.
+/// With [selected] set it is a toggle, ringed and ticked when on.
 class _Pick extends StatelessWidget {
   final String label;
   final Widget icon;
   final SlTone tone;
+  final bool? selected;
   final VoidCallback onTap;
-  const _Pick({required this.label, required this.icon, this.tone = SlTone.neutral, required this.onTap});
+  const _Pick({required this.label, required this.icon, this.tone = SlTone.neutral, this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -189,29 +246,48 @@ class _Pick extends StatelessWidget {
       SlTone.info => c.rainTint,
       _ => c.brandSoft,
     };
-    return Container(
-      decoration: BoxDecoration(
-        color: c.cardBackground,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
+    final on = selected == true;
+    return Semantics(
+      button: true,
+      toggled: selected,
+      child: Container(
+        decoration: BoxDecoration(
+          color: c.cardBackground,
           borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
-            child: Column(children: [
-              Container(width: 44, height: 44, decoration: BoxDecoration(color: well, shape: BoxShape.circle), child: Center(child: icon)),
-              const SizedBox(height: 6),
-              Expanded(
-                child: Text(label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontFamily: AppType.text, fontSize: 12, height: 16 / 12, fontWeight: FontWeight.w700, color: c.textPrimary)),
+          border: Border.all(color: on ? c.brandText : Colors.transparent, width: 2),
+          boxShadow: const [BoxShadow(color: Color(0x1217211A), blurRadius: 24, offset: Offset(0, 8))],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onTap,
+            child: Stack(children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(2, 10, 2, 6),
+                child: Column(children: [
+                  Container(width: 44, height: 44, decoration: BoxDecoration(color: well, shape: BoxShape.circle), child: Center(child: icon)),
+                  const SizedBox(height: 6),
+                  Expanded(
+                    child: Text(label,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontFamily: AppType.text, fontSize: 12, height: 16 / 12, fontWeight: FontWeight.w700, color: c.textPrimary)),
+                  ),
+                ]),
               ),
+              if (on)
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(color: c.brandText, shape: BoxShape.circle),
+                    child: Icon(PhosphorIconsBold.check, size: 11, color: c.cardBackground),
+                  ),
+                ),
             ]),
           ),
         ),
