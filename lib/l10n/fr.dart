@@ -1272,7 +1272,7 @@ const fr = <String, String>{
   'Weather and alerts use the county until the farm is mapped.': 'La météo et les alertes utilisent le comté jusqu\'à ce que la ferme soit cartographiée.',
   'What you and your workers call it.': 'Le nom que vous et vos ouvriers lui donnez.',
   'All optional': 'Tout est facultatif',
-  'Bull tag, or the AI straw name': 'Boucle du taureau, ou nom de la paillette IA',
+  'Father\'s tag, or the AI straw name': 'Boucle du père, ou nom de la paillette IA',
   'Calf': 'Veau',
   'Choose the mother': 'Choisissez la mère',
   'Enter the weight in kg.': 'Saisissez le poids en kg.',

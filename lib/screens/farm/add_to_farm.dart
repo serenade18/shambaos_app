@@ -777,7 +777,7 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
               ),
             ])
           else
-            field(SlFilledBox(controller: _sire, icon: icons.mars, placeholder: 'Bull tag, or the AI straw name'.tr, fontSize: 15),
+            field(SlFilledBox(controller: _sire, icon: icons.mars, placeholder: "Father's tag, or the AI straw name".tr, fontSize: 15),
                 'Sire'.tr,
                 optional: true,
                 error: err('sire')),

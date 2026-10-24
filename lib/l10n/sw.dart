@@ -1272,7 +1272,7 @@ const sw = <String, String>{
   'Weather and alerts use the county until the farm is mapped.': 'Hali ya hewa na arifa hutumia kaunti hadi shamba liwekwe kwenye ramani.',
   'What you and your workers call it.': 'Jina mnalolitumia wewe na wafanyakazi wako.',
   'All optional': 'Zote si lazima',
-  'Bull tag, or the AI straw name': 'Alama ya fahali, au jina la mbegu ya AI',
+  'Father\'s tag, or the AI straw name': 'Alama ya baba, au jina la mbegu ya AI',
   'Calf': 'Ndama',
   'Choose the mother': 'Chagua mama',
   'Enter the weight in kg.': 'Weka uzito kwa kilo.',
