@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shambaOS/screens/farm/add_to_farm.dart';
 import 'package:shambaOS/screens/records/record_form.dart';
+import 'package:shambaOS/widgets/sl_form.dart';
 import 'package:shambaOS/services/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -65,19 +66,22 @@ void main() {
         await show(tester, AnimalForm(farmId: 'farm', kind: FarmKind.of('dairy_cattle')!));
         expect(find.text('KE-048'), findsOneWidget);
         expect(find.text('Next after KE-047. Change it if the ear tag says otherwise.'), findsOneWidget);
-        expect(find.text('Adding several? Add them all on one screen'), findsOneWidget);
+        expect(find.text('Adding several cows at once?'), findsOneWidget);
         await tap(tester, 'Milking');
         await tap(tester, 'Friesian');
         await tap(tester, 'Born on the farm');
-        await tap(tester, 'Choose the mother');
+        await tap(tester, 'Choose');
         await tap(tester, 'KE-029 · Njeri');
-        await tap(tester, 'More details');
-        await tester.enterText(find.widgetWithText(TextField, 'Bull tag, or the AI straw name'), 'KE-012');
+        await tester.enterText(find.widgetWithText(TextField, 'KE-012'), 'KE-012');
+        await tap(tester, 'Next');
+        expect(find.text('KE-049'), findsOneWidget);
+        await tester.scrollUntilVisible(find.text('READY TO SAVE'), 300, scrollable: find.byType(Scrollable).first);
+        expect(find.textContaining('Tag and sex are in.'), findsOneWidget);
         await tap(tester, 'Save animal');
         final body = posted['/animals']!;
         expect(
             {for (final k in ['tag', 'sex', 'stage', 'breed', 'source', 'mother_id', 'sire', 'castrated']) k: body[k]},
-            {'tag': 'KE-048', 'sex': 'female', 'stage': 'milking', 'breed': 'Friesian', 'source': 'born', 'mother_id': 'a-29',
+            {'tag': 'KE-049', 'sex': 'female', 'stage': 'milking', 'breed': 'Friesian', 'source': 'born', 'mother_id': 'a-29',
              'sire': 'KE-012', 'castrated': false});
       }));
 
@@ -86,9 +90,13 @@ void main() {
         expect(find.text('KE-1'), findsOneWidget);
         expect(find.text('Stage'), findsNothing);
         await tap(tester, 'Steer');
-        await tester.enterText(find.descendant(of: find.byType(RecordTally), matching: find.byType(TextField)), '280');
+        await tester.enterText(find.descendant(of: find.byType(SlStepper), matching: find.byType(TextField)), '275');
+        await tester.ensureVisible(find.bySemanticsLabel('5 kg more'));
+        await tester.tap(find.bySemanticsLabel('5 kg more'));
+        await tester.pumpAndSettle();
         await tap(tester, 'Save animal');
         expect(posted['/animals'], allOf(containsPair('sex', 'male'), containsPair('castrated', true), containsPair('stage', '')));
         expect(posted['/animals/a-new/weights'], containsPair('kg', '280'));
+        expect(posted['/animals'], containsPair('stage', ''));
       }));
 }
