@@ -275,7 +275,8 @@ class RecordTally extends StatelessWidget {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
           Expanded(child: Text(label, style: AppType.label.copyWith(color: c.textPrimary))),
-          if (note != null) Text(note!, style: AppType.caption.copyWith(color: c.textSecondary)),
+          if (note != null)
+            Flexible(child: Text(note!, textAlign: TextAlign.end, style: AppType.caption.copyWith(color: c.textSecondary))),
         ]),
         const SizedBox(height: 12),
         Row(children: [
@@ -348,7 +349,8 @@ class RecordCard extends StatelessWidget {
         if (label != null) ...[
           Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
             Expanded(child: Text(label!, style: AppType.label.copyWith(color: c.textPrimary))),
-            if (note != null) Text(note!, style: AppType.caption.copyWith(color: c.textSecondary)),
+            if (note != null)
+              Flexible(child: Text(note!, textAlign: TextAlign.end, style: AppType.caption.copyWith(color: c.textSecondary))),
           ]),
           const SizedBox(height: 12),
         ],

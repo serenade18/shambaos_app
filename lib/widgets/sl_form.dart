@@ -258,8 +258,10 @@ class SlSelectBox extends StatelessWidget {
   final bool muted; // nothing chosen yet
   final VoidCallback onTap;
   final bool error;
+  final Widget? trailing; // beside the chevron: the age as a tag
 
-  const SlSelectBox({super.key, required this.icon, required this.text, this.muted = false, required this.onTap, this.error = false});
+  const SlSelectBox(
+      {super.key, required this.icon, required this.text, this.muted = false, required this.onTap, this.error = false, this.trailing});
 
   static const calendar = '<path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/>';
   static const building =
@@ -287,6 +289,7 @@ class SlSelectBox extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontFamily: AppType.text, fontSize: 17, color: muted ? c.textHint : c.textPrimary)),
                 ),
+                if (trailing != null) ...[trailing!, const SizedBox(width: 8)],
                 LineIcon('<path d="m6 9 6 6 6-6"/>', size: 22, color: c.textSecondary),
               ]),
             ),
@@ -397,13 +400,21 @@ Future<T?> slPick<T>(BuildContext context, {required String title, required List
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text(title, style: TextStyle(fontFamily: AppType.text, fontSize: 19, height: 24 / 19, fontWeight: FontWeight.w500, color: c.textPrimary)),
           const SizedBox(height: 8),
-          for (final (v, text) in options)
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              title: Text(text, style: TextStyle(fontFamily: AppType.text, fontSize: 16, color: c.textPrimary)),
-              trailing: v == value ? Icon(Icons.check_rounded, color: c.brandText) : null,
-              onTap: () => Navigator.pop(sheet, v),
+          // A long list (a herd's cows) scrolls inside the sheet.
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheet).height * 0.6),
+              child: ListView(shrinkWrap: true, children: [
+                for (final (v, text) in options)
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    title: Text(text, style: TextStyle(fontFamily: AppType.text, fontSize: 16, color: c.textPrimary)),
+                    trailing: v == value ? Icon(Icons.check_rounded, color: c.brandText) : null,
+                    onTap: () => Navigator.pop(sheet, v),
+                  ),
+              ]),
             ),
+          ),
         ]),
       ),
     ),
