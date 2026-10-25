@@ -379,7 +379,8 @@ Future<DateTime?> _pickDate(BuildContext context, DateTime initial, {int yearsBa
 }
 
 /// Screens 29–34, "Add a dairy cow" and its kin: one animal by tag into its herd
-/// (POST /animals; a beef animal's weight with POST /animals/{id}/weights). With no
+/// (POST /animals; its weight with POST /animals/{id}/weights). The tag starts as
+/// the herd's next one; what most animals are saved without is under More details. With no
 /// herd of its kind yet, one is started first (POST /herds). After "Start a herd",
 /// it is shown once per animal: [index] of [total].
 class AnimalForm extends StatefulWidget {
@@ -402,23 +403,34 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
   final _name = TextEditingController();
   final _cost = TextEditingController();
   final _weight = TextEditingController();
+  final _sire = TextEditingController();
+  final _rfid = TextEditingController();
   List<Map<String, dynamic>>? _herds;
   String? _herd;
-  String _sex = 'female';
+  String _sex = 'female'; // female | male | steer (a castrated male)
+  String? _stage;
   String? _breed;
   String _source = 'bought';
   DateTime? _born;
-  bool _askBorn = false;
+  List<Map<String, dynamic>> _mothers = const []; // the herd's females
+  String? _mother;
+  String? _lastTag; // the herd's highest tag, for "Next after KE-047"
+  String _suggested = ''; // the tag filled in; replaced when the herd changes, unless typed over
+
+  static const _strip =
+      '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>';
 
   String get _type => widget.kind.code;
   bool get _sequence => widget.total > 1;
+  bool get _beef => _type == 'beef_cattle';
+  bool get _female => _sex == 'female';
+  // Beef bought by weight: its weight is on the form itself (screen 30); for the rest it is a detail.
+  bool get _weightUp => _beef && _source == 'bought';
 
   @override
   void initState() {
     super.initState();
-    _sex = _type == 'beef_cattle' ? 'male' : 'female';
-    // The design shows the date for dairy cows, goats and pigs; a link for the rest.
-    _askBorn = const {'dairy_cattle', 'dairy_goats', 'pigs'}.contains(_type);
+    _sex = _beef ? 'male' : 'female';
     _loadHerds();
   }
 
@@ -429,17 +441,64 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
       _herds = h;
       _herd = widget.herdId ?? _herd ?? (h.isEmpty ? null : '${h.first['id']}');
     });
+    _loadHerd();
+  }
+
+  /// The chosen herd's animals: its next tag and the mothers to pick from.
+  Future<void> _loadHerd() async {
+    final herd = _herd;
+    if (herd == null) {
+      _suggest(widget.lastTag == null ? 'KE-1' : nextTag(widget.lastTag!), null);
+      return;
+    }
+    final animals = await FarmSetupService.animals(herd);
+    if (!mounted || herd != _herd) return;
+    final tags = [for (final a in animals) '${a['tag'] ?? ''}'];
+    final next = firstTag(tags);
+    setState(() {
+      _mothers = [for (final a in animals) if (a['sex'] == 'female' && a['status'] == 'active') a];
+      if (!_mothers.any((m) => '${m['id']}' == _mother)) _mother = null;
+    });
+    _suggest(next, tags.isEmpty ? null : _highest(tags));
+  }
+
+  /// The highest numbered tag, which the next one follows.
+  static String? _highest(List<String> tags) {
+    String? best;
+    var high = -1;
+    for (final t in tags) {
+      final m = RegExp(r'(\d+)\D*$').firstMatch(t);
+      final n = m == null ? null : int.tryParse(m[1]!);
+      if (n != null && n > high) {
+        high = n;
+        best = t;
+      }
+    }
+    return best;
+  }
+
+  void _suggest(String tag, String? after) {
+    setState(() {
+      if (_tag.text.isEmpty || _tag.text == _suggested) _tag.text = tag;
+      _suggested = tag;
+      _lastTag = after;
+    });
   }
 
   @override
   void dispose() {
-    for (final c in [_tag, _name, _cost, _weight]) {
+    for (final c in [_tag, _name, _cost, _weight, _sire, _rfid]) {
       c.dispose();
     }
     super.dispose();
   }
 
-  List<(String, String)> get _sexes => animalSexes(_type);
+  /// Where a milked female is in her life (screen 29), for milk recording and breeding.
+  List<(String, String)>? get _stages => switch (_type) {
+        'dairy_cattle' => [('milking', 'Milking'.tr), ('dry', 'In calf or dry'.tr), ('heifer', 'Heifer'.tr), ('young', 'Calf'.tr)],
+        'dairy_goats' => [('milking', 'Milking'.tr), ('dry', 'Dry'.tr), ('heifer', 'Young doe'.tr), ('young', 'Kid'.tr)],
+        _ => null,
+      };
 
   List<String> get _breeds => animalBreeds(_type);
 
@@ -453,11 +512,15 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
         _ => 'Add an animal'.tr,
       };
 
-  String get _tagHint => switch (_type) {
-        'sheep' => 'On the ear tag, or a number you paint on.'.tr,
-        'rabbits' => 'On the ear tattoo or cage card.'.tr,
-        _ => 'On the ear tag, or a number you give it.'.tr,
-      };
+  String get _tagHint {
+    final last = _lastTag;
+    if (last != null && _tag.text == _suggested) return 'Next after {tag}. Change it if the ear tag says otherwise.'.trArgs({'tag': last});
+    return switch (_type) {
+      'sheep' => 'On the ear tag, or a number you paint on.'.tr,
+      'rabbits' => 'On the ear tattoo or cage card.'.tr,
+      _ => 'On the ear tag, or a number you give it.'.tr,
+    };
+  }
 
   String? get _note => switch (_type) {
         'dairy_goats' => 'For a kid born to one of your does, use Record a birth on the mother. It links them.'.tr,
@@ -466,18 +529,17 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
         _ => null,
       };
 
+  /// "2 yrs 8 mos", short, for the tag in the date box.
   String _age(DateTime born) {
     final now = DateTime.now();
     final days = now.difference(born).inDays;
-    if (days < 56) return days < 14 ? '{n} days old'.trArgs({'n': days}) : '{n} weeks old'.trArgs({'n': days ~/ 7});
+    if (days < 56) return days < 14 ? '{n} days'.trArgs({'n': days}) : '{n} wks'.trArgs({'n': days ~/ 7});
     var months = (now.year - born.year) * 12 + now.month - born.month - (now.day < born.day ? 1 : 0);
-    if (months < 12) return months == 1 ? '1 month old'.tr : '{n} months old'.trArgs({'n': months});
+    if (months < 12) return '{n} mos'.trArgs({'n': months});
     final years = months ~/ 12;
     months %= 12;
-    final y = years == 1 ? '1 year'.tr : '{n} years'.trArgs({'n': years});
-    if (months == 0) return '{age} old'.trArgs({'age': y});
-    final m = months == 1 ? '1 month'.tr : '{n} months'.trArgs({'n': months});
-    return '{years} {months} old'.trArgs({'years': y, 'months': m});
+    final y = years == 1 ? '1 yr'.tr : '{n} yrs'.trArgs({'n': years});
+    return months == 0 ? y : '$y ${'{n} mos'.trArgs({'n': months})}';
   }
 
   /// "Dairy herd · 5 cows", or "Dairy herd · 2 of 5" while filling a new herd.
@@ -508,6 +570,7 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
       return;
     }
     setState(() => _herd = picked);
+    _loadHerd();
   }
 
   /// Quick herd entry for this herd, in place of this form.
@@ -519,11 +582,25 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
     );
   }
 
+  Future<void> _pickMother() async {
+    final picked = await slPick<String>(context, title: 'Mother'.tr, value: _mother ?? '', options: [
+      ('', 'Not known'.tr),
+      for (final m in _mothers) ('${m['id']}', '${m['name']}'.isEmpty ? '${m['tag']}' : '${m['tag']} · ${m['name']}'),
+    ]);
+    if (picked != null) setState(() => _mother = picked.isEmpty ? null : picked);
+  }
+
+  void _setSex(String v) => setState(() {
+        _sex = v;
+        if (v != 'female' && _stage != 'young') _stage = null; // milking, dry and heifer are hers
+      });
+
   Future<void> _save() async {
     final tag = _tag.text.trim();
     if (tag.isEmpty) return fail("Enter the animal's tag.".tr, 'tag');
     final cost = _source == 'bought' && _cost.text.trim().isNotEmpty ? _num(_cost) : null;
-    final kg = _type == 'beef_cattle' && _source == 'bought' && _weight.text.trim().isNotEmpty ? _num(_weight) : null;
+    final kg = _weight.text.trim().isEmpty ? null : _num(_weight);
+    if (_weight.text.trim().isNotEmpty && (kg == null || kg <= 0)) return fail('Enter the weight in kg.'.tr, 'kg');
     final done = '{tag} added'.trArgs({'tag': tag});
     await save(() async {
       var herd = _herd;
@@ -542,13 +619,18 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
         'enterprise_id': herd,
         'tag': tag,
         'name': _name.text.trim(),
-        'sex': _sex,
+        'sex': _sex == 'steer' ? 'male' : _sex,
+        'castrated': _sex == 'steer',
+        'stage': _stage ?? '',
         'breed': _breed ?? '',
         'source': _source,
         'birth_date': _born == null ? null : _day(_born!),
+        'mother_id': _source == 'born' ? _mother : null,
+        'sire': _sire.text.trim(),
+        'rfid': _rfid.text.replaceAll(' ', ''),
         'cost': cost?.toString(),
       });
-      // Its weight when bought is its first weighing (a failed weighing doesn't undo the animal).
+      // Its weight today is its first weighing (a failed weighing doesn't undo the animal).
       if (!res.error && kg != null && res.data is Map) {
         await FarmSetupService.weigh('${res.data['id']}', {'date': _day(DateTime.now()), 'kg': kg.toString()});
       }
@@ -576,98 +658,329 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
     });
   }
 
+  /// Quick weights to start from, by what the animal is.
+  List<(num, String)> get _presets => switch (_type) {
+        'dairy_cattle' => [(280, 'Heifer'.tr), (420, 'Cow'.tr), (550, 'Bull'.tr)],
+        'beef_cattle' => [(200, 'Weaner'.tr), (300, 'Grower'.tr), (450, 'Finished'.tr)],
+        'dairy_goats' => [(15, 'Kid'.tr), (45, 'Doe'.tr), (60, 'Buck'.tr)],
+        'sheep' => [(20, 'Lamb'.tr), (40, 'Ewe'.tr), (60, 'Ram'.tr)],
+        'pigs' => [(30, 'Weaner'.tr), (70, 'Grower'.tr), (150, 'Sow'.tr)],
+        'rabbits' => [(1.5, 'Young'.tr), (3, 'Doe'.tr), (4, 'Buck'.tr)],
+        _ => const [],
+      };
+
+  static const _icons = (
+    tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5"/>',
+    next: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+    paw: '<circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/>',
+    pulse: '<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>',
+    venus: '<path d="M12 15v7"/><path d="M9 19h6"/><circle cx="12" cy="9" r="6"/>',
+    mars: '<path d="M16 3h5v5"/><path d="m21 3-6.75 6.75"/><circle cx="10" cy="14" r="6"/>',
+    minus: '<path d="M5 12h14"/>',
+    award: '<path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/>',
+    fork: '<circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v2c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V9"/><path d="M12 12v3"/>',
+    house: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    scale: '<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+    save: '<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',
+  );
+
+  /// "Tag and sex are in. 5 of 8 details filled; the rest can wait."
+  (bool, String) get _readiness {
+    if (_tag.text.trim().isEmpty) return (false, 'Add the tag to save.'.tr);
+    final stage = _stages != null && _female;
+    final filled = [
+      true, // tag
+      true, // sex
+      if (stage) _stage != null,
+      _breed != null,
+      _born != null,
+      _source == 'born' ? _mother != null : _cost.text.trim().isNotEmpty,
+      _sire.text.trim().isNotEmpty,
+      _weight.text.trim().isNotEmpty,
+      _name.text.trim().isNotEmpty,
+    ];
+    final n = filled.where((f) => f).length;
+    return (true, 'Tag and sex are in. {n} of {total} details filled; the rest can wait.'.trArgs({'n': n, 'total': filled.length}));
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.appColors;
+    final stages = _female ? _stages : null;
+    final sexes = animalSexesShort(_type);
+    final icons = _icons;
+    final (ready, readyText) = _readiness;
+    Widget label(String text, {bool required = false, bool optional = false, String? note}) => Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+            Expanded(
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(text: text),
+                  if (required) TextSpan(text: ' *', style: TextStyle(color: c.dangerInk)),
+                  if (optional) TextSpan(text: ' ${'(optional)'.tr}', style: TextStyle(fontWeight: FontWeight.w400, color: c.textSecondary)),
+                ]),
+                style: AppType.label.copyWith(color: c.textPrimary),
+              ),
+            ),
+            if (note != null) Flexible(child: Text(note, textAlign: TextAlign.end, style: AppType.caption.copyWith(color: c.textSecondary))),
+          ]),
+        );
+    Widget under(String? error, String? hint) => error == null && hint == null
+        ? const SizedBox.shrink()
+        : Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(error ?? hint!, style: AppType.caption.copyWith(color: error != null ? c.dangerInk : c.textSecondary)),
+          );
+    Widget field(Widget box, String text, {bool required = false, bool optional = false, String? note, String? error, String? hint}) =>
+        Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          label(text, required: required, optional: optional, note: note),
+          box,
+          under(error, hint),
+        ]);
+
     return SlFormPage(
       eyebrow: 'ADD AN ANIMAL'.tr,
       title: _title,
+      close: true,
+      gap: 12,
       saving: saving,
-      error: banner({'tag', 'name', 'sex', 'breed', 'birth_date', 'cost', 'kg'}),
+      error: banner({'tag', 'name', 'sex', 'stage', 'castrated', 'breed', 'birth_date', 'mother_id', 'cost', 'kg', 'sire', 'rfid'}),
       saveLabel: 'Save animal'.tr,
+      saveIcon: icons.save,
       onSave: _herds == null ? null : _save,
       children: [
-        SlTypeHead(
-          icon: Image.asset(fieldIcon(_type), width: 28, height: 28, excludeFromSemantics: true),
-          title: widget.kind.label,
-          meta: _meta,
-          onChange: _herds == null || _sequence ? null : _change,
-        ),
-        SlField(
-          label: 'Tag or number'.tr,
-          required: true,
-          hint: _tagHint,
-          error: err('tag'),
-          child: SlTextBox(controller: _tag, mono: true, placeholder: 'KE-0142', caps: TextCapitalization.characters, error: err('tag') != null),
-        ),
-        SlField(
-          label: 'Name'.tr,
-          optional: true,
-          error: err('name'),
-          child: SlTextBox(controller: _name, placeholder: 'Njeri', caps: TextCapitalization.words),
-        ),
-        SlField(
-          label: 'Sex'.tr,
-          required: true,
-          error: err('sex'),
-          child: SlChoices<String>(options: _sexes, value: _sex, onChanged: (v) => setState(() => _sex = v)),
-        ),
-        if (_breeds.isNotEmpty)
-          SlField(
-            label: 'Breed'.tr,
+        if (!_sequence && _herd != null) _severalStrip(c),
+        _herdHead(c),
+        SlSection(icon: icons.tag, title: 'IDENTIFICATION & TAGS'.tr, note: _lastTag == null ? null : 'Auto-suggested'.tr, noteGood: true, children: [
+          field(
+            SlFilledBox(
+              controller: _tag,
+              mono: true,
+              placeholder: 'KE-0142',
+              caps: TextCapitalization.characters,
+              error: err('tag') != null,
+              action: _NextButton(icon: icons.next, onTap: _bumpTag),
+            ),
+            'Tag or number'.tr,
+            required: true,
+            error: err('tag'),
+            hint: _tagHint,
+          ),
+          field(
+            SlFilledBox(controller: _name, icon: icons.paw, placeholder: 'e.g. Baraka, Mrembo, Chebet'.tr, caps: TextCapitalization.words),
+            'Name'.tr,
             optional: true,
-            child: SlChoices<String>(
-              options: [for (final b in _breeds) (b, b), ('Cross', 'Cross'.tr), ('', 'Other'.tr)],
+            error: err('name'),
+          ),
+          field(
+            SlFilledBox(controller: _rfid, mono: true, number: true, fontSize: 17, placeholder: '15 digits'.tr, error: err('rfid') != null),
+            'RFID'.tr,
+            optional: true,
+            error: err('rfid'),
+          ),
+        ]),
+        SlSection(icon: icons.pulse, title: stages == null && _stages == null ? 'SEX'.tr : 'SEX & STAGE'.tr, children: [
+          field(
+            SlTiles<String>(
+              options: [
+                for (final (v, t) in sexes) (v, t, v == 'female' ? icons.venus : icons.mars),
+                if (_beef) ('steer', 'Steer'.tr, icons.minus),
+              ],
+              value: _sex,
+              columns: _beef ? 3 : 2,
+              onChanged: _setSex,
+            ),
+            'Sex'.tr,
+            required: true,
+            error: err('sex') ?? err('castrated'),
+          ),
+          if (stages != null)
+            field(SlSoftChoices<String>(options: stages, value: _stage, onChanged: (v) => setState(() => _stage = v)), 'Stage'.tr,
+                optional: true, error: err('stage')),
+        ]),
+        if (_breeds.isNotEmpty)
+          SlSection(icon: icons.award, title: 'BREED'.tr, note: 'Optional'.tr, children: [
+            SlTiles<String>(
+              options: [for (final b in _breeds) (b, b, null), ('Cross', 'Cross'.tr, null), ('', 'Other'.tr, null)],
               value: _breed,
+              columns: 3,
+              column: true,
+              radio: true,
               onChanged: (v) => setState(() => _breed = v),
             ),
-          ),
-        SlField(
-          label: 'Where it came from'.tr,
-          child: SlChoices<String>(
-            options: [('bought', 'Bought'.tr), ('born', 'Born on the farm'.tr)],
+          ]),
+        SlSection(icon: icons.fork, title: 'ORIGIN & LINEAGE'.tr, children: [
+          SlTiles<String>(
+            options: [('born', 'Born on the farm'.tr, icons.house), ('bought', 'Bought'.tr, _storeIcon)],
             value: _source,
             onChanged: (v) => setState(() => _source = v),
           ),
-        ),
-        if (_askBorn || _born != null)
-          SlField(
-            label: 'Date of birth'.tr,
-            hint: _born == null ? null : _age(_born!),
-            error: err('birth_date'),
-            child: SlSelectBox(
+          if (_source == 'bought')
+            field(SlFilledBox(controller: _cost, prefix: 'KSh'.tr, mono: true, number: true, fontSize: 19, error: err('cost') != null), 'Price paid'.tr,
+                optional: true, error: err('cost')),
+          field(
+            SlFilledSelect(
               icon: SlSelectBox.calendar,
               text: _born == null ? 'Choose a date'.tr : _pretty(_born!),
               muted: _born == null,
+              pill: _born == null ? null : _age(_born!),
+              error: err('birth_date') != null,
               onTap: () async {
                 final d = await _pickDate(context, _born ?? DateTime.now().subtract(const Duration(days: 365)));
                 if (d != null) setState(() => _born = d);
               },
             ),
-          ),
-        if (_source == 'bought')
-          SlField(
-            label: 'Price paid'.tr,
+            'Date of birth'.tr,
             optional: true,
-            error: err('cost'),
-            child: SlTextBox(controller: _cost, prefix: 'KSh'.tr, number: true, error: err('cost') != null),
+            error: err('birth_date'),
           ),
-        if (_type == 'beef_cattle' && _source == 'bought')
-          SlField(
-            label: 'Weight when bought'.tr,
-            optional: true,
-            hint: 'Saved as its first weighing, to track gain.'.tr,
-            child: SlTextBox(controller: _weight, suffix: 'kg', number: true),
+          if (_source == 'born' && _mothers.isNotEmpty)
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                child: field(
+                  SlFilledSelect(
+                      icon: icons.venus, text: _motherTag ?? 'Choose'.tr, muted: _mother == null, error: err('mother_id') != null, onTap: _pickMother),
+                  'Mother'.tr,
+                  error: err('mother_id'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: field(SlFilledBox(controller: _sire, icon: icons.mars, placeholder: 'KE-012', fontSize: 15, caps: TextCapitalization.characters),
+                    'Sire'.tr,
+                    error: err('sire')),
+              ),
+            ])
+          else
+            field(SlFilledBox(controller: _sire, icon: icons.mars, placeholder: "Father's tag, or the AI straw name".tr, fontSize: 15),
+                'Sire'.tr,
+                optional: true,
+                error: err('sire')),
+          Text(
+              _source == 'born' && _mothers.isNotEmpty
+                  ? "Mother: the females in this herd. Sire: a male's tag, or the AI straw name.".tr
+                  : 'Not in your herd? Write what the AI receipt says.'.tr,
+              style: AppType.caption.copyWith(color: c.textSecondary)),
+        ]),
+        SlSection(icon: icons.scale, title: 'WEIGHT'.tr, note: 'Optional'.tr, children: [
+          field(
+            SlStepper(
+              controller: _weight,
+              unit: 'kg',
+              step: _type == 'rabbits' ? 0.5 : 5,
+              presets: _presets,
+              error: err('kg') != null,
+              onChanged: () => setState(() {}),
+            ),
+            _weightUp ? 'Weight when bought'.tr : 'Weight now'.tr,
+            note: _weightUp ? 'To track gain from day one'.tr : 'Saved as the first weighing'.tr,
+            error: err('kg'),
           ),
-        if (!_askBorn && _born == null)
-          Align(alignment: Alignment.centerLeft, child: SlLink('Add date of birth'.tr, () => setState(() => _askBorn = true))),
+        ]),
         if (_note != null) SlInfoNote(_note!),
-        if (!_sequence && _herd != null)
-          Align(alignment: Alignment.centerLeft, child: SlLink('Adding several? Add them all on one screen'.tr, _several)),
+        SlReadyCard(ready: ready, text: readyText),
         if (_sequence && widget.index < widget.total)
           Text('Next: {unit} {i} of {n}'.trArgs({'unit': animalUnit(_type, 1), 'i': widget.index + 1, 'n': widget.total}),
               style: AppType.caption.copyWith(color: c.textSecondary)),
       ],
+    );
+  }
+
+  /// "Next": the tag after the one in the box.
+  void _bumpTag() {
+    final next = nextTag(_tag.text.trim().isEmpty ? (_lastTag ?? 'KE-0') : _tag.text);
+    if (next.isEmpty) return;
+    setState(() {
+      _tag.text = next;
+      _suggested = next;
+    });
+  }
+
+  String? get _motherTag => _mothers.where((m) => '${m['id']}' == _mother).map((m) => '${m['tag']}').firstOrNull;
+
+  /// "Adding several cows at once? Herd entry →", on top: it is decided first.
+  Widget _severalStrip(AppColors c) => SlCard(
+        padding: EdgeInsets.zero,
+        onTap: _several,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+          child: Row(children: [
+            LineIcon(_strip, size: 20, color: c.textSecondary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text('Adding several {unit} at once?'.trArgs({'unit': animalUnit(_type, 2)}),
+                  style: TextStyle(fontFamily: AppType.text, fontSize: 14, height: 18 / 14, color: c.textPrimary)),
+            ),
+            Text('Herd entry'.tr, style: TextStyle(fontFamily: AppType.text, fontSize: 13, fontWeight: FontWeight.w700, color: c.brandText)),
+            const SizedBox(width: 4),
+            LineIcon('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', size: 16, color: c.brandText),
+          ]),
+        ),
+      );
+
+  /// The herd it joins: its picture, the kind, the herd and its size, and Change.
+  Widget _herdHead(AppColors c) => SlCard(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Row(children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(color: c.brandSoft, borderRadius: BorderRadius.circular(14)),
+            child: Center(child: Image.asset(fieldIcon(_type), width: 32, height: 32, excludeFromSemantics: true)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('HERD'.tr, style: AppType.eyebrow.copyWith(fontSize: 11, color: c.textSecondary)),
+              Text(widget.kind.label, style: AppType.titleM.copyWith(fontWeight: FontWeight.w500, color: c.textPrimary)),
+              Text(_meta, style: AppType.caption.copyWith(color: c.textSecondary)),
+            ]),
+          ),
+          if (_herds != null && !_sequence)
+            Material(
+              color: c.surfaceMuted,
+              shape: const StadiumBorder(),
+              child: InkWell(
+                customBorder: const StadiumBorder(),
+                onTap: _change,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('Change'.tr, style: TextStyle(fontFamily: AppType.text, fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary)),
+                    LineIcon('<path d="m6 9 6 6 6-6"/>', size: 16, color: c.textPrimary),
+                  ]),
+                ),
+              ),
+            ),
+        ]),
+      );
+}
+
+/// The "Next" key in the tag box: the next number on.
+class _NextButton extends StatelessWidget {
+  final String icon;
+  final VoidCallback onTap;
+  const _NextButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.appColors;
+    return Material(
+      color: c.cardBackground,
+      shape: StadiumBorder(side: BorderSide(color: c.border, width: 1.5)),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            LineIcon(icon, size: 16, color: c.textPrimary),
+            const SizedBox(width: 6),
+            Text('Next'.tr, style: TextStyle(fontFamily: AppType.text, fontSize: 13, fontWeight: FontWeight.w700, color: c.textPrimary)),
+          ]),
+        ),
+      ),
     );
   }
 }

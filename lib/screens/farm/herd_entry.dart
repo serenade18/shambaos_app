@@ -36,8 +36,8 @@ String firstTag(List<String> tags) {
   return best == null ? 'KE-1' : nextTag(best);
 }
 
-/// What the rows' sex toggle says, short: "Cow" and "Bull".
-List<(String, String)> _shortSexes(String type) => switch (type) {
+/// The sexes, short, for toggles and tiles: "Cow" and "Bull".
+List<(String, String)> animalSexesShort(String type) => switch (type) {
       'dairy_cattle' => [('female', 'Cow'.tr), ('male', 'Bull'.tr)],
       'beef_cattle' => [('female', 'Heifer'.tr), ('male', 'Bull'.tr)],
       'dairy_goats' || 'rabbits' => [('female', 'Doe'.tr), ('male', 'Buck'.tr)],
@@ -266,7 +266,7 @@ class _HerdEntryScreenState extends State<HerdEntryScreen> with RecordForm {
         Padding(
           padding: const EdgeInsets.fromLTRB(38, 10, 8, 0),
           child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
-            for (final (v, text) in _shortSexes(_type)) SlChip(text, selected: row.sex == v, onTap: () => setState(() => row.sex = v)),
+            for (final (v, text) in animalSexesShort(_type)) SlChip(text, selected: row.sex == v, onTap: () => setState(() => row.sex = v)),
             if (hasBreeds)
               ActionChip(
                 onPressed: () => _pickBreed(row),

@@ -45,9 +45,11 @@ class FarmSetupService {
   static Future<ApiResponse> addAnimal(Map<String, dynamic> body) => ApiService.post('/animals', body);
   static Future<ApiResponse> addAnimals(Map<String, dynamic> body) => ApiService.post('/animals/bulk', body);
 
+  /// A herd's animals: their tags, for numbering on, and its females, for mothers.
+  static Future<List<Map<String, dynamic>>> animals(String herdId) => _rows('/animals?enterprise_id=$herdId');
+
   /// The tags already in a herd, so new rows number on from them.
-  static Future<List<String>> tags(String herdId) async =>
-      [for (final a in await _rows('/animals?enterprise_id=$herdId')) '${a['tag'] ?? ''}'];
+  static Future<List<String>> tags(String herdId) async => [for (final a in await animals(herdId)) '${a['tag'] ?? ''}'];
   static Future<ApiResponse> weigh(String animalId, Map<String, dynamic> body) => ApiService.post('/animals/$animalId/weights', body);
   static Future<ApiResponse> startBatch(Map<String, dynamic> body) => ApiService.post('/batches', body);
   static Future<ApiResponse> startSeason(Map<String, dynamic> body) => ApiService.post('/seasons', body);
