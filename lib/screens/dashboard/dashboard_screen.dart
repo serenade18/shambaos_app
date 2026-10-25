@@ -12,6 +12,7 @@ import '../../widgets/ledger_parts.dart';
 import '../customers/customer_screen.dart';
 import 'dashboard_service.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/skeleton.dart';
 
 /// Activity, as the design draws it (GET /dashboard): profit over the chosen
 /// days on a green band, money in and out, profit by field, what needs the
@@ -122,7 +123,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<Widget> _body(AppColors c) {
     if (_loading && _result == null) {
-      return [Padding(padding: const EdgeInsets.only(top: 64), child: Center(child: CircularProgressIndicator(color: c.shamba)))];
+      return const [
+        SkeletonBlocks([140, 96, 180]),
+        SizedBox(height: 12),
+        SkeletonLedger(rows: 3, title: true),
+      ];
     }
     final result = _result!;
     if (result.noFarm) {

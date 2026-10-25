@@ -12,6 +12,7 @@ import '../../widgets/phosphor_icons.dart';
 import '../auth/auth_ui.dart';
 import '../home_service.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/skeleton.dart';
 
 /// Vets for the farm, nearest first (GET /vets?farm_id=&animal=). The list is
 /// kept by Shamba OS, the same for every farm.
@@ -146,7 +147,7 @@ class _VetsScreenState extends State<VetsScreen> {
                     if (made) _load();
                   }))])
               else if (vets == null && _loading)
-                Padding(padding: const EdgeInsets.only(top: 64), child: Center(child: CircularProgressIndicator(color: c.shamba)))
+                const Column(children: [SkeletonBlocks([132]), SizedBox(height: 56), SkeletonLedger(rows: 4)])
               else if (vets == null)
                 SlLedger(children: [
                   SlLedgerRow(title: 'Could not load vets'.tr, meta: _error, status: TextButton(onPressed: _load, child: Text('Try again'.tr))),

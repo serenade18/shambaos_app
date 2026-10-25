@@ -1556,4 +1556,6 @@ const fr = <String, String>{
   'e.g. Baraka, Mrembo, Chebet': 'ex. Baraka, Mrembo, Chebet',
   '{n} {unit} less': '{n} {unit} de moins',
   '{n} {unit} more': '{n} {unit} de plus',
+  // Skeletons, read out while a screen loads.
+  'Loading…': 'Chargement…',
 };

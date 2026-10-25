@@ -12,6 +12,7 @@ import 'farm_map_screen.dart';
 import 'farm_setup_service.dart';
 import 'setup_farm_screen.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/skeleton.dart';
 
 /// My farm, from Profile: the farm, its boundary (the farm map), what it runs,
 /// and "Add to your farm", which opens "What are you adding?".
@@ -118,7 +119,7 @@ class _MyFarmScreenState extends State<MyFarmScreen> {
                 ]),
                 const SizedBox(height: 16),
                 if (_loading && farm == null)
-                  Padding(padding: const EdgeInsets.only(top: 64), child: Center(child: CircularProgressIndicator(color: c.shamba)))
+                  const Column(children: [SkeletonBlocks([168]), SizedBox(height: 40), SkeletonLedger(rows: 1), SizedBox(height: 40), SkeletonLedger(rows: 3)])
                 else if (farm == null && _error != null)
                   SlLedger(children: [
                     SlLedgerRow(

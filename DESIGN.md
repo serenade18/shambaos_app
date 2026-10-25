@@ -149,6 +149,7 @@ The design system's components and their Flutter widgets (`lib/widgets/`):
 | season strip | `SlSeasonStrip` | The year's rains and today's marker |
 | switch | `SlSwitch` | Notification settings |
 | sl-btn | `LedgerButton`, `ElevatedButton` (stadium) | Primary is shamba, 56 high, full width at the foot |
+| skeleton | `SkeletonLedger`, `SkeletonBlocks`, `SkeletonText`, `Skeleton` + `SkeletonBox` (`skeleton.dart`) | What a screen shows while it loads, in the shape of what's coming: sheet-sunk blocks that pulse, still with animations off, read out once as "Loading". Never a page spinner; spinners are only for a button that is busy |
 
 ### The form kit (`lib/widgets/sl_form.dart`)
 

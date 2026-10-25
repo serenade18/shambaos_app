@@ -1556,4 +1556,6 @@ const sw = <String, String>{
   'e.g. Baraka, Mrembo, Chebet': 'mf. Baraka, Mrembo, Chebet',
   '{n} {unit} less': '{unit} {n} pungufu',
   '{n} {unit} more': '{unit} {n} zaidi',
+  // Skeletons, read out while a screen loads.
+  'Loading…': 'Inapakia…',
 };

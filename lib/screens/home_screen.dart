@@ -17,6 +17,7 @@ import 'profile/complete_profile_sheet.dart';
 import '../services/app_colors.dart';
 import '../services/app_type.dart';
 import '../widgets/ledger.dart';
+import '../widgets/skeleton.dart';
 import 'animals/animal_screen.dart';
 import 'plants/plant_screen.dart';
 import 'markets/market_screen.dart';
@@ -47,6 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
   WeatherModel? _today;
   double? _weekRain; // mm forecast over the next 7 days
   bool _weatherLoading = true;
+  bool _farmLoaded = false; // until then, Home doesn't yet know whether there is a farm
+  bool _todayLoading = false;
 
   // The profile can't stay incomplete (see ensureProfileComplete), so the farm
   // is all that's left to set up.
@@ -167,6 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _farm = farm;
       _fields = fields;
       _isFarmSetup = farm != null;
+      _farmLoaded = true;
     });
     if (farm == null) {
       setState(() => _weatherLoading = false);
@@ -186,9 +190,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadToday() async {
     final farm = _farm;
     if (farm == null) return;
+    setState(() => _todayLoading = true);
     final rows = await TodayService.load('${farm['id']}');
-    if (!mounted || rows == null) return;
-    setState(() => _todayRows = rows);
+    if (!mounted) return;
+    setState(() {
+      _todayLoading = false;
+      if (rows != null) _todayRows = rows;
+    });
   }
 
   Future<void> _onRefresh() async {
@@ -305,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
           ],
           if (fields == null)
-            Container(height: 108, decoration: BoxDecoration(color: colors.surfaceMuted, borderRadius: BorderRadius.circular(16)))
+            const SkeletonBlocks([112, 112], gap: 10)
           else if (fields.isEmpty)
             SlLedger(children: [
               SlLedgerRow(
@@ -786,12 +794,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               if (_todayRows?.isNotEmpty ?? false)
-                TodaySection(rows: _todayRows!, fields: _fields ?? const [], onSaved: _loadToday),
+                TodaySection(rows: _todayRows!, fields: _fields ?? const [], onSaved: _loadToday)
+              else if (_todayRows == null && _todayLoading)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 24, 16, 0),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Skeleton(child: SkeletonBox(width: 72, height: 18)),
+                    SizedBox(height: 12),
+                    SkeletonLedger(rows: 3),
+                  ]),
+                ),
               _buildBusiness(colors),
               _buildMyFields(colors),
 
               // Hidden only when BOTH profile is complete AND farm is set up
-              if (!_allUpdatesComplete) ...[
+              if (_farmLoaded && !_allUpdatesComplete) ...[
                 const SizedBox(height: 8),
                 _buildImportantUpdates(colors),
               ],

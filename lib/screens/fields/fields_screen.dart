@@ -13,6 +13,7 @@ import 'field_detail_screen.dart';
 import 'field_service.dart';
 import 'field_widgets.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/skeleton.dart';
 
 /// Opens a field's page.
 void openField(BuildContext context, Field f) =>
@@ -108,7 +109,7 @@ class _FieldsScreenState extends State<FieldsScreen> {
               const SlSeasonStrip(),
               const SizedBox(height: 16),
               if (fields == null)
-                Padding(padding: const EdgeInsets.only(top: 48), child: Center(child: CircularProgressIndicator(color: c.shamba)))
+                const SkeletonBlocks([76, 76, 76, 76], gap: 10)
               else if (fields.isEmpty)
                 SlLedger(children: [
                   SlLedgerRow(

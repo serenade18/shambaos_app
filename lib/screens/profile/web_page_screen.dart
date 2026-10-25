@@ -5,6 +5,7 @@ import '../../services/app_colors.dart';
 import '../../services/app_type.dart';
 import '../../widgets/phosphor_icons.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/skeleton.dart';
 
 /// The Shamba OS website. Override per build:
 ///   flutter run --dart-define=SITE_URL=https://staging.shambaos.com
@@ -88,7 +89,13 @@ class _WebPageScreenState extends State<WebPageScreen> {
                   )
                 : Stack(children: [
                     WebViewWidget(controller: _web),
-                    if (_loading) Center(child: CircularProgressIndicator(color: c.shamba)),
+                    if (_loading)
+                      Positioned.fill(
+                        child: ColoredBox(
+                          color: c.scaffoldBackground,
+                          child: const SingleChildScrollView(padding: EdgeInsets.all(20), child: SkeletonText()),
+                        ),
+                      ),
                   ]),
           ),
         ]),

@@ -10,6 +10,7 @@ import '../../widgets/ledger_parts.dart';
 import '../auth/auth_ui.dart';
 import '../profile/my_photo.dart';
 import '../../l10n/tr.dart';
+import '../../widgets/skeleton.dart';
 
 /// The top of Home, as the design draws it (sl-hero): the farm photograph
 /// with rounded bottom corners, the greeting, today's weather on a frosted
@@ -177,11 +178,22 @@ class HomeHero extends StatelessWidget {
                       ? farmTag
                       : Semantics(button: true, hint: 'Map your farm'.tr, child: GestureDetector(onTap: onPlaceTap, child: farmTag)),
                 ),
-                if (w == null)
+                if (w == null && weatherLoading)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(0, 12, 64, 4),
+                    child: Skeleton(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        SkeletonBox(width: 96, height: 44, radius: 10),
+                        SizedBox(height: 10),
+                        SkeletonBox(width: 160),
+                      ]),
+                    ),
+                  )
+                else if (w == null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(0, 14, 64, 4),
                     child: Text(
-                      weatherLoading ? 'Loading the forecast…'.tr : 'The forecast shows here once your farm has a location.'.tr,
+                      'The forecast shows here once your farm has a location.'.tr,
                       style: AppType.body.copyWith(color: c.textSecondary),
                     ),
                   )
