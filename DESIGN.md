@@ -192,8 +192,10 @@ Numbers match the canvas. Files are under `lib/screens/`.
 |---|---|---|
 | 01 | Splash | `onboarding/splash_screen.dart` |
 | 02 | Welcome | `onboarding/welcome_screens.dart` |
-| 03 | Sign in (phone) | `auth/login_screen.dart` |
+| 03 | Sign in (phone in Kenya, password elsewhere) | `auth/login_screen.dart` |
 | 04 | Verify code | `auth/verify_otp_screen.dart` |
+| 04b | Create account (outside Kenya) | `auth/sign_up_screen.dart` |
+| 04c | Reset password (sheet) | `auth/forgot_password_sheet.dart` |
 
 ### Setting up the farm
 | # | Screen | File |
@@ -260,10 +262,22 @@ changing them.
 ## 5. Key flows
 
 **New user**
-Sign in (03) → Verify code (04) → Set up your farm (23b) → Map your farm (05–09,
+Sign in (03) → Verify code (04) → Complete your profile (modal) → Set up your farm (23b) → Map your farm (05–09,
 or "Later") → What are you adding? (27) → Home.
+- Complete your profile (`profile/complete_profile_sheet.dart`) asks for name,
+  email and phone, and can't be dismissed: Save and continue, or Log out. It
+  shows whenever Home opens with an incomplete profile, saved sessions included.
 - The setup starts by itself only when the farm list loads and is empty.
 - It can also be started from Home, My farm, or any "No farm yet" row.
+
+**Signing in outside Kenya**
+Sign in (03) shows a Country field first, defaulting to the last one chosen,
+then the phone's region, then Kenya. Kenya signs in with phone + SMS code;
+every other country (all 197, searchable by name or code) with username or
+email and password. New accounts: Create account (04b) → "Check your email" →
+open the emailed link → back to Sign in with the username filled in.
+- Google still signs in existing accounts; a new Google account outside Kenya is
+  sent to Create account, since finishing it needs an SMS code.
 
 **Returning user, farm not mapped**
 Sign in → Home, with Map your farm on top, unless they chose "Later" for that

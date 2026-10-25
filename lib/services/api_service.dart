@@ -29,7 +29,7 @@ class ApiService {
   // The default reaches runserver on the host from the Android emulator.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.0.101:8000/api/v1',
+    defaultValue: 'http://192.168.0.102:8000/api/v1',
   );
 
   static String? _accessToken;

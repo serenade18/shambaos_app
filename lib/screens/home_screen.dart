@@ -13,7 +13,7 @@ import 'home/today_section.dart';
 import 'records/record_menu.dart';
 import 'alerts/alerts_screen.dart';
 import 'profile/profile_screen.dart';
-import 'profile/edit_profile_screen.dart';
+import 'profile/complete_profile_sheet.dart';
 import '../services/app_colors.dart';
 import '../services/app_type.dart';
 import '../widgets/ledger.dart';
@@ -48,13 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
   double? _weekRain; // mm forecast over the next 7 days
   bool _weatherLoading = true;
 
-  bool get _isProfileComplete =>
-      _userName.isNotEmpty &&
-      _userEmail.isNotEmpty &&
-      !_userEmail.endsWith('@shambos.com');
-
-  // Section hides only when BOTH conditions are satisfied
-  bool get _allUpdatesComplete => _isProfileComplete && _isFarmSetup;
+  // The profile can't stay incomplete (see ensureProfileComplete), so the farm
+  // is all that's left to set up.
+  bool get _allUpdatesComplete => _isFarmSetup;
 
   List<Map<String, dynamic>> get _quickMenuItems => [
     {
@@ -134,6 +130,11 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUser();
     _loadFarmStatus();
+    // Opened from a saved session: the profile is checked here. After signing in,
+    // goHomeAfterSignIn has already opened it, and this returns.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted && await ensureProfileComplete(Navigator.of(context)) && mounted) _loadUser();
+    });
     FarmMapScreen.boundarySaved.addListener(_loadFarmStatus);
     _posterPageController = PageController(
       initialPage: _posterItems.length * 100,
@@ -356,24 +357,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openEditProfile() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => EditProfileScreen(
-          name: _userName,
-          email: _userEmail,
-          phone: '',
-          username: _userName,
-        ),
-      ),
-    ).then((updated) {
-      if (updated == true) {
-        _loadUser();
-      }
-    });
-  }
-
   String _getInitials(String name) {
     if (name.isEmpty) return 'U';
     final parts = name.trim().split(' ');
@@ -459,29 +442,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Build only the items that are still pending
     final List<Widget> pendingItems = [];
 
-    if (!_isProfileComplete) {
-      pendingItems.add(
-        _buildUpdateItem(
-          icon: Icons.auto_awesome_outlined,
-          title: 'Complete your profile'.tr,
-          subtitle: 'Unlock a personalised experience'.tr,
-          onTap: _openEditProfile,
-        ),
-      );
-    }
-
     if (!_isFarmSetup) {
-      if (pendingItems.isNotEmpty) {
-        pendingItems.add(
-          Divider(
-            height: 1,
-            thickness: 1,
-            indent: 14,
-            endIndent: 14,
-            color: context.appColors.brandSoft,
-          ),
-        );
-      }
       pendingItems.add(
         _buildUpdateItem(
           icon: Icons.agriculture_outlined,

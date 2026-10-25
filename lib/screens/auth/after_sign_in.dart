@@ -3,10 +3,12 @@ import '../home_screen.dart';
 import '../../services/api_service.dart';
 import '../farm/farm_map_screen.dart';
 import '../farm/setup_farm_screen.dart';
+import '../profile/complete_profile_sheet.dart';
 
 /// Where a farmer goes once signed in (by code, Google or biometrics): Home,
-/// with "Set up your farm" on top for someone with no farm yet, or "Map your
-/// farm" when their farm has no boundary yet and they haven't put it off.
+/// with "Complete your profile" on top until it is, then "Set up your farm" for
+/// someone with no farm yet, or "Map your farm" when their farm has no boundary
+/// yet and they haven't put it off.
 /// Closing or finishing either lands on Home.
 Future<void> goHomeAfterSignIn(BuildContext context) async {
   final navigator = Navigator.of(context);
@@ -20,6 +22,8 @@ Future<void> goHomeAfterSignIn(BuildContext context) async {
     ),
     (_) => false,
   );
+  // Signed out instead of completing it: nothing more to open.
+  if (!await ensureProfileComplete(navigator)) return;
   if (farms != null && farms.isEmpty) {
     setUpFarmWith(navigator);
   } else if (farm != null) {

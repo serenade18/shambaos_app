@@ -7,32 +7,13 @@ import 'package:flutter/services.dart';
 import 'auth_service.dart';
 import 'verify_otp_screen.dart';
 import 'after_sign_in.dart';
+import 'countries.dart';
+import 'forgot_password_sheet.dart';
+import 'sign_up_screen.dart';
 import '../../l10n/tr.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Country model
-// ─────────────────────────────────────────────────────────────────────────────
-class _Country {
-  final String flag;
-  final String iso;
-  final String name;
-  final String dialCode;
-  const _Country({required this.flag, required this.iso, required this.name, required this.dialCode});
-}
-
-List<_Country> get _countries => [
-  _Country(flag: '🇰🇪', iso: 'KE', name: 'Kenya'.tr,        dialCode: '+254'),
-  _Country(flag: '🇺🇬', iso: 'UG', name: 'Uganda'.tr,       dialCode: '+256'),
-  _Country(flag: '🇹🇿', iso: 'TZ', name: 'Tanzania'.tr,     dialCode: '+255'),
-  _Country(flag: '🇷🇼', iso: 'RW', name: 'Rwanda'.tr,       dialCode: '+250'),
-  _Country(flag: '🇪🇹', iso: 'ET', name: 'Ethiopia'.tr,     dialCode: '+251'),
-  _Country(flag: '🇳🇬', iso: 'NG', name: 'Nigeria'.tr,      dialCode: '+234'),
-  _Country(flag: '🇬🇭', iso: 'GH', name: 'Ghana'.tr,        dialCode: '+233'),
-  _Country(flag: '🇿🇦', iso: 'ZA', name: 'South Africa'.tr, dialCode: '+27'),
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// LOGIN SCREEN  (phone entry)
+// LOGIN SCREEN  (phone + SMS code in Kenya; username or email and password elsewhere)
 // ─────────────────────────────────────────────────────────────────────────────
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -43,9 +24,14 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  _Country _selectedCountry = _countries.first;
+  Country _country = countries.first;
   final _phoneCtrl  = TextEditingController();
   final _phoneFocus = FocusNode();
+  // Outside Kenya: username or email, and password.
+  final _idCtrl     = TextEditingController();
+  final _idFocus    = FocusNode();
+  final _pwCtrl     = TextEditingController();
+  final _pwFocus    = FocusNode();
 
   late AnimationController _animCtrl;
   late List<Animation<double>> _fadeAnims;
@@ -94,8 +80,16 @@ class _LoginScreenState extends State<LoginScreen>
       if (mounted) _animCtrl.forward();
     });
     _phoneFocus.addListener(() => setState(() {}));
+    _idFocus.addListener(() => setState(() {}));
+    _pwFocus.addListener(() => setState(() {}));
+    _loadCountry();
     _checkBiometric();
     _checkGoogle();
+  }
+
+  Future<void> _loadCountry() async {
+    final country = await initialCountry();
+    if (mounted) setState(() => _country = country);
   }
 
   void _goHome() => goHomeAfterSignIn(context);
@@ -118,6 +112,9 @@ class _LoginScreenState extends State<LoginScreen>
       if (res.message != AuthService.googleCancelled) {
         setState(() => _errorMsg = res.message ?? "Google sign-in didn't work. Try again.".tr);
       }
+    } else if (res.data is Map && res.data['needs_phone'] == true && !_country.signsInBySms) {
+      // A new account needs an SMS code, which only Kenyan numbers get.
+      setState(() => _errorMsg = 'No account uses this Google account yet. Create one with your email below.'.tr);
     } else if (res.data is Map && res.data['needs_phone'] == true) {
       setState(() {
         _googleTicket = res.data['google_ticket']?.toString();
@@ -167,24 +164,16 @@ class _LoginScreenState extends State<LoginScreen>
     _animCtrl.dispose();
     _phoneCtrl.dispose();
     _phoneFocus.dispose();
+    _idCtrl.dispose();
+    _idFocus.dispose();
+    _pwCtrl.dispose();
+    _pwFocus.dispose();
     super.dispose();
   }
 
   Widget _stagger(int i, Widget child) => SlideTransition(
       position: _slideAnims[i],
       child: FadeTransition(opacity: _fadeAnims[i], child: child));
-
-  // ── Normalise to E.164 ────────────────────────────────────────────────────
-  String _normalizedPhone() {
-    final raw = _phoneCtrl.text.trim();
-    if (raw.startsWith('0')) {
-      return _selectedCountry.dialCode + raw.substring(1);
-    }
-    if (!raw.startsWith('+')) {
-      return '${_selectedCountry.dialCode}$raw';
-    }
-    return raw;
-  }
 
   // ── Request OTP ────────────────────────────────────────────────────────────
   Future<void> _handleContinue() async {
@@ -196,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     setState(() { _isLoading = true; _errorMsg = null; });
 
-    final phone = _normalizedPhone();
+    final phone = _country.e164(raw);
     final res   = await AuthService.requestOtp(phone: phone);
 
     if (!mounted) return;
@@ -209,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen>
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => VerifyOtpScreen(
             phone: phone,
-            displayPhone: '${_selectedCountry.dialCode} $raw',
+            displayPhone: '${_country.dialCode} $raw',
             googleTicket: _googleTicket,
           ),
           transitionsBuilder: (_, anim, __, child) => SlideTransition(
@@ -228,45 +217,44 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  void _showCountryPicker() {
-    _phoneFocus.unfocus();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Ledger.sheet,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(Ledger.radiusSheet))),
-      builder: (_) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const SizedBox(height: 12),
-          Container(width: 40, height: 5, decoration: BoxDecoration(color: Ledger.rule, borderRadius: BorderRadius.circular(999))),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Align(alignment: Alignment.centerLeft, child: Text('Select Country'.tr, style: Ledger.title.copyWith(fontSize: 19, height: 24 / 19))),
-          ),
-          for (final c in _countries)
-            InkWell(
-              onTap: () {
-                setState(() => _selectedCountry = c);
-                Navigator.pop(context);
-              },
-              child: Container(
-                constraints: const BoxConstraints(minHeight: 56),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: c.dialCode == _selectedCountry.dialCode ? Ledger.shambaTint : null,
-                  border: const Border(top: BorderSide(color: Ledger.rule)),
-                ),
-                child: Row(children: [
-                  Text(c.flag, style: const TextStyle(fontSize: 22)),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(c.name, style: Ledger.label)),
-                  Text('${c.iso} ${c.dialCode}', style: Ledger.code.copyWith(fontSize: 15, color: Ledger.inkMuted)),
-                ]),
-              ),
-            ),
-          const SizedBox(height: 12),
-        ]),
-      ),
+  // ── Username or email, and password ───────────────────────────────────────
+  Future<void> _handlePasswordSignIn() async {
+    final id = _idCtrl.text.trim();
+    if (id.isEmpty) return _idFocus.requestFocus();
+    if (_pwCtrl.text.isEmpty) return _pwFocus.requestFocus();
+
+    setState(() { _isLoading = true; _errorMsg = null; });
+    final res = await AuthService.login(email: id, password: _pwCtrl.text);
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (!res.error) {
+      _goHome();
+    } else {
+      setState(() => _errorMsg = res.message ?? "Couldn't sign in. Try again.".tr);
+    }
+  }
+
+  Future<void> _openSignUp() async {
+    final username = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => SignUpScreen(country: _country)),
     );
+    // Back from "Check your email": ready to sign in once the link is opened.
+    if (username != null && username.isNotEmpty && mounted) {
+      setState(() => _idCtrl.text = username);
+      _pwFocus.requestFocus();
+    }
+  }
+
+  Future<void> _showCountryPicker() async {
+    final picked = await showCountryPicker(context, _country);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _country = picked;
+      _errorMsg = null;
+      if (!picked.signsInBySms) { _googleTicket = null; _googleEmail = null; }
+    });
+    saveCountry(picked);
   }
 
   void _showHelp() {
@@ -277,7 +265,9 @@ class _LoginScreenState extends State<LoginScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text('Need Help?'.tr, style: Ledger.title.copyWith(fontSize: 19, height: 24 / 19)),
         content: Text(
-          'Enter your phone number (e.g. 0712 123456).\nWe\'ll send a 6-digit SMS code to log in or create your account.'.tr,
+          _country.signsInBySms
+              ? 'Enter your phone number (e.g. 0712 123456).\nWe\'ll send a 6-digit SMS code to log in or create your account.'.tr
+              : 'Sign in with your username or email and password. New here? Create an account and we\'ll email you a link to start it.'.tr,
           style: Ledger.body,
         ),
         actions: [
@@ -318,6 +308,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildScreen(BuildContext context) {
     final google = _googleAvailable && _googleTicket == null;
     final others = google || _biometricReady;
+    final sms = _country.signsInBySms;
     return Scaffold(
       backgroundColor: Ledger.paper,
       // The photo fills whatever the sheet leaves, running 28 under its rounded top.
@@ -382,12 +373,17 @@ class _LoginScreenState extends State<LoginScreen>
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Text('KARIBU · WELCOME'.tr, style: Ledger.eyebrow),
                   const SizedBox(height: 6),
-                  Text(_googleTicket != null ? 'One more step'.tr : 'Sign in with your phone'.tr, style: Ledger.title),
+                  Text(
+                    _googleTicket != null
+                        ? 'One more step'.tr
+                        : sms ? 'Sign in with your phone'.tr : 'Sign in to Shamba OS'.tr,
+                    style: Ledger.title,
+                  ),
                   const SizedBox(height: 6),
                   Text(
                     _googleTicket != null
                         ? 'Add your phone number to finish setting up your account'.tr
-                        : 'We will send a 6-digit code by SMS.'.tr,
+                        : sms ? 'We will send a 6-digit code by SMS.'.tr : 'Use your username or email, and your password.'.tr,
                     style: Ledger.body,
                   ),
                   if (_googleTicket != null) ...[
@@ -396,52 +392,114 @@ class _LoginScreenState extends State<LoginScreen>
                   ],
                   const SizedBox(height: 16),
 
-                  // Phone number, with the country code in front
+                  // Where they farm decides how they sign in
                   LedgerField(
-                    label: 'Phone number'.tr,
-                    focused: _phoneFocus.hasFocus,
-                    error: _errorMsg,
-                    prefix: Semantics(
+                    label: 'Country'.tr,
+                    input: Semantics(
                       button: true,
-                      label: 'Country code {code}. Change country'.trArgs({'code': _selectedCountry.dialCode}),
-                      child: GestureDetector(
+                      label: 'Country {name}. Change country'.trArgs({'name': _country.name}),
+                      child: InkWell(
                         onTap: _showCountryPicker,
-                        behavior: HitTestBehavior.opaque,
                         child: ExcludeSemantics(
-                          child: Text('${_selectedCountry.iso} ${_selectedCountry.dialCode}',
-                              style: Ledger.code.copyWith(fontSize: 17, letterSpacing: 0)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Row(children: [
+                              Text(_country.flag, style: const TextStyle(fontSize: 22)),
+                              const SizedBox(width: 10),
+                              Expanded(child: Text(_country.name, style: Ledger.input, overflow: TextOverflow.ellipsis)),
+                              const LineIcon(LineIcon.chevronDown, size: 20, color: Ledger.inkMuted),
+                            ]),
+                          ),
                         ),
-                      ),
-                    ),
-                    input: TextField(
-                      controller: _phoneCtrl,
-                      focusNode: _phoneFocus,
-                      keyboardType: TextInputType.phone,
-                      autofillHints: const [AutofillHints.telephoneNumberNational],
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(10),
-                      ],
-                      onChanged: (_) {
-                        if (_errorMsg != null) setState(() => _errorMsg = null);
-                      },
-                      onSubmitted: (_) => _handleContinue(),
-                      style: Ledger.code,
-                      cursorColor: Ledger.shamba,
-                      decoration: InputDecoration(
-                        hintText: '712 345 678',
-                        hintStyle: Ledger.code.copyWith(color: Ledger.inkFaint),
-                        border: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        filled: false,
-                        isCollapsed: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  LedgerButton(label: 'Continue'.tr, busy: _isLoading, onPressed: _handleContinue),
+
+                  if (sms) ...[
+                    // Phone number, with the country code in front
+                    LedgerField(
+                      label: 'Phone number'.tr,
+                      focused: _phoneFocus.hasFocus,
+                      error: _errorMsg,
+                      prefix: Semantics(
+                        button: true,
+                        label: 'Country code {code}. Change country'.trArgs({'code': _country.dialCode}),
+                        child: GestureDetector(
+                          onTap: _showCountryPicker,
+                          behavior: HitTestBehavior.opaque,
+                          child: ExcludeSemantics(
+                            child: Text(_country.dialLabel, style: Ledger.code.copyWith(fontSize: 17, letterSpacing: 0)),
+                          ),
+                        ),
+                      ),
+                      input: TextField(
+                        controller: _phoneCtrl,
+                        focusNode: _phoneFocus,
+                        keyboardType: TextInputType.phone,
+                        autofillHints: const [AutofillHints.telephoneNumberNational],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
+                        onChanged: (_) {
+                          if (_errorMsg != null) setState(() => _errorMsg = null);
+                        },
+                        onSubmitted: (_) => _handleContinue(),
+                        style: Ledger.code,
+                        cursorColor: Ledger.shamba,
+                        decoration: Ledger.bare('712 345 678', style: Ledger.code),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    LedgerButton(label: 'Continue'.tr, busy: _isLoading, onPressed: _handleContinue),
+                  ] else
+                    AutofillGroup(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        LedgerField(
+                          label: 'Username or email'.tr,
+                          focused: _idFocus.hasFocus,
+                          input: TextField(
+                            controller: _idCtrl,
+                            focusNode: _idFocus,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.username, AutofillHints.email],
+                            autocorrect: false,
+                            textInputAction: TextInputAction.next,
+                            onChanged: (_) {
+                              if (_errorMsg != null) setState(() => _errorMsg = null);
+                            },
+                            onSubmitted: (_) => _pwFocus.requestFocus(),
+                            style: Ledger.input,
+                            cursorColor: Ledger.shamba,
+                            decoration: Ledger.bare(''),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        LedgerField(
+                          label: 'Password'.tr,
+                          focused: _pwFocus.hasFocus,
+                          error: _errorMsg,
+                          input: PasswordInput(
+                            controller: _pwCtrl,
+                            focusNode: _pwFocus,
+                            onChanged: (_) {
+                              if (_errorMsg != null) setState(() => _errorMsg = null);
+                            },
+                            onSubmitted: (_) => _handlePasswordSignIn(),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => showForgotPassword(context, email: _idCtrl.text.trim()),
+                            style: TextButton.styleFrom(minimumSize: const Size(0, 40), foregroundColor: Ledger.shambaInk),
+                            child: Text('Forgot password?'.tr, style: Ledger.link),
+                          ),
+                        ),
+                        LedgerButton(label: 'Sign in'.tr, busy: _isLoading, onPressed: _handlePasswordSignIn),
+                      ]),
+                    ),
 
                   if (others) ...[
                     const SizedBox(height: 16),
@@ -493,6 +551,15 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                     ]),
+                  ],
+                  if (!sms) ...[
+                    const SizedBox(height: 16),
+                    LedgerButton(
+                      label: 'Create an account'.tr,
+                      kind: LedgerButtonKind.secondary,
+                      large: false,
+                      onPressed: _isLoading ? null : _openSignUp,
+                    ),
                   ],
                   const SizedBox(height: 16),
                   Center(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../services/app_type.dart';
+import '../../l10n/tr.dart';
 
 /// Shamba Ledger values for the screens before sign-in (splash, welcome, phone,
 /// code). They keep the light design in both themes, so the values are fixed
@@ -37,6 +38,19 @@ class Ledger {
   static const eyebrow = TextStyle(fontFamily: AppType.text, fontSize: 12, height: 16 / 12, fontWeight: FontWeight.w700, letterSpacing: 0.96, color: inkMuted);
   static const link = TextStyle(fontFamily: AppType.text, fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w700, color: shambaInk);
   static const code = TextStyle(fontFamily: AppType.mono, fontSize: 19, height: 24 / 19, fontWeight: FontWeight.w500, letterSpacing: 0.76, color: ink);
+  static const input = TextStyle(fontFamily: AppType.text, fontSize: 17, height: 24 / 17, color: ink);
+
+  /// A bare text field inside a LedgerField: the box draws the border.
+  static InputDecoration bare(String hint, {TextStyle style = input}) => InputDecoration(
+        hintText: hint,
+        hintStyle: style.copyWith(color: inkFaint),
+        border: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        filled: false,
+        isCollapsed: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      );
 }
 
 /// The Shamba OS leaf in a circle.
@@ -73,6 +87,9 @@ class LineIcon extends StatelessWidget {
   static const fingerprint = '<path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/>';
   static const chevronDown = '<path d="m6 9 6 6 6-6"/>';
   static const x = '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>';
+  static const eye = '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>';
+  static const eyeOff = '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>';
+  static const mail = '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>';
 
   @override
   Widget build(BuildContext context) {
@@ -191,4 +208,54 @@ class LedgerField extends StatelessWidget {
       ],
     ]);
   }
+}
+
+/// A password typed into a LedgerField, with a button to show it.
+class PasswordInput extends StatefulWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool newPassword;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+
+  const PasswordInput({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    this.newPassword = false,
+    this.onChanged,
+    this.onSubmitted,
+  });
+
+  @override
+  State<PasswordInput> createState() => _PasswordInputState();
+}
+
+class _PasswordInputState extends State<PasswordInput> {
+  bool _shown = false;
+
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Expanded(
+          child: TextField(
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            obscureText: !_shown,
+            autocorrect: false,
+            enableSuggestions: false,
+            autofillHints: [widget.newPassword ? AutofillHints.newPassword : AutofillHints.password],
+            textInputAction: TextInputAction.done,
+            onChanged: widget.onChanged,
+            onSubmitted: widget.onSubmitted,
+            style: Ledger.input,
+            cursorColor: Ledger.shamba,
+            decoration: Ledger.bare(''),
+          ),
+        ),
+        IconButton(
+          onPressed: () => setState(() => _shown = !_shown),
+          tooltip: _shown ? 'Hide password'.tr : 'Show password'.tr,
+          icon: LineIcon(_shown ? LineIcon.eyeOff : LineIcon.eye, size: 20, color: Ledger.inkMuted),
+        ),
+      ]);
 }
