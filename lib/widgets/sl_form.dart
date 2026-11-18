@@ -22,6 +22,8 @@ class SlFormPage extends StatelessWidget {
   final bool close; // an X on a filled circle, as screens 29–30, in place of the back arrow
   final String? saveIcon; // a LineIcon path before the Save label
   final double gap; // between children: 18 for fields, 12 for section cards
+  final String? againLabel; // a second, outlined button under Save: "Save and add another"
+  final VoidCallback? onAgain;
 
   const SlFormPage({
     super.key,
@@ -35,6 +37,8 @@ class SlFormPage extends StatelessWidget {
     this.close = false,
     this.saveIcon,
     this.gap = 18,
+    this.againLabel,
+    this.onAgain,
   });
 
   @override
@@ -123,6 +127,22 @@ class SlFormPage extends StatelessWidget {
                         ]),
                 ),
               ),
+              if (againLabel != null) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: saving ? null : onAgain,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: c.brandText,
+                      side: BorderSide(color: c.border, width: 1.5),
+                      shape: const StadiumBorder(),
+                      textStyle: const TextStyle(fontFamily: AppType.text, fontSize: 15, fontWeight: FontWeight.w700),
+                    ),
+                    child: Text(againLabel!),
+                  ),
+                ),
+              ],
             ]),
           ),
         ]),

@@ -49,6 +49,7 @@ List<(String, String)> animalSexesShort(String type) => switch (type) {
 
 class _Row {
   final tag = TextEditingController();
+  final name = TextEditingController(); // optional: "Njeri"
   bool typed = false; // the farmer changed the tag, so it no longer numbers itself
   String last = ''; // the tag as last seen: a controller also speaks up when only the cursor moves
   String sex;
@@ -102,6 +103,7 @@ class _HerdEntryScreenState extends State<HerdEntryScreen> with RecordForm {
   void dispose() {
     for (final r in _rows) {
       r.tag.dispose();
+      r.name.dispose();
     }
     super.dispose();
   }
@@ -143,6 +145,7 @@ class _HerdEntryScreenState extends State<HerdEntryScreen> with RecordForm {
   void _remove(_Row row) => setState(() {
         _rows.remove(row);
         row.tag.dispose();
+        row.name.dispose();
         fieldErrors = {};
       });
 
@@ -169,7 +172,7 @@ class _HerdEntryScreenState extends State<HerdEntryScreen> with RecordForm {
         'enterprise_id': widget.herdId,
         'source': _source,
         'animals': [
-          for (final r in _rows) {'tag': r.tag.text.trim(), 'sex': r.sex, 'breed': r.breed ?? _breed ?? ''},
+          for (final r in _rows) {'tag': r.tag.text.trim(), 'name': r.name.text.trim(), 'sex': r.sex, 'breed': r.breed ?? _breed ?? ''},
         ],
       }),
       '{n} {unit} added to {herd}'.trArgs({'n': n, 'unit': animalUnit(_type, n), 'herd': widget.herdName}),
@@ -192,7 +195,7 @@ class _HerdEntryScreenState extends State<HerdEntryScreen> with RecordForm {
         SlTypeHead(
           icon: Image.asset(fieldIcon(_type), width: 28, height: 28, excludeFromSemantics: true),
           title: widget.herdName,
-          meta: 'A row each. Tags number themselves; change any.'.tr,
+          meta: 'A row each: tag, name, sex. Tags number themselves; change any.'.tr,
         ),
         if (breeds.isNotEmpty)
           SlField(
@@ -264,6 +267,13 @@ class _HerdEntryScreenState extends State<HerdEntryScreen> with RecordForm {
             padding: const EdgeInsets.fromLTRB(38, 6, 8, 0),
             child: Text(error, style: TextStyle(fontFamily: AppType.text, fontSize: 13, height: 18 / 13, color: c.dangerInk)),
           ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(38, 8, 8, 0),
+          child: Semantics(
+            label: 'Name, row {n}'.trArgs({'n': i + 1}),
+            child: SlTextBox(controller: row.name, placeholder: 'Name (optional)'.tr, caps: TextCapitalization.words),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(38, 10, 8, 0),
           child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [

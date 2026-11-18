@@ -10,6 +10,7 @@ import 'fields/fields_screen.dart';
 import '../widgets/phosphor_icons.dart';
 import 'home/home_hero.dart';
 import 'home/today_section.dart';
+import 'home/quick_add.dart';
 import 'records/record_menu.dart';
 import 'alerts/alerts_screen.dart';
 import 'profile/profile_screen.dart';
@@ -793,6 +794,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(builder: (_) => const AlertsScreen()),
                 ),
               ),
+              QuickAdd(farm: _farm, fields: _fields ?? const [], onChanged: _loadFarmStatus),
               if (_todayRows?.isNotEmpty ?? false)
                 TodaySection(rows: _todayRows!, fields: _fields ?? const [], onSaved: _loadToday)
               else if (_todayRows == null && _todayLoading)

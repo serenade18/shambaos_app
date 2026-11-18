@@ -376,14 +376,14 @@ class _LoginScreenState extends State<LoginScreen>
                   Text(
                     _googleTicket != null
                         ? 'One more step'.tr
-                        : sms ? 'Sign in with your phone'.tr : 'Sign in to Shamba OS'.tr,
+                        : sms ? 'Sign in or sign up with your phone'.tr : 'Sign in to Shamba OS'.tr,
                     style: Ledger.title,
                   ),
                   const SizedBox(height: 6),
                   Text(
                     _googleTicket != null
                         ? 'Add your phone number to finish setting up your account'.tr
-                        : sms ? 'We will send a 6-digit code by SMS.'.tr : 'Use your username or email, and your password.'.tr,
+                        : sms ? 'New or returning, enter your number. We will text you a 6-digit code.'.tr : 'Use your username or email, and your password.'.tr,
                     style: Ledger.body,
                   ),
                   if (_googleTicket != null) ...[

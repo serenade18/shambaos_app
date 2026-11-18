@@ -20,15 +20,14 @@ const kenyaCounties = [
   'Trans Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot',
 ];
 
-/// A new farm, the whole way: its name and county (screen 23b), then Map your farm
-/// (screens 05–09, which can be put off), then "What are you adding?" (screen 27).
+/// A new farm in two steps: its name and county (screen 23b), then "What are you
+/// adding?" (screen 27). Mapping the boundary waits: Home and My farm offer it.
 /// From sign-in, Home and My farm. True when a farm was made.
 Future<bool> setUpFarm(BuildContext context) => setUpFarmWith(Navigator.of(context));
 
 Future<bool> setUpFarmWith(NavigatorState navigator) async {
   final farm = await navigator.push<Map<String, dynamic>>(MaterialPageRoute(builder: (_) => const SetupFarmScreen()));
   if (farm == null) return false;
-  await navigator.push(MaterialPageRoute(builder: (_) => FarmMapScreen(farm: farm)));
   await navigator.push(MaterialPageRoute(builder: (_) => AddToFarmScreen(farm: farm)));
   FarmMapScreen.boundarySaved.value++; // Home and My farm reload
   return true;
@@ -49,6 +48,20 @@ class _SetupFarmScreenState extends State<SetupFarmScreen> with RecordForm {
 
   final _name = TextEditingController();
   String? _county;
+
+  @override
+  void initState() {
+    super.initState();
+    _suggestName();
+  }
+
+  /// "Wanjiku's farm", from the farmer's own name, so most farmers type nothing here.
+  Future<void> _suggestName() async {
+    final user = await ApiService.getUser();
+    final first = '${user?['name'] ?? ''}'.trim().split(' ').first;
+    if (!mounted || first.isEmpty || _name.text.isNotEmpty) return;
+    setState(() => _name.text = "{name}'s farm".trArgs({'name': first}));
+  }
 
   @override
   void dispose() {
@@ -105,15 +118,15 @@ class _SetupFarmScreenState extends State<SetupFarmScreen> with RecordForm {
   Widget build(BuildContext context) {
     final c = context.appColors;
     return SlFormPage(
-      eyebrow: 'NEW FARM · STEP 1 OF 3'.tr,
+      eyebrow: 'NEW FARM · STEP 1 OF 2'.tr,
       title: 'Set up your farm'.tr,
       saving: saving,
       error: banner({'name', 'county'}),
-      saveLabel: 'Next: map your farm'.tr,
+      saveLabel: 'Next: what you keep'.tr,
       onSave: _save,
       children: [
         Row(children: [
-          for (var i = 0; i < 3; i++) ...[
+          for (var i = 0; i < 2; i++) ...[
             if (i > 0) const SizedBox(width: 6),
             Expanded(
               child: Container(
@@ -155,10 +168,10 @@ class _SetupFarmScreenState extends State<SetupFarmScreen> with RecordForm {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Next, map your farm'.tr,
+                Text("Next, choose what you keep".tr,
                     style: TextStyle(fontFamily: AppType.text, fontSize: 15, height: 20 / 15, fontWeight: FontWeight.w700, color: c.textPrimary)),
                 const SizedBox(height: 2),
-                Text("Walk or draw its boundary, or do it later. Then choose what you're running.".tr,
+                Text('Your cows, goats, chickens or crops. Map the farm later from My farm.'.tr,
                     style: TextStyle(fontFamily: AppType.text, fontSize: 13, height: 18 / 13, color: c.textSecondary)),
               ]),
             ),

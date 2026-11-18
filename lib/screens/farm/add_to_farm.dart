@@ -416,6 +416,7 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
   String? _mother;
   String? _lastTag; // the herd's highest tag, for "Next after KE-047"
   String _suggested = ''; // the tag filled in; replaced when the herd changes, unless typed over
+  final _added = <String>[]; // tags saved with "Save and add another", while the form stays open
 
   static const _strip =
       '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>';
@@ -595,7 +596,9 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
         if (v != 'female' && _stage != 'young') _stage = null; // milking, dry and heifer are hers
       });
 
-  Future<void> _save() async {
+  /// Saves the animal. With [again], the form stays open for the next one: the tag moves
+  /// on, the herd, sex, breed and origin stay, and the rest clears.
+  Future<void> _save({bool again = false}) async {
     final tag = _tag.text.trim();
     if (tag.isEmpty) return fail("Enter the animal's tag.".tr, 'tag');
     final cost = _source == 'bought' && _cost.text.trim().isNotEmpty ? _num(_cost) : null;
@@ -636,6 +639,7 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
       }
       return res;
     }, done, next: (_) {
+      if (again) return _another(tag);
       if (_sequence && widget.index < widget.total) {
         // The next animal's form says this one was saved; a snack bar would cover its button.
         Navigator.pushReplacement(
@@ -653,10 +657,30 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
           result: done,
         );
       } else {
-        Navigator.pop(context, done);
+        Navigator.pop(context, _added.isEmpty ? done : _addedLine(_added.length + 1));
       }
     });
   }
+
+  void _another(String tag) {
+    final next = nextTag(tag);
+    setState(() {
+      _added.add(tag);
+      _tag.text = next;
+      _suggested = next;
+      _lastTag = tag;
+      for (final c in [_name, _rfid, _weight, _cost, _sire]) {
+        c.clear();
+      }
+      _born = null;
+      _mother = null;
+      _stage = null;
+    });
+    _loadHerds(); // the herd's count, and the new animal as a mother to pick
+  }
+
+  /// "3 cows added", for Home once the form closes.
+  String _addedLine(int n) => '{n} {unit} added'.trArgs({'n': n, 'unit': animalUnit(_type, n)});
 
   /// Quick weights to start from, by what the animal is.
   List<(num, String)> get _presets => switch (_type) {
@@ -687,6 +711,9 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
   /// "Tag and sex are in. 5 of 8 details filled; the rest can wait."
   (bool, String) get _readiness {
     if (_tag.text.trim().isEmpty) return (false, 'Add the tag to save.'.tr);
+    if (_added.isNotEmpty && _tag.text == _suggested) {
+      return (true, '{tag} saved, {n} so far. This is the next one.'.trArgs({'tag': _added.last, 'n': _added.length}));
+    }
     final stage = _stages != null && _female;
     final filled = [
       true, // tag
@@ -739,7 +766,13 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
           under(error, hint),
         ]);
 
-    return SlFormPage(
+    // Closed after "Save and add another": Home still hears what was added.
+    return PopScope(
+      canPop: _added.isEmpty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) Navigator.pop(context, _addedLine(_added.length));
+      },
+      child: SlFormPage(
       eyebrow: 'ADD AN ANIMAL'.tr,
       title: _title,
       close: true,
@@ -749,6 +782,8 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
       saveLabel: 'Save animal'.tr,
       saveIcon: icons.save,
       onSave: _herds == null ? null : _save,
+      againLabel: _sequence ? null : 'Save and add another'.tr,
+      onAgain: _herds == null ? null : () => _save(again: true),
       children: [
         if (!_sequence && _herd != null) _severalStrip(c),
         _herdHead(c),
@@ -884,6 +919,7 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
           Text('Next: {unit} {i} of {n}'.trArgs({'unit': animalUnit(_type, 1), 'i': widget.index + 1, 'n': widget.total}),
               style: AppType.caption.copyWith(color: c.textSecondary)),
       ],
+    ),
     );
   }
 
@@ -1469,7 +1505,8 @@ class _CropFormState extends State<CropForm> with RecordForm {
     if (!mounted) return;
     setState(() {
       _plots = p;
-      _plot = pick != null && p.any((x) => '${x['id']}' == pick) ? pick : (_plot ?? (p.isEmpty ? null : '${p.first['id']}'));
+      // No plot chosen: the crop gets a plot of its own, the size planted.
+      if (pick != null && p.any((x) => '${x['id']}' == pick)) _plot = pick;
     });
   }
 
@@ -1484,9 +1521,11 @@ class _CropFormState extends State<CropForm> with RecordForm {
   Future<void> _choosePlot() async {
     final plots = _plots ?? const [];
     if (plots.isEmpty) return _addPlot();
-    final picked = await slPick<String>(context,
-        title: 'Plot'.tr, value: _plot, options: [for (final p in plots) ('${p['id']}', '${p['name']} · ${_acresText(p['area_acres'])}')]);
-    if (picked != null) setState(() => _plot = picked);
+    final picked = await slPick<String>(context, title: 'Plot'.tr, value: _plot ?? '', options: [
+      ('', 'A new plot for this crop'.tr),
+      for (final p in plots) ('${p['id']}', '${p['name']} · ${_acresText(p['area_acres'])}'),
+    ]);
+    if (picked != null) setState(() => _plot = picked.isEmpty ? null : picked);
   }
 
   List<String> get _varieties => switch (_code) {
@@ -1538,7 +1577,6 @@ class _CropFormState extends State<CropForm> with RecordForm {
 
   Future<void> _save() async {
     final area = _num(_area);
-    if (_plot == null) return fail('Choose a plot, or add one.'.tr, 'plot_id');
     if (area == null || area <= 0) return fail('Enter the area planted.'.tr, 'area_acres');
     final plants = _num(_plants);
     if (_orchard && (plants == null || plants < 1)) {
@@ -1578,21 +1616,21 @@ class _CropFormState extends State<CropForm> with RecordForm {
           meta: _orchard ? 'Fruit trees on one plot'.tr : 'One season on one plot'.tr,
           onChange: () => Navigator.maybePop(context),
         ),
-        SlField(
-          label: 'Plot'.tr,
-          required: true,
-          error: err('plot_id'),
-          below: SlLink('Add a plot'.tr, _addPlot),
-          child: SlSelectBox(
-            icon: _plotPath,
-            text: plot == null
-                ? (plots == null ? 'Loading your plots…'.tr : 'No plots yet. Add one.'.tr)
-                : '${plot['name']} · ${_acresText(plot['area_acres'])}',
-            muted: plot == null,
-            error: err('plot_id') != null,
-            onTap: _choosePlot,
+        // A farm with plots picks one, or leaves it to get a new one; a farm without
+        // plots isn't asked: the crop gets its own.
+        if ((plots ?? const []).isNotEmpty)
+          SlField(
+            label: 'Plot'.tr,
+            optional: true,
+            error: err('plot_id'),
+            below: SlLink('Add a plot'.tr, _addPlot),
+            child: SlSelectBox(
+              icon: _plotPath,
+              text: plot == null ? 'A new plot for this crop'.tr : '${plot['name']} · ${_acresText(plot['area_acres'])}',
+              error: err('plot_id') != null,
+              onTap: _choosePlot,
+            ),
           ),
-        ),
         SlField(
           label: _orchard ? 'Area'.tr : 'Area planted'.tr,
           required: true,
