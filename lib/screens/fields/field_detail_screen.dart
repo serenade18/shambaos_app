@@ -16,7 +16,6 @@ import '../records/record_menu.dart';
 import 'field_service.dart';
 import 'field_widgets.dart';
 import '../../l10n/tr.dart';
-import '../../widgets/skeleton.dart';
 
 /// One field, as the design's field page: its photo with the field's card,
 /// how it is doing, the jobs in its plan, and Record today.
@@ -311,7 +310,7 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
       ];
     }
     if (tasks == null) {
-      return const [SkeletonBlocks([72, 72, 72], gap: 10)];
+      return [for (var i = 0; i < 3; i++) _taskSkeleton(c)];
     }
     if (tasks.isEmpty) {
       return [
@@ -320,6 +319,12 @@ class _FieldDetailScreenState extends State<FieldDetailScreen> {
     }
     return [for (final t in tasks) _taskCard(c, t)];
   }
+
+  Widget _taskSkeleton(AppColors c) => Container(
+        height: 72,
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(color: c.surfaceMuted, borderRadius: BorderRadius.circular(24)),
+      );
 
   IconData _taskIcon(FieldTask t) => switch (t.code) {
         'land_preparation' => PhosphorIconsRegular.shovel,

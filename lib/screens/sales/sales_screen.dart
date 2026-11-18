@@ -15,7 +15,6 @@ import '../home_service.dart';
 import '../records/record_form.dart';
 import '../records/record_forms.dart';
 import '../../l10n/tr.dart';
-import '../../widgets/skeleton.dart';
 
 /// The farm's sales over a period (GET /sales?farm_id=&from=&to=).
 class SalesPeriod {
@@ -190,13 +189,7 @@ class _SalesScreenState extends State<SalesScreen> {
                   }))])];
     }
     if (p == null && _loading) {
-      return const [
-        SkeletonBlocks([120]),
-        SizedBox(height: 12),
-        Row(children: [Expanded(child: SkeletonBlocks([88])), SizedBox(width: 10), Expanded(child: SkeletonBlocks([88]))]),
-        SizedBox(height: 12),
-        SkeletonLedger(rows: 5, title: true, leading: false, figure: true),
-      ];
+      return [Padding(padding: const EdgeInsets.only(top: 64), child: Center(child: CircularProgressIndicator(color: c.shamba)))];
     }
     if (p == null) {
       return [

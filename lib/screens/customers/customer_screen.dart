@@ -11,7 +11,6 @@ import '../farm/add_to_farm.dart';
 import '../records/record_form.dart';
 import 'customer_service.dart';
 import '../../l10n/tr.dart';
-import '../../widgets/skeleton.dart';
 
 /// Everyone the farm sells to, as the design's Customers: a search, what they
 /// owe altogether on a green band, then who owes what, most first (GET
@@ -89,7 +88,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 _searchBox(c),
                 const SizedBox(height: 14),
                 if (all == null && !_failed)
-                  const Column(children: [SkeletonBlocks([96]), SizedBox(height: 14), SkeletonLedger(rows: 6, figure: true)])
+                  Padding(padding: const EdgeInsets.only(top: 48), child: Center(child: CircularProgressIndicator(color: c.shamba)))
                 else if (all == null)
                   SlLedger(children: [
                     SlLedgerRow(

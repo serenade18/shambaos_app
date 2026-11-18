@@ -21,13 +21,10 @@ String fieldPhoto(String type) => switch (type) {
 
 /// The illustrated icon for what a field keeps or grows (images/assets/icons).
 String fieldIcon(String type, {bool crop = false}) => 'images/assets/icons/${switch (type) {
-      'layers' => 'chicken',
-      'broilers' => 'cock',
+      'layers' || 'broilers' => 'chicken',
       'fish' => 'fish',
-      'dairy_cattle' => 'cow',
-      'beef_cattle' => 'bull',
-      'dairy_goats' => 'goat',
-      'sheep' => 'sheep',
+      'dairy_cattle' || 'beef_cattle' => 'cow',
+      'dairy_goats' || 'sheep' => 'goat',
       'pigs' => 'pig',
       'rabbits' => 'rabbit',
       'maize' => 'corn',

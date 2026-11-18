@@ -14,11 +14,10 @@ import 'home/quick_add.dart';
 import 'records/record_menu.dart';
 import 'alerts/alerts_screen.dart';
 import 'profile/profile_screen.dart';
-import 'profile/complete_profile_sheet.dart';
+import 'profile/edit_profile_screen.dart';
 import '../services/app_colors.dart';
 import '../services/app_type.dart';
 import '../widgets/ledger.dart';
-import '../widgets/skeleton.dart';
 import 'animals/animal_screen.dart';
 import 'plants/plant_screen.dart';
 import 'markets/market_screen.dart';
@@ -49,12 +48,14 @@ class _HomeScreenState extends State<HomeScreen> {
   WeatherModel? _today;
   double? _weekRain; // mm forecast over the next 7 days
   bool _weatherLoading = true;
-  bool _farmLoaded = false; // until then, Home doesn't yet know whether there is a farm
-  bool _todayLoading = false;
 
-  // The profile can't stay incomplete (see ensureProfileComplete), so the farm
-  // is all that's left to set up.
-  bool get _allUpdatesComplete => _isFarmSetup;
+  bool get _isProfileComplete =>
+      _userName.isNotEmpty &&
+      _userEmail.isNotEmpty &&
+      !_userEmail.endsWith('@shambos.com');
+
+  // Section hides only when BOTH conditions are satisfied
+  bool get _allUpdatesComplete => _isProfileComplete && _isFarmSetup;
 
   List<Map<String, dynamic>> get _quickMenuItems => [
     {
@@ -134,11 +135,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUser();
     _loadFarmStatus();
-    // Opened from a saved session: the profile is checked here. After signing in,
-    // goHomeAfterSignIn has already opened it, and this returns.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (mounted && await ensureProfileComplete(Navigator.of(context)) && mounted) _loadUser();
-    });
     FarmMapScreen.boundarySaved.addListener(_loadFarmStatus);
     _posterPageController = PageController(
       initialPage: _posterItems.length * 100,
@@ -171,7 +167,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _farm = farm;
       _fields = fields;
       _isFarmSetup = farm != null;
-      _farmLoaded = true;
     });
     if (farm == null) {
       setState(() => _weatherLoading = false);
@@ -191,13 +186,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadToday() async {
     final farm = _farm;
     if (farm == null) return;
-    setState(() => _todayLoading = true);
     final rows = await TodayService.load('${farm['id']}');
-    if (!mounted) return;
-    setState(() {
-      _todayLoading = false;
-      if (rows != null) _todayRows = rows;
-    });
+    if (!mounted || rows == null) return;
+    setState(() => _todayRows = rows);
   }
 
   Future<void> _onRefresh() async {
@@ -314,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
           ],
           if (fields == null)
-            const SkeletonBlocks([112, 112], gap: 10)
+            Container(height: 108, decoration: BoxDecoration(color: colors.surfaceMuted, borderRadius: BorderRadius.circular(16)))
           else if (fields.isEmpty)
             SlLedger(children: [
               SlLedgerRow(
@@ -364,6 +355,24 @@ class _HomeScreenState extends State<HomeScreen> {
             ProfileScreen(userName: _userName, userEmail: _userEmail),
       ),
     );
+  }
+
+  void _openEditProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfileScreen(
+          name: _userName,
+          email: _userEmail,
+          phone: '',
+          username: _userName,
+        ),
+      ),
+    ).then((updated) {
+      if (updated == true) {
+        _loadUser();
+      }
+    });
   }
 
   String _getInitials(String name) {
@@ -451,7 +460,29 @@ class _HomeScreenState extends State<HomeScreen> {
     // Build only the items that are still pending
     final List<Widget> pendingItems = [];
 
+    if (!_isProfileComplete) {
+      pendingItems.add(
+        _buildUpdateItem(
+          icon: Icons.auto_awesome_outlined,
+          title: 'Complete your profile'.tr,
+          subtitle: 'Unlock a personalised experience'.tr,
+          onTap: _openEditProfile,
+        ),
+      );
+    }
+
     if (!_isFarmSetup) {
+      if (pendingItems.isNotEmpty) {
+        pendingItems.add(
+          Divider(
+            height: 1,
+            thickness: 1,
+            indent: 14,
+            endIndent: 14,
+            color: context.appColors.brandSoft,
+          ),
+        );
+      }
       pendingItems.add(
         _buildUpdateItem(
           icon: Icons.agriculture_outlined,
@@ -796,21 +827,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               QuickAdd(farm: _farm, fields: _fields ?? const [], onChanged: _loadFarmStatus),
               if (_todayRows?.isNotEmpty ?? false)
-                TodaySection(rows: _todayRows!, fields: _fields ?? const [], onSaved: _loadToday)
-              else if (_todayRows == null && _todayLoading)
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 24, 16, 0),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Skeleton(child: SkeletonBox(width: 72, height: 18)),
-                    SizedBox(height: 12),
-                    SkeletonLedger(rows: 3),
-                  ]),
-                ),
+                TodaySection(rows: _todayRows!, fields: _fields ?? const [], onSaved: _loadToday),
               _buildBusiness(colors),
               _buildMyFields(colors),
 
               // Hidden only when BOTH profile is complete AND farm is set up
-              if (_farmLoaded && !_allUpdatesComplete) ...[
+              if (!_allUpdatesComplete) ...[
                 const SizedBox(height: 8),
                 _buildImportantUpdates(colors),
               ],

@@ -9,7 +9,6 @@ import '../../widgets/ledger.dart';
 import '../../widgets/ledger_parts.dart';
 import '../../widgets/phosphor_icons.dart';
 import '../auth/auth_ui.dart';
-import '../auth/countries.dart';
 import 'my_photo.dart';
 import 'profile_service.dart';
 import '../../l10n/tr.dart';
@@ -38,7 +37,6 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late final _name = TextEditingController(text: widget.name);
-  late Country _country = splitPhone(widget.phone).$1;
   late final _phone = TextEditingController(text: _local(widget.phone));
   late final _email = TextEditingController(text: widget.email);
   late String _username = widget.username;
@@ -70,17 +68,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  /// +254712345678 → 712 345 678, as the field shows it after its country code.
+  /// +254712345678 → 712 345 678, as the field shows it after its +254.
   static String _local(String phone) {
-    var digits = splitPhone(phone).$2;
+    var digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('254')) digits = digits.substring(3);
     if (digits.startsWith('0')) digits = digits.substring(1);
-    if (digits.length != 9) return digits;
+    if (digits.length != 9) return phone;
     return '${digits.substring(0, 3)} ${digits.substring(3, 6)} ${digits.substring(6)}';
-  }
-
-  Future<void> _pickCountry() async {
-    final picked = await showCountryPicker(context, _country);
-    if (picked != null && mounted) setState(() => _country = picked);
   }
 
   Future<void> _fetch() async {
@@ -89,9 +83,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final d = res.data as Map;
     setState(() {
       _name.text = '${d['name'] ?? _name.text}';
-      final phone = '${d['phone'] ?? ''}';
-      if (phone.isNotEmpty) _country = splitPhone(phone).$1;
-      _phone.text = _local(phone);
+      _phone.text = _local('${d['phone'] ?? ''}');
       _email.text = '${d['email'] ?? ''}';
       _username = '${d['username'] ?? _username}';
       _usernameField.text = _username;
@@ -109,7 +101,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _error = null;
       _fieldErrors = {};
     });
-    final phone = _country.e164(digits);
+    final phone = '+254${digits.startsWith('0') ? digits.substring(1) : digits}';
     final res = await ProfileService.updateProfile(name: name, email: _email.text.trim(), phone: phone, username: _username);
     if (!mounted) return;
     if (!res.error) {
@@ -266,7 +258,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               children: [
                 _photo(c),
                 const SizedBox(height: 18),
-                ProfileField(
+                _Field(
                   label: 'Full name'.tr,
                   required: true,
                   controller: _name,
@@ -274,19 +266,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   error: _fieldErrors['name'],
                 ),
                 const SizedBox(height: 18),
-                ProfileField(
+                _Field(
                   label: 'Phone number'.tr,
                   required: true,
                   controller: _phone,
-                  prefix: _country.dialLabel,
-                  onPrefixTap: _pickCountry,
+                  prefix: '+254',
                   keyboard: TextInputType.phone,
                   mono: true,
-                  hint: _country.signsInBySms ? 'You sign in with a code sent to this number'.tr : null,
+                  hint: 'You sign in with a code sent to this number'.tr,
                   error: _fieldErrors['phone'],
                 ),
                 const SizedBox(height: 18),
-                ProfileField(
+                _Field(
                   label: 'Email'.tr,
                   optional: true,
                   controller: _email,
@@ -295,7 +286,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 if (_username.isNotEmpty) ...[
                   const SizedBox(height: 18),
-                  ProfileField(
+                  _Field(
                     label: 'Username'.tr,
                     controller: _usernameField,
                     readOnly: true,
@@ -405,9 +396,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 }
 
 /// A labelled field as the design draws it (sl-field): the label above, a
-/// 56-high box with an optional prefix (the country code, tappable to change
-/// it), and a hint or error under it.
-class ProfileField extends StatelessWidget {
+/// 56-high box with an optional +254 prefix, and a hint or error under it.
+class _Field extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final bool required;
@@ -415,15 +405,13 @@ class ProfileField extends StatelessWidget {
   final bool readOnly;
   final bool mono;
   final String? prefix;
-  final VoidCallback? onPrefixTap;
   final Widget? trailing;
   final String? hint;
   final String? error;
   final TextInputType? keyboard;
   final TextCapitalization caps;
 
-  const ProfileField({
-    super.key,
+  const _Field({
     required this.label,
     required this.controller,
     this.required = false,
@@ -431,7 +419,6 @@ class ProfileField extends StatelessWidget {
     this.readOnly = false,
     this.mono = false,
     this.prefix,
-    this.onPrefixTap,
     this.trailing,
     this.hint,
     this.error,
@@ -460,21 +447,11 @@ class ProfileField extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           if (prefix != null)
-            Semantics(
-              button: onPrefixTap != null,
-              label: onPrefixTap != null ? 'Country code {code}. Change country'.trArgs({'code': prefix}) : null,
-              child: GestureDetector(
-                onTap: onPrefixTap,
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(color: c.surfaceMuted, border: Border(right: BorderSide(color: c.divider))),
-                  child: ExcludeSemantics(
-                    child: Text(prefix!, style: TextStyle(fontFamily: AppType.mono, fontSize: 17, fontWeight: FontWeight.w500, color: c.textPrimary)),
-                  ),
-                ),
-              ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: c.surfaceMuted, border: Border(right: BorderSide(color: c.divider))),
+              child: Text(prefix!, style: TextStyle(fontFamily: AppType.mono, fontSize: 17, fontWeight: FontWeight.w500, color: c.textPrimary)),
             ),
           Expanded(
             child: Center(

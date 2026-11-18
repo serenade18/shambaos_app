@@ -14,7 +14,6 @@ import '../dashboard/dashboard_service.dart';
 import '../home_service.dart';
 import '../profile/notification_screen.dart';
 import '../../l10n/tr.dart';
-import '../../widgets/skeleton.dart';
 
 /// The farm's alerts: GET /alerts?farm_id= (open and seen, newest first), and
 /// POST /alerts/{id}/seen for the ones the farmer has now looked at.
@@ -133,7 +132,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
               ]),
               const SizedBox(height: 16),
               if (_loading && all == null)
-                const SkeletonLedger(rows: 5)
+                Padding(padding: const EdgeInsets.only(top: 48), child: Center(child: CircularProgressIndicator(color: c.shamba)))
               else if (_noFarm)
                 SlLedger(children: [SlLedgerRow(title: 'No farm yet'.tr, meta: 'Set up your farm to see its alerts here.'.tr, status: Icon(PhosphorIconsRegular.caretRight, size: 18, color: context.appColors.textSecondary), onTap: () => setUpFarm(context).then((made) {
                     if (made) _load();

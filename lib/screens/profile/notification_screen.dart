@@ -7,7 +7,6 @@ import '../../widgets/ledger.dart';
 import '../../widgets/ledger_parts.dart';
 import '../../widgets/phosphor_icons.dart';
 import '../../l10n/tr.dart';
-import '../../widgets/skeleton.dart';
 
 /// Which of the farm's alerts this phone shows. The API has no notification
 /// settings: alerts come from GET /alerts, and these choices are kept on the
@@ -129,7 +128,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
             const SizedBox(height: 16),
             if (p == null)
-              const Column(children: [SkeletonLedger(rows: 1), SizedBox(height: 40), SkeletonLedger(rows: 5)])
+              Padding(padding: const EdgeInsets.only(top: 48), child: Center(child: CircularProgressIndicator(color: c.shamba)))
             else ...[
               SlLedger(children: [
                 SlIconRow(

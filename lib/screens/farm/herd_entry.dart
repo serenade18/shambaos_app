@@ -11,7 +11,6 @@ import '../records/record_form.dart';
 import 'add_to_farm.dart';
 import 'farm_setup_service.dart';
 import '../../l10n/tr.dart';
-import '../../widgets/skeleton.dart';
 
 /// The tag after [tag]: its last number one up, keeping its zeros ("KE-009" → "KE-010").
 /// Empty when the tag has no number to count on from.
@@ -217,7 +216,7 @@ class _HerdEntryScreenState extends State<HerdEntryScreen> with RecordForm {
           ),
         ),
         if (_loading)
-          const Padding(padding: EdgeInsets.only(top: 8), child: SkeletonBlocks([148, 148]))
+          Padding(padding: const EdgeInsets.only(top: 24), child: Center(child: CircularProgressIndicator(color: c.shamba)))
         else ...[
           for (var i = 0; i < n; i++) _rowCard(c, i, breeds.isNotEmpty),
           Align(
