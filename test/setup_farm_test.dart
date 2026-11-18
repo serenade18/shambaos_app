@@ -18,9 +18,9 @@ Future<void> frames(WidgetTester tester) async {
 }
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() => SharedPreferences.setMockInitialValues({'user': jsonEncode({'name': 'Wanjiku Kamau'})}));
 
-  testWidgets('setting up a farm creates it, then maps it, then asks what it runs', (tester) async {
+  testWidgets('setting up a farm: its name filled in, the county, then what it runs (no map step)', (tester) async {
     Map<String, dynamic>? sent;
     final client = MockClient((r) async {
       if (r.method == 'POST' && r.url.path.endsWith('/farms')) {
@@ -46,25 +46,23 @@ void main() {
       await tester.tap(find.text('go'));
       await tester.pumpAndSettle();
 
-      // Both are needed.
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Next: map your farm'));
+      // The name comes from the farmer's own; the county is still needed.
+      expect(find.text("Wanjiku's farm"), findsOneWidget);
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Next: what you keep'));
       await tester.pumpAndSettle();
-      expect(find.text("Enter the farm's name."), findsOneWidget);
+      expect(find.text('Choose the county.'), findsOneWidget);
 
-      await tester.enterText(find.byType(TextField), 'Wanjiku Farm');
       await tester.tap(find.text('Choose the county'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Nyeri'), 200, scrollable: find.byType(Scrollable).last);
       await tester.tap(find.text('Nyeri'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Next: map your farm'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Next: what you keep'));
       await frames(tester);
-      expect(sent, {'name': 'Wanjiku Farm', 'county': 'Nyeri'});
-      expect(find.byType(FarmMapScreen), findsOneWidget);
+      expect(sent, {'name': "Wanjiku's farm", 'county': 'Nyeri'});
 
-      // Leaving the map goes on to what the farm runs; closing that ends the setup.
-      Navigator.of(tester.element(find.byType(FarmMapScreen))).pop(false);
-      await frames(tester);
+      // Straight on to what the farm runs: mapping waits for later. Closing that ends the setup.
+      expect(find.byType(FarmMapScreen), findsNothing);
       expect(find.byType(AddToFarmScreen), findsOneWidget);
       Navigator.of(tester.element(find.byType(AddToFarmScreen))).pop(false);
       await frames(tester);

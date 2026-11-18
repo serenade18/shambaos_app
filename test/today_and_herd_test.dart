@@ -92,29 +92,32 @@ void main() {
   testWidgets('quick herd entry saves every row in one go', (tester) => run(() async {
         await pumpApp(tester, const HerdEntryScreen(herdId: 'e-dairy', herdName: 'Dairy herd', type: 'dairy_cattle'));
         final tags = find.byType(TextField);
-        expect(tags, findsNWidgets(3));
+        // Each row has its tag, then its name.
+        expect(tags, findsNWidgets(6));
         expect((tester.widget<TextField>(tags.at(0))).controller!.text, 'KE-013');
-        expect((tester.widget<TextField>(tags.at(2))).controller!.text, 'KE-015');
+        expect((tester.widget<TextField>(tags.at(4))).controller!.text, 'KE-015');
+        await tester.enterText(tags.at(1), 'Njeri');
 
         // A tag typed by hand: the rows under it follow on from it.
-        await tester.enterText(tags.at(1), 'KE-100');
+        await tester.enterText(tags.at(2), 'KE-100');
         await tester.pump();
-        expect((tester.widget<TextField>(tags.at(2))).controller!.text, 'KE-101');
+        expect((tester.widget<TextField>(tags.at(4))).controller!.text, 'KE-101');
 
         await tester.tap(find.text('Friesian').first);
         await tester.tap(find.text('Bull').last);
+        await tester.scrollUntilVisible(find.text('Add another cow'), 200, scrollable: find.byType(Scrollable).first);
         await tester.tap(find.text('Add another cow'));
         await tester.pumpAndSettle();
-        expect(find.byType(TextField), findsNWidgets(4));
+        expect(find.byType(TextField), findsNWidgets(8));
         await tester.tap(find.widgetWithText(ElevatedButton, 'Save 4 cows'));
         await tester.pumpAndSettle();
         final body = posted['/animals/bulk']!.single;
         expect(body['enterprise_id'], 'e-dairy');
         expect(body['animals'], [
-          {'tag': 'KE-013', 'sex': 'female', 'breed': 'Friesian'},
-          {'tag': 'KE-100', 'sex': 'female', 'breed': 'Friesian'},
-          {'tag': 'KE-101', 'sex': 'male', 'breed': 'Friesian'},
-          {'tag': 'KE-102', 'sex': 'male', 'breed': 'Friesian'},
+          {'tag': 'KE-013', 'name': 'Njeri', 'sex': 'female', 'breed': 'Friesian'},
+          {'tag': 'KE-100', 'name': '', 'sex': 'female', 'breed': 'Friesian'},
+          {'tag': 'KE-101', 'name': '', 'sex': 'male', 'breed': 'Friesian'},
+          {'tag': 'KE-102', 'name': '', 'sex': 'male', 'breed': 'Friesian'},
         ]);
       }));
 }

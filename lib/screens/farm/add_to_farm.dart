@@ -454,7 +454,8 @@ class _AnimalFormState extends State<AnimalForm> with RecordForm {
     }
     final animals = await FarmSetupService.animals(herd);
     if (!mounted || herd != _herd) return;
-    final tags = [for (final a in animals) '${a['tag'] ?? ''}'];
+    // With the ones just saved here, in case the list doesn't carry them yet: the tag never goes back.
+    final tags = [for (final a in animals) '${a['tag'] ?? ''}', ..._added];
     final next = firstTag(tags);
     setState(() {
       _mothers = [for (final a in animals) if (a['sex'] == 'female' && a['status'] == 'active') a];
